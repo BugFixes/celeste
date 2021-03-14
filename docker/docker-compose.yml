@@ -1,0 +1,13 @@
+version: '2.1'
+
+services:
+    localstack:
+      image: localstack/localstack
+      network_mode: bridge
+      ports:
+        - 53:53
+        - 443:443
+        - 4510-4530:4510-4530
+        - 4566-4620:4566-4620
+      environment:
+        - LOCALSTACK_API_KEY=${LOCALSTACK_API_KEY}

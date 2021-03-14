@@ -35,29 +35,38 @@ type Response struct {
 	Headers map[string]string
 }
 
-const (
-	LEVEL_LOG     = 1 << iota
-	LEVEL_INFO    = 1 << iota
-	LEVEL_ERROR   = 1 << iota
-	LEVEL_UNKNOWN = 1 << iota
-)
+func GetLevelLog() int {
+	return 1
+}
 
-func convertLevelFromString(s string, logger *zap.SugaredLogger) int {
+func GetLevelInfo() int {
+	return 2
+}
+
+func GetLevelError() int {
+	return 3
+}
+
+func GetLevelUnknown() int {
+	return 4
+}
+
+func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	switch s {
 	case "log":
-		return LEVEL_LOG
+		return GetLevelLog()
 	case "info":
-		return LEVEL_INFO
+		return GetLevelInfo()
 	case "error":
-		return LEVEL_ERROR
+		return GetLevelError()
 	default:
 		lvl, err := strconv.Atoi(s)
 		if err != nil {
 			logger.Errorf("log level was sent wrong: %v, sent: %v", err, s)
-			return LEVEL_UNKNOWN
+			return GetLevelUnknown()
 		}
 		if lvl >= 5 {
-			return LEVEL_UNKNOWN
+			return GetLevelUnknown()
 		}
 		return lvl
 	}

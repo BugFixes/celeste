@@ -11,7 +11,9 @@ import (
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	logger, err := zap.NewProduction()
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync()
+	}()
 	if err != nil {
 		return events.APIGatewayProxyResponse{}, fmt.Errorf("zap failed to start: %w", err)
 	}
@@ -24,7 +26,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		response, err := bug.ProcessBug(request, sugar)
 		if err != nil {
 			sugar.Errorf("bug request: %v, failed: %w", request, err)
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("process bug failed: %w\n", err)
+			return events.APIGatewayProxyResponse{}, fmt.Errorf("process bug failed: %w", err)
 		}
 		sugar.Infow("bug request processed")
 		return events.APIGatewayProxyResponse{
@@ -38,7 +40,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		response, err := bug.ProcessFile(request, sugar)
 		if err != nil {
 			sugar.Errorf("file request: %v, failed: %v", request, err)
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("process file failed: %w\n", err)
+			return events.APIGatewayProxyResponse{}, fmt.Errorf("process file failed: %w", err)
 		}
 		sugar.Infow("file request processed")
 		return events.APIGatewayProxyResponse{

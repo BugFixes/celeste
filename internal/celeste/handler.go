@@ -7,9 +7,17 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/celeste/bug"
+	"github.com/bugfixes/celeste/internal/config"
 )
 
+type Celeste struct {
+	Config  config.Config
+	Logger  *zap.SugaredLogger
+	Request events.APIGatewayProxyRequest
+}
+
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// Logger
 	logger, err := zap.NewProduction()
 	defer func() {
 		_ = logger.Sync()
@@ -20,15 +28,31 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	sugar := logger.Sugar()
 	sugar.Infow("Starting Celeste")
 
-	switch request.Path {
+	// Config
+	cfg, err := config.BuildConfig()
+	if err != nil {
+		return events.APIGatewayProxyResponse{}, fmt.Errorf("config failed to build: %w", err)
+	}
+
+	// Routes
+	c := Celeste{
+		Config:  cfg,
+		Logger:  sugar,
+		Request: request,
+	}
+	return c.parseRequest()
+}
+
+func (c Celeste) parseRequest() (events.APIGatewayProxyResponse, error) {
+	switch c.Request.Path {
 	case "/bug":
-		sugar.Infow("bug request received")
-		response, err := bug.ProcessBug(request, sugar)
+		c.Logger.Infow("bug request received")
+		response, err := bug.NewProcessBug(c.Config, *c.Logger).Parse(c.Request)
 		if err != nil {
-			sugar.Errorf("bug request: %v, failed: %w", request, err)
+			c.Logger.Errorf("bug request: %v, failed: %w", c.Request, err)
 			return events.APIGatewayProxyResponse{}, fmt.Errorf("process bug failed: %w", err)
 		}
-		sugar.Infow("bug request processed")
+		c.Logger.Infow("bug request processed")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    response.Headers,
@@ -36,13 +60,14 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		}, nil
 
 	case "/file":
-		sugar.Infow("file request received")
-		response, err := bug.ProcessFile(request, sugar)
+		c.Logger.Infow("file request received")
+
+		response, err := bug.NewProcessFile(c.Config, *c.Logger).Parse(c.Request)
 		if err != nil {
-			sugar.Errorf("file request: %v, failed: %v", request, err)
+			c.Logger.Errorf("file request: %v, failed: %v", c.Request, err)
 			return events.APIGatewayProxyResponse{}, fmt.Errorf("process file failed: %w", err)
 		}
-		sugar.Infow("file request processed")
+		c.Logger.Infow("file request processed")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    response.Headers,
@@ -50,6 +75,6 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		}, nil
 	}
 
-	sugar.Errorf("unknown request received: %v", request)
-	return events.APIGatewayProxyResponse{}, fmt.Errorf("unknown request received: %v", request)
+	c.Logger.Errorf("unknown request received: %v", c.Request)
+	return events.APIGatewayProxyResponse{}, fmt.Errorf("unknown request received: %v", c.Request)
 }

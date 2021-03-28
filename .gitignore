@@ -1,1 +1,2 @@
-./test/coverage.txt
+test/coverage.txt
+.env

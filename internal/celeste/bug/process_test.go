@@ -1,13 +1,13 @@
 package bug_test
 
 import (
-  "errors"
-  "testing"
+	"errors"
+	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
-  "github.com/bugfixes/celeste/internal/config"
-  "github.com/stretchr/testify/assert"
+	"github.com/bugfixes/celeste/internal/config"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -31,14 +31,14 @@ func TestProcessBug(t *testing.T) {
 				},
 			},
 			expect: bug.Response{},
-			err: errors.New("bug: parse: no body: {Resource: Path: HTTPMethod: Headers:map[tester:bob] MultiValueHeaders:map[] QueryStringParameters:map[] MultiValueQueryStringParameters:map[] PathParameters:map[] StageVariables:map[] RequestContext:{AccountID: ResourceID: OperationName: Stage: DomainName: DomainPrefix: RequestID: Protocol: Identity:{CognitoIdentityPoolID: AccountID: CognitoIdentityID: Caller: APIKey: APIKeyID: AccessKey: SourceIP: CognitoAuthenticationType: CognitoAuthenticationProvider: UserArn: UserAgent: User:} ResourcePath: Authorizer:map[] HTTPMethod: RequestTime: RequestTimeEpoch:0 APIID:} Body: IsBase64Encoded:false}"),
+			err:    errors.New("bug: parse: no body: {Resource: Path: HTTPMethod: Headers:map[tester:bob] MultiValueHeaders:map[] QueryStringParameters:map[] MultiValueQueryStringParameters:map[] PathParameters:map[] StageVariables:map[] RequestContext:{AccountID: ResourceID: OperationName: Stage: DomainName: DomainPrefix: RequestID: Protocol: Identity:{CognitoIdentityPoolID: AccountID: CognitoIdentityID: Caller: APIKey: APIKeyID: AccessKey: SourceIP: CognitoAuthenticationType: CognitoAuthenticationProvider: UserArn: UserAgent: User:} ResourcePath: Authorizer:map[] HTTPMethod: RequestTime: RequestTimeEpoch:0 APIID:} Body: IsBase64Encoded:false}"),
 		},
 	}
 
 	c, err := config.BuildConfig()
 	if err != nil {
-	  t.Errorf("config error: %w", err)
-  }
+		t.Errorf("config error: %w", err)
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -35,6 +35,6 @@ version-resolver:
 
 exclude-labels:
   - 'skip-changelog'
-  
+
 tag-template: 'v$NEXT_PATCH_VERISON'
 change-template: '- [#$NUMBER](https://github.com/bugfixes/celeste/pull/$NUMBER) $TITLE (@$AUTHOR)'

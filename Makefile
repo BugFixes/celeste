@@ -31,17 +31,23 @@ mocks: ## Generate the mocks
 full: clean build fmt lint test ## Clean, build, make sure its formatted, linted, and test it
 
 .PHONY: docker-up
-docker-up: ## Start docker
+docker-up: docker-start sleepy bucket-create ## Start docker
+
+docker-start: ## Docker Start
 	docker-compose -p ${SERVICE_NAME} --project-directory=docker -f docker/docker-compose.yml up -d
-	sleep 60
-	go run ./docker/docker.go
+
+docker-stop: ## Docker Stop
+	docker-compose -p ${SERVICE_NAME} --project-directory=docker -f docker/docker-compose.yml down
 
 .PHONY: docker-down
-docker-down: ## Stop docker
-	docker-compose -p ${SERVICE_NAME} --project-directory=docker -f docker/docker-compose.yml down
+docker-down: docker-stop ## Stop docker
 
 .PHONY: docker-restart
 docker-restart: docker-down docker-up ## Restart Docker
+
+.PHONY: docker-logs
+docker-logs: ## Follow the logs
+	docker logs -f ${SERVICE_NAME}_localstack_1
 
 .PHONY: lint
 lint: ## Lint
@@ -60,3 +66,36 @@ pre-commit: fmt lint ## Do formatting and linting
 clean: ## Clean
 	go clean ./...
 	rm -rf bin/${SERVICE_NAME}
+
+sleepy: ## Sleepy
+	sleep 60
+
+.PHONY: cloud-up
+cloud-up: ## CloudFormation Up
+	aws cloudformation create-stack \
+  		--template-body file://docker/cloudformation.yaml \
+  		--stack-name celeste \
+  		--endpoint https://localhost.localstack.cloud:4566 \
+  		--region us-east-1
+
+.PHONY: cloud-down
+cloud-down: ## CloudFormation Down
+	aws cloudformation delete-stack \
+  		--stack-name celeste \
+  		--endpoint https://localhost.localstack.cloud:4566 \
+  		--region us-east-1
+
+.PHONY: bucket-up
+bucket-up: bucket-create bucket-upload ## S3 Bucket Up
+
+bucket-create: ## Create the bucket for builds
+	aws s3api create-bucket \
+		--endpoint https://localhost.localstack.cloud:4566 \
+		--bucket celeste
+
+bucket-upload: build-aws ## Put the build in the bucket
+	aws s3 cp bin/celeste-local.zip s3://celeste/celeste-local.zip --endpoint https://localhost.localstack.cloud:4566
+
+build-aws: ## Build for AWS
+	GOOS=linux GOARCH=amd64 go build -o bin/celeste ./cmd/main
+	zip bin/celeste-local.zip bin/celeste

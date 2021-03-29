@@ -1,0 +1,37 @@
+name: Pull Requests
+on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
+  check_suite:
+    types:
+      - completed
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.16.x
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: install golang-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.39.0
+
+  automerge:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ridedott/merge-me-action@v2
+        with:
+          GITHUB_LOGIN: dependabot-preview[bot]
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

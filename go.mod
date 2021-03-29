@@ -3,7 +3,7 @@ module github.com/bugfixes/celeste
 go 1.16
 
 require (
-	github.com/aws/aws-lambda-go v1.22.0
+	github.com/aws/aws-lambda-go v1.23.0
 	github.com/aws/aws-sdk-go v1.38.7
 	github.com/caarlos0/env/v6 v6.5.0
 	github.com/google/uuid v1.2.0

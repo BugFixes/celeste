@@ -62,24 +62,24 @@ func createDatabase(cfg config.Config, sess *session.Session) error {
 
 func createBugs(cfg config.Config, svc *dynamodb.DynamoDB) error {
 	_, err := svc.CreateTable(&dynamodb.CreateTableInput{
-    AttributeDefinitions: []*dynamodb.AttributeDefinition{
-      {
-        AttributeName: aws.String("id"),
-        AttributeType: aws.String("S"),
-      },
-    },
-    KeySchema: []*dynamodb.KeySchemaElement{
-      {
-        AttributeName: aws.String("id"),
-        KeyType:       aws.String("HASH"),
-      },
-    },
-    ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-      ReadCapacityUnits:  aws.Int64(5),
-      WriteCapacityUnits: aws.Int64(5),
-    },
-    TableName: aws.String(cfg.BugsTable),
-  })
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+		TableName: aws.String(cfg.BugsTable),
+	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); !ok {
 			return fmt.Errorf("awserr: %w", aerr)
@@ -92,24 +92,24 @@ func createBugs(cfg config.Config, svc *dynamodb.DynamoDB) error {
 
 func createAccounts(cfg config.Config, svc *dynamodb.DynamoDB) error {
 	_, err := svc.CreateTable(&dynamodb.CreateTableInput{
-    AttributeDefinitions: []*dynamodb.AttributeDefinition{
-      {
-        AttributeName: aws.String("id"),
-        AttributeType: aws.String("S"),
-      },
-    },
-    KeySchema: []*dynamodb.KeySchemaElement{
-      {
-        AttributeName: aws.String("id"),
-        KeyType:       aws.String("HASH"),
-      },
-    },
-    ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-      ReadCapacityUnits:  aws.Int64(5),
-      WriteCapacityUnits: aws.Int64(5),
-    },
-    TableName: aws.String(cfg.AccountsTable),
-  })
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("id"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("id"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(5),
+			WriteCapacityUnits: aws.Int64(5),
+		},
+		TableName: aws.String(cfg.AccountsTable),
+	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); !ok {
 			return fmt.Errorf("awserr: %w", aerr)
@@ -125,35 +125,35 @@ func createQueue(cfg config.Config, sess *session.Session) error {
 	svc := sqs.New(sess)
 
 	_, err := svc.CreateQueue(&sqs.CreateQueueInput{
-    QueueName: aws.String(cfg.QueueName),
-  })
+		QueueName: aws.String(cfg.QueueName),
+	})
 	if err != nil {
 		return fmt.Errorf("createQueue: %w", err)
 	}
 
 	err = injectQueueItem(cfg, svc)
 	if err != nil {
-	  return fmt.Errorf("createQueue: %w", err)
-  }
+		return fmt.Errorf("createQueue: %w", err)
+	}
 
 	return nil
 }
 
 func injectQueueItem(cfg config.Config, svc *sqs.SQS) error {
-  result, err := svc.SendMessage(&sqs.SendMessageInput{
-    MessageAttributes: map[string]*sqs.MessageAttributeValue{
-      "clientId": &sqs.MessageAttributeValue{
-        DataType: aws.String("String"),
-        StringValue: aws.String("testClient"),
-      },
-    },
-    MessageBody: aws.String("testMessage"),
-    QueueUrl: aws.String(fmt.Sprintf("%s/queue/%s", cfg.AWSEndpoint, cfg.QueueName)),
-  })
-  if err != nil {
-    return fmt.Errorf("injectQueue: %w", err)
-  }
+	result, err := svc.SendMessage(&sqs.SendMessageInput{
+		MessageAttributes: map[string]*sqs.MessageAttributeValue{
+			"clientId": &sqs.MessageAttributeValue{
+				DataType:    aws.String("String"),
+				StringValue: aws.String("testClient"),
+			},
+		},
+		MessageBody: aws.String("testMessage"),
+		QueueUrl:    aws.String(fmt.Sprintf("%s/queue/%s", cfg.AWSEndpoint, cfg.QueueName)),
+	})
+	if err != nil {
+		return fmt.Errorf("injectQueue: %w", err)
+	}
 
-  fmt.Printf("result: %s\n", result)
-  return nil
+	fmt.Printf("result: %s\n", result)
+	return nil
 }

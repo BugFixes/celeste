@@ -4,24 +4,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bugfixes/celeste/internal/celeste/agent"
 	"go.uber.org/zap"
 )
-
-type Agent struct {
-	Agent  string `json:"agent,omitempty"`
-	Key    string `json:"key,omitempty"`
-	Secret string `json:"secret,omitempty"`
-}
 
 type BugInput struct {
 	Message string `json:"message,omitempty"`
 	Level   string `json:"level,omitempty"`
 
-	Agent
+	agent.Agent
 }
 
 type Bug struct {
-	Agent
+	agent.Agent
 
 	Message    string
 	Level      int

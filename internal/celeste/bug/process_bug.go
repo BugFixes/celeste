@@ -22,10 +22,6 @@ func NewProcessBug(c config.Config, l zap.SugaredLogger) ProcessBug {
 	}
 }
 
-func (p ProcessBug) Name() string {
-	return ""
-}
-
 func (p ProcessBug) Parse(request events.APIGatewayProxyRequest) (Response, error) {
 	if len(request.Body) == 0 {
 		p.Logger.Errorf("bug: parse: no body: %+v", request)

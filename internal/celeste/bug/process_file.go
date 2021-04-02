@@ -19,10 +19,6 @@ func NewProcessFile(c config.Config, l zap.SugaredLogger) ProcessFile {
 	}
 }
 
-func (p ProcessFile) Name() string {
-	return ""
-}
-
 func (p ProcessFile) Parse(request events.APIGatewayProxyRequest) (Response, error) {
 	return Response{}, nil
 }

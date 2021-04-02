@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+
+	"github.com/bugfixes/celeste/internal/celeste/account"
 )
 
 type Credentials struct {
@@ -12,17 +14,23 @@ type Credentials struct {
 	Secret string
 }
 
-type Company struct {
-	ID   string
-	Name string
-}
-
 type Agent struct {
 	ID   string
 	Name string
 
 	Credentials
-	Company
+	account.Account
+}
+
+func blankAgent(a, b Agent) bool {
+	if a.ID != b.ID ||
+		a.Secret != b.Secret ||
+		a.Key != b.Key ||
+		a.Name != b.Name {
+		return false
+	}
+
+	return true
 }
 
 func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Agent, error) {
@@ -40,7 +48,7 @@ func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Ag
 		}
 	}
 
-	if (Agent{}) == a {
+	if blankAgent(a, Agent{}) {
 		logger.Errorf("headers are bad: %v", headers)
 		return a, fmt.Errorf("headers are bad")
 	}

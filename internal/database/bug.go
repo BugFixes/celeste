@@ -26,7 +26,7 @@ func NewBugStorage(d Database) *BugStorage {
 	}
 }
 
-func (b BugStorage) Insert(record BugRecord) error {
+func (b BugStorage) Insert(data BugRecord) error {
 	svc, err := b.Database.dynamoSession()
 	if err != nil {
 		b.Database.Logger.Errorf("insert bug: %w", err)
@@ -36,19 +36,19 @@ func (b BugStorage) Insert(record BugRecord) error {
 	input := &dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{
 			"id": {
-				S: aws.String(record.ID),
+				S: aws.String(data.ID),
 			},
 			"hash": {
-				S: aws.String(record.Hash),
+				S: aws.String(data.Hash),
 			},
 			"agent": {
-				S: aws.String(record.Agent),
+				S: aws.String(data.Agent),
 			},
 			"level": {
-				N: aws.String(strconv.Itoa(record.Level)),
+				N: aws.String(strconv.Itoa(data.Level)),
 			},
 			"full": {
-				S: aws.String(record.Full.(string)),
+				S: aws.String(data.Full.(string)),
 			},
 		},
 		TableName: aws.String(b.Database.Config.BugsTable),

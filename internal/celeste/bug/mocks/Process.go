@@ -35,20 +35,6 @@ func (_m *Process) Fetch() (bug.Response, error) {
 	return r0, r1
 }
 
-// Name provides a mock function with given fields:
-func (_m *Process) Name() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // Parse provides a mock function with given fields: request
 func (_m *Process) Parse(request events.APIGatewayProxyRequest) (bug.Response, error) {
 	ret := _m.Called(request)

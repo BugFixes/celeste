@@ -12,20 +12,6 @@ type Comms struct {
 	mock.Mock
 }
 
-// Name provides a mock function with given fields:
-func (_m *Comms) Name() string {
-	ret := _m.Called()
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // Send provides a mock function with given fields: cp
 func (_m *Comms) Send(cp comms.CommsPackage) (comms.AckPackage, error) {
 	ret := _m.Called(cp)

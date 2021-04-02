@@ -14,6 +14,9 @@ Parameters:
   DatabaseAccounts:
     Type: String
     Default: accounts
+  DatabaseAgents:
+    Type: String
+    Default: Agents
   QueueName:
     Type: String
     Default: bugs
@@ -73,6 +76,12 @@ Resources:
                   - dynamodb:DescribeTable
                 Resource:
                   Fn::Join: [':', [arn, aws, dynamodb, Ref AWS::Region, Ref::AccountId, Ref DatabaseAccounts]]
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateTable
+                  - dynamodb:DescribeTable
+                Resource:
+                  Fn::Join: [':', [arn, aws, dynamodb, Ref AWS::Region, Ref::AccountId, Ref DatabaseAgents]]
 
   MainQueue:
     Type: AWS::SQS::Queue
@@ -117,6 +126,19 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
       TableName: Ref DatabaseAccounts
+  AgentsDynamo:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: Ref DatabaseAgents
 
   Service:
     Type: AWS::Lambda::Function

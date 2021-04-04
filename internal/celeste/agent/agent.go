@@ -2,11 +2,9 @@ package agent
 
 import (
 	"fmt"
-	"strings"
-
-	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	"github.com/google/uuid"
 )
 
 type Credentials struct {
@@ -22,82 +20,73 @@ type Agent struct {
 	account.Account
 }
 
-func blankAgent(a, b Agent) bool {
-	if a.ID != b.ID ||
-		a.Secret != b.Secret ||
-		a.Key != b.Key ||
-		a.Name != b.Name {
-		return false
-	}
-
-	return true
+//go:generate mockery --name=Agents
+type Agents interface {
+	Create() (*Agent, error)
+	Delete(a Agent) error
 }
 
-func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Agent, error) {
-	a := Agent{}
-
-	for h, v := range headers {
-		l := strings.ToLower(h)
-		switch l {
-		case "x-agent-id":
-			a.ID = v
-		case "x-api-key":
-			a.Key = v
-		case "x-api-secret":
-			a.Secret = v
-		}
+func NewAgent(name string, account account.Account) *Agent {
+	return &Agent{
+		Name:    name,
+		Account: account,
 	}
+}
 
-	if blankAgent(a, Agent{}) {
-		logger.Errorf("headers are bad: %v", headers)
-		return a, fmt.Errorf("headers are bad")
-	}
-
-	if a.ID == "" {
-		return a.missingID(headers, logger)
-	}
-
-	valid, err := a.ValidateID()
+func (a Agent) Create() (*Agent, error) {
+	id, err := createID()
 	if err != nil {
-		logger.Errorf("validate id failed: %v", err)
-		return a, fmt.Errorf("validated id failed: %w", err)
+		return &a, fmt.Errorf("agent create: %w", err)
 	}
-	if !valid {
-		logger.Errorf("agent isn't valid: %v", a)
-		return a, fmt.Errorf("agent isn't valid: %v", a)
-	}
+	a.ID = id
 
-	return a, nil
-}
-
-func (a Agent) missingID(headers map[string]string, logger *zap.SugaredLogger) (Agent, error) {
-	if a.Credentials.Secret == "" && a.Credentials.Key == "" {
-		logger.Errorf("secret and key are blank: %v", headers)
-		return a, fmt.Errorf("secret and key are blank: %v", headers)
-	}
-
-	if a.Credentials.Secret == "" {
-		logger.Errorf("secret is blank: %v", headers)
-		return a, fmt.Errorf("secret is blank: %v", headers)
-	}
-
-	if a.Credentials.Key == "" {
-		logger.Errorf("key is blank: %v", headers)
-		return a, fmt.Errorf("key is blank: %v", headers)
-	}
-
-	a, err := a.LookupDetails()
+	key, err := createKey()
 	if err != nil {
-		logger.Errorf("lookup id failed: %v", err)
-		return a, fmt.Errorf("lookup id failed: %w", err)
+		return &a, fmt.Errorf("agent create: %w", err)
 	}
-	return a, nil
+	a.Credentials.Key = key
+
+	secret, err := createSecret()
+	if err != nil {
+		return &a, fmt.Errorf("agent create: %w", err)
+	}
+	a.Credentials.Secret = secret
+
+	return &a, nil
 }
 
-func (a Agent) ValidateID() (bool, error) {
-	return false, nil
+func createID() (string, error) {
+	id, err := generateUUID()
+	if err != nil {
+		return "", fmt.Errorf("createID: %w", err)
+	}
+
+	return id, nil
 }
 
-func (a Agent) LookupDetails() (Agent, error) {
-	return Agent{}, nil
+func createKey() (string, error) {
+	key, err := generateUUID()
+	if err != nil {
+		return "", fmt.Errorf("createKey: %w", err)
+	}
+
+	return key, nil
+}
+
+func createSecret() (string, error) {
+	secret, err := generateUUID()
+	if err != nil {
+		return "", fmt.Errorf("generateUUID: %w", err)
+	}
+
+	return secret, nil
+}
+
+func generateUUID() (string, error) {
+	s, err := uuid.NewUUID()
+	if err != nil {
+		return "", fmt.Errorf("generateUUID: %w", err)
+	}
+
+	return s.String(), nil
 }

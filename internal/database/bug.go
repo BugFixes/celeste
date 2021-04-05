@@ -33,7 +33,7 @@ func (b BugStorage) Insert(data BugRecord) error {
 		return fmt.Errorf("insert bug: %w", err)
 	}
 
-	input := &dynamodb.PutItemInput{
+	_, err = svc.PutItem(&dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{
 			"id": {
 				S: aws.String(data.ID),
@@ -52,9 +52,7 @@ func (b BugStorage) Insert(data BugRecord) error {
 			},
 		},
 		TableName: aws.String(b.Database.Config.BugsTable),
-	}
-
-	_, err = svc.PutItem(input)
+	})
 	if err != nil {
 		return dynamoError(err, b.Database.Logger)
 	}

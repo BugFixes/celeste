@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bugfixes/celeste/internal/celeste/account"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
@@ -34,7 +35,7 @@ func TestParseAgentHeaders(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			resp, err := agent.ParseAgentHeaders(test.request, sugar)
 			if passed := assert.IsType(t, test.err, err); !passed {
-				t.Errorf("lookup err: %w", err)
+				t.Errorf("lookup err: %v", err)
 			}
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)
@@ -70,7 +71,7 @@ func TestAgent_LookupDetails(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			resp, err := test.request.LookupDetails()
 			if passed := assert.IsType(t, test.err, err); !passed {
-				t.Errorf("lookup err: %w", err)
+				t.Errorf("lookup err: %v", err)
 			}
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)
@@ -106,13 +107,41 @@ func TestAgent_ValidateID(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			resp, err := test.request.ValidateID()
 			if passed := assert.IsType(t, test.err, err); !passed {
-				t.Errorf("validate err: %w", err)
+				t.Errorf("validate err: %v", err)
 			}
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("validate expect: %v, got: %v", test.expect, resp)
 			}
 			if passed := assert.Equal(t, test.err, err); !passed {
 				t.Errorf("lookup err failed - expected: %v, got: %v", test.err, err)
+			}
+		})
+	}
+}
+
+func TestAgent_Create(t *testing.T) {
+	tests := []struct {
+		name    string
+		request *agent.Agent
+		expect  *agent.Agent
+		err     error
+	}{
+		{
+			name:    "create",
+			request: agent.NewAgent("tester", account.Account{}),
+			expect:  &agent.Agent{},
+			err:     nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := test.request.Create()
+			if passed := assert.IsType(t, test.err, err); !passed {
+				t.Errorf("create err: %v", err)
+			}
+			if passed := assert.IsType(t, test.expect, resp); !passed {
+				t.Errorf("create expect: %v", resp)
 			}
 		})
 	}

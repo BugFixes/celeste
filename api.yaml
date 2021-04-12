@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: Celeste
+  description: Celeste
+  version: 1.0.0
+
+servers:
+  - url: 'https://localhost.localstack.cloud'
+    description: Local
+  - url: 'https://dev.api.bugfix.es/v1'
+    description: Dev
+  - url: 'https://api.bugfix.es/v1'
+    description: Live
+
+tags:
+  - name: Internal
+    description: Internal comms
+  - name: External
+    description: External Endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Internal
+      summary: Health Endpoint
+      description: >-
+        Expose the health endpoint
+      responses:
+        200:
+          description: Service Alive
+        5XX:
+          description: Error happened
+      operationId: celeste_health\
+
+  /bug:
+    get:
+      tags:
+        - External
+      summary: Get the info of a Bug
+      description: Get the hash, and comms statuses
+      operationId: celeste_bug_get
+      parameters:
+        - $ref: "#/components/parameters/BugID"
+        - $ref: "#/components/parameters/AccountID"
+        - $ref: "#/components/parameters/AccountSecret"
+      responses:
+        200:
+          description: Good
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugStatus"
+              example:
+                operation_id: celeste_bug_get
+                data:
+                  id: 1234
+                  hash: asdf1234
+                  comms:
+                    - platform: slack
+                      channel: bob
+                      time_posted: 2001-12-01T23:00Z
+                      comms_id: 1234
+                    - platform: email
+                      subject: bug detected
+                      time_posted: 2001-12-01T23:00Z
+                      comms_id: 1234
+        404:
+          description: Unknown Bug
+        5XX:
+          description: Unknown Error
+
+components:
+  headers:
+    XAccountId:
+      schema:
+        type: string
+        format: uuid
+    XAccountSecret:
+      schema:
+        type: string
+
+  parameters:
+    AccountID:
+      in: header
+      name: accountId
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Account ID
+    AccountSecret:
+      in: header
+      name: accountSecret
+      schema:
+        type: string
+      required: true
+      description: Account Secret
+    BugID:
+      in: path
+      name: bugId
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Bug ID
+
+  schemas:
+    BugStatus:
+      type: object
+      properties:
+        operation_id:
+          type: string
+          nullable: false
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            hash:
+              type: string
+            comms:
+              type: array
+              items:
+                $ref: "#/components/schemas/CommsStatus"
+    CommsStatus:
+      type: object
+      properties:
+        comms_id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+        channel:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        time_posted:
+          type: string
+          format: date-time

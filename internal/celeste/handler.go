@@ -74,8 +74,8 @@ func (c Celeste) parseRequest() (events.APIGatewayProxyResponse, error) {
 			Body:       response.Body,
 		}, nil
 
-  case "/agent":
-    c.Logger.Infow("agent request recieved")
+	case "/agent":
+		c.Logger.Infow("agent request recieved")
 	}
 
 	c.Logger.Errorf("unknown request received: %v", c.Request)

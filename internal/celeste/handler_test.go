@@ -1,45 +1,43 @@
 package celeste_test
 
 import (
-  "testing"
+	"testing"
 
-  "github.com/aws/aws-lambda-go/events"
-  "github.com/bugfixes/celeste/internal/celeste"
-  "github.com/stretchr/testify/assert"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/bugfixes/celeste/internal/celeste"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAccount(t *testing.T) {
-  tests := []struct{
-    name string
-    request events.APIGatewayProxyRequest
-    expect events.APIGatewayProxyResponse
-    err error
-  }{
-    {
-      name: "test1",
-      request: events.APIGatewayProxyRequest{
-        Path: "/account",
-        HTTPMethod: "POST",
-        Body: `{"name":"tester","email":"tester@test.com","cellphone":"111111111111","countryCode":"44"}`,
-      },
-      expect: events.APIGatewayProxyResponse{
+	tests := []struct {
+		name    string
+		request events.APIGatewayProxyRequest
+		expect  events.APIGatewayProxyResponse
+		err     error
+	}{
+		{
+			name: "test1",
+			request: events.APIGatewayProxyRequest{
+				Path:       "/account",
+				HTTPMethod: "POST",
+				Body:       `{"name":"tester","email":"tester@test.com","cellphone":"111111111111","countryCode":"44"}`,
+			},
+			expect: events.APIGatewayProxyResponse{},
+		},
+	}
 
-      },
-    },
-  }
-
-  for _, test := range tests {
-    t.Run(test.name, func(t *testing.T) {
-      resp, err := celeste.Handler(test.request)
-      if passed := assert.IsType(t, test.err, err); !passed {
-        t.Errorf("Account err type: %v, %+v", err, test.err)
-      }
-      if passed := assert.Equal(t, test.err, err); !passed {
-        t.Errorf("Account err equal: %v, %+v", err, test.err)
-      }
-      if passed := assert.Equal(t, test.expect, resp); !passed {
-        t.Errorf("Account equal: %v, %+v", resp, test.expect)
-      }
-    })
-  }
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			resp, err := celeste.Handler(test.request)
+			if passed := assert.IsType(t, test.err, err); !passed {
+				t.Errorf("Account err type: %v, %+v", err, test.err)
+			}
+			if passed := assert.Equal(t, test.err, err); !passed {
+				t.Errorf("Account err equal: %v, %+v", err, test.err)
+			}
+			if passed := assert.Equal(t, test.expect, resp); !passed {
+				t.Errorf("Account equal: %v, %+v", resp, test.expect)
+			}
+		})
+	}
 }

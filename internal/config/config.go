@@ -14,6 +14,8 @@ type Config struct {
 	AccountsTable string `env:"DB_ACCOUNTS_TABLE" envDefault:"accounts"`
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
+
+	LocalPort int `env:"LOCAL_PORT" envDefault:"3000"`
 }
 
 func BuildConfig() (Config, error) {

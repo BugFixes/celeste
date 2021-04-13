@@ -1,6 +1,8 @@
 package bug
 
 import (
+	"net/http"
+
 	"github.com/aws/aws-lambda-go/events"
 	"go.uber.org/zap"
 
@@ -14,7 +16,7 @@ type ProcessFile struct {
 	CommsChannel string
 }
 
-func NewProcessFile(c config.Config, l zap.SugaredLogger) ProcessFile {
+func NewFile(c config.Config, l zap.SugaredLogger) ProcessFile {
 	return ProcessFile{
 		Config: c,
 		Logger: l,
@@ -32,4 +34,8 @@ func (p ProcessFile) Report() (Response, error) {
 
 func (p ProcessFile) Fetch() (Response, error) {
 	return Response{}, nil
+}
+
+func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
+
 }

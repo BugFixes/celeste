@@ -13,7 +13,7 @@ type Account struct {
 }
 
 type Response struct {
-	Body    string
+	Body    interface{}
 	Headers map[string]string
 }
 

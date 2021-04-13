@@ -17,6 +17,14 @@ tags:
     description: Internal comms
   - name: External
     description: External Endpoints
+  - name: Account
+    description: Account Endpoints
+  - name: Agent
+    description: Agent Endpoints
+  - name: Bug
+    description: Bug Endpoints
+  - name: Comms
+    description: Comms Endpoints
 
 paths:
   /health:
@@ -31,42 +39,350 @@ paths:
           description: Service Alive
         5XX:
           description: Error happened
-      operationId: celeste_health\
+      operationId: celeste_health
 
   /bug:
     get:
       tags:
         - External
+        - Bug
       summary: Get the info of a Bug
       description: Get the hash, and comms statuses
-      operationId: celeste_bug_get
+      operationId: celeste_bug
       parameters:
         - $ref: "#/components/parameters/BugID"
-        - $ref: "#/components/parameters/AccountID"
-        - $ref: "#/components/parameters/AccountSecret"
+        - $ref: "#/components/parameters/AgentID"
+        - $ref: "#/components/parameters/AgentSecret"
       responses:
         200:
-          description: Good
+          description: Bug Found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BugStatus"
               example:
-                operation_id: celeste_bug_get
+                operation: celeste_bug
                 data:
-                  id: 1234
+                  id: 123e4567-e89b-12d3-a456-426614174000
                   hash: asdf1234
                   comms:
                     - platform: slack
                       channel: bob
                       time_posted: 2001-12-01T23:00Z
-                      comms_id: 1234
+                      id: 123e4567-e89b-12d3-a456-426614174000
                     - platform: email
                       subject: bug detected
                       time_posted: 2001-12-01T23:00Z
-                      comms_id: 1234
+                      id: 123e4567-e89b-12d3-a456-426614174000
         404:
           description: Unknown Bug
+        5XX:
+          description: Unknown Error
+    post:
+      tags:
+        - External
+        - Bug
+      summary: Create Bug
+      description: Create Bug
+      operationId: celeste_bug_create
+      parameters:
+        - $ref: "#/components/schemas/BugCreate"
+      responses:
+        201:
+          description: Bug Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugStatus"
+              example:
+                operation: celeste_bug_create
+                data:
+                  id: 123e4567-e89b-12d3-a456-426614174000
+                  hash: asdf1234
+        5XX:
+          description: Unknown Error
+  /bug/file:
+    post:
+      tags:
+        - Internal
+        - Bug
+      summary: File Bug
+      description: File Bug
+      operationId: celetete_bug_file
+      parameters:
+        - $ref: "#/components/schema/BugFile"
+      responses:
+        202:
+          description: Bug Filed
+
+  /account:
+    post:
+      tags:
+        - External
+        - Account
+      summary: Create Account
+      description: Create Account
+      operationId: celeste_account_create
+      parameters:
+        - $ref: "#/components/schemas/AccountCreate"
+      responses:
+        201:
+          description: Account Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+              example:
+                operation: celeste_account_create
+                data:
+                  id: 123e4567-e89b-12d3-a456-426614174000
+                  secret: 123e4567-e89b-12d3-a456-426614174000
+    delete:
+      tags:
+        - External
+        - Account
+      summary: Delete Account
+      description: Delete Account
+      operationId: celeste_account_delete
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/parameters/AccountID"
+      responses:
+        202:
+          description: Account Deleted
+        401:
+          description: Invalid Auth Code
+        404:
+          description: Account Unknown
+        5XX:
+          description: Unknown Error
+  /account/login:
+    post:
+      tags:
+        - External
+        - Account
+      summary: Login Account
+      description: Login Account
+      operationId: celeste_account_login
+      parameters:
+        - $ref: "#/components/schema/AccountsLogin"
+      responses:
+        200:
+          description: Account Logged In
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountAuth"
+              example:
+                operation: celeste_account_login
+                data:
+                  auth_code: 123e4567-e89b-12d3-a456-426614174000
+        401:
+          description: Unauthorized
+
+  /agent:
+    get:
+      tags:
+        - External
+        - Agent
+      summary: List Agents
+      description: List Agents
+      operationId: celeste_agent_list
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+      responses:
+        200:
+          description: Agents List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agents"
+              example:
+                operation: celeste_agent_list
+                data:
+                  - name: bob
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    secret: 123e4567-e89b-12d3-a456-426614174000
+        401:
+          description: Auth Code invalid
+        5XX:
+          description: Unknown Error
+    delete:
+      tags:
+        - External
+        - Agent
+      summary: Agent Delete
+      description: Agent Delete
+      operationId: celeste_agent_delete
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/parameters/AgentID"
+      responses:
+        202:
+          description: Agent Deleted
+        401:
+          description: Auth Code Invalid
+        404:
+          description: Agent Unknown
+        5XX:
+          description: Unknown Error
+    post:
+      tags:
+        - External
+        - Agent
+      summary: Create Agent
+      description: Create Agent
+      operationId: celeste_agent_create
+      parameters:
+        - $ref: "#/components/schema/AgentCreate"
+        - $ref: "#/components/parameters/AccountAuth"
+      responses:
+        201:
+          description: Agent Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+              example:
+                operation: celeste_agent_create
+                data:
+                  name: Agent 1
+                  id: 123e4567-e89b-12d3-a456-426614174000
+                  secret: 123e4567-e89b-12d3-a456-426614174000
+        400:
+          description: Bad Agent Request
+        401:
+          description: Auth Code invalid
+        402:
+          description: Agent quota filled
+        403:
+          description: Account cannot create agents
+        5XX:
+          description: Unknown Error
+
+  /comms:
+    post:
+      tags:
+        - External
+        - Comms
+      summary: Create Comms
+      description: Create Comms
+      operationId: celeste_comms_create
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+      responses:
+        201:
+          description: Comms Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/Comms"
+              example:
+                operation: celeste_comms_create
+                data:
+                  comms:
+                    name: Slack
+                    platform: slack
+                    channel: "#bob"
+                    id: 123e4567-e89b-12d3-a456-426614174000
+        400:
+          description: Bad Comms Request
+        401:
+          description: Auth Code invalid
+        402:
+          description: Comms quota filled
+        403:
+          description: Account cannot create comms
+        5XX:
+          description: Unknown Error
+    put:
+      tags:
+        - External
+        - Comms
+      summary: Attach Agent to Comms
+      description: Attach Agent to Comms
+      operationId: celeste_comms_attach
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/schemas/CommsAgent"
+      responses:
+        202:
+          description: Comms Attached
+        400:
+          description: Bad Comms Attach Request
+        401:
+          description: Auth Code Invalid
+        404:
+          description: Unknown Comms
+        5XX:
+          description: Unknown Error
+    patch:
+      tags:
+        - External
+        - Comms
+      summary: Detach Agent from Comms
+      description: Detach Agent from Comms
+      operationId: celeste_comms_detach
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/schemas/CommsAgent"
+      responses:
+        202:
+          description: Comms Detached
+        400:
+          description: Bad Comms Detach Request
+        401:
+          description: Auth Code Invalid
+        404:
+          description: Unknown Comms
+        5XX:
+          description: Unknown Error
+    delete:
+      tags:
+        - External
+        - Comms
+      summary: Delete Comms
+      description: Delete Comms
+      operationId: celeste_comms_delete
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/parameters/CommsID"
+      responses:
+        202:
+          description: Comms Deleted
+        401:
+          description: Auth Code Invalid
+        404:
+          description: Unknown Comms
+        5XX:
+          description: Unknown Error
+    get:
+      tags:
+        - External
+        - Comms
+      summary: List Comms
+      description: List Comms
+      operationId: celeste_comms_list
+      parameters:
+        - $ref: "#/components/parameters/AccountAuth"
+        - $ref: "#/components/parameters/CommsAgentID"
+      responses:
+        200:
+          description: Comms List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schema/CommsList"
+              example:
+                operation: celeste_comms_list
+                data:
+                  - name: Slack
+                    platform: slack
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    channel: "#bob"
+                    agent: 123e4567-e89b-12d3-a456-426614174000
+        401:
+          description: Auth Code Invalid
         5XX:
           description: Unknown Error
 
@@ -79,6 +395,15 @@ components:
     XAccountSecret:
       schema:
         type: string
+
+    XAgentId:
+      schema:
+        type: string
+        format: uuid
+    XAgentSecret:
+      schema:
+        type: string
+        format: uuid
 
   parameters:
     AccountID:
@@ -96,6 +421,15 @@ components:
         type: string
       required: true
       description: Account Secret
+
+    AccountAuth:
+      in: header
+      name: accountAuth
+      schema:
+        type: string
+      required: true
+      description: Account Auth
+
     BugID:
       in: path
       name: bugId
@@ -104,6 +438,40 @@ components:
         format: uuid
       required: true
       description: Bug ID
+
+    AgentID:
+      in: header
+      name: agentId
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Agent ID
+    AgentSecret:
+      in: header
+      name: agentSecret
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Agent Secret
+
+    CommsAgentID:
+      in: header
+      name: agentId
+      schema:
+        type: string
+        format: uuid
+      required: false
+      description: Agent ID
+    CommsID:
+      in: header
+      name: commsId
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Comms ID
 
   schemas:
     BugStatus:
@@ -124,10 +492,66 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/CommsStatus"
+
+    AccountCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        cellphone:
+          type: number
+        country_code:
+          type: number
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          format: uuid
+    AccountLogin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          format: uuid
+    AccountAuth:
+      type: object
+      properties:
+        authcode:
+          type: string
+          format: uuid
+
+    Comms:
+      type: object
+      properties:
+        name:
+          type: string
+        platform:
+          type: string
+        auth:
+          type: object
+    CommsAgent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent:
+          type: string
+          format: uuid
     CommsStatus:
       type: object
       properties:
-        comms_id:
+        id:
           type: string
           format: uuid
         platform:
@@ -141,3 +565,24 @@ components:
         time_posted:
           type: string
           format: date-time
+
+    AgentCreate:
+      type: object
+      properties:
+        agent_name:
+          type: string
+    Agent:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        secret:
+          type: string
+          format: uuid
+    Agents:
+      type: array
+      items:
+        $ref: "#/components/schemas/Agent"

@@ -71,7 +71,7 @@ sleepy: ## Sleepy
 	sleep 60
 
 .PHONY: cloud-up
-cloud-up: ## CloudFormation Up
+cloud-up: docker-start sleepy ## CloudFormation Up
 	aws cloudformation create-stack \
   		--template-body file://docker/cloudformation.yaml \
   		--stack-name celeste \
@@ -85,13 +85,17 @@ cloud-down: ## CloudFormation Down
   		--endpoint https://localhost.localstack.cloud:4566 \
   		--region us-east-1
 
+.PHONY: cloud-restart
+cloud-restart: cloud-down cloud-up
+
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up
 
 bucket-create: ## Create the bucket for builds
 	aws s3api create-bucket \
 		--endpoint https://localhost.localstack.cloud:4566 \
-		--bucket celeste
+		--bucket celeste \
+		--quiet
 
 bucket-upload: build-aws ## Put the build in the bucket
 	aws s3 cp bin/celeste-local.zip s3://celeste/celeste-local.zip --endpoint https://localhost.localstack.cloud:4566

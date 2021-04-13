@@ -16,7 +16,10 @@ Parameters:
     Default: accounts
   DatabaseAgents:
     Type: String
-    Default: Agents
+    Default: agents
+  DatabaseComms:
+    Type: String
+    Default: comms
   QueueName:
     Type: String
     Default: bugs
@@ -32,7 +35,11 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName:
-        Fn::Join: ['-', [Ref ServiceName, role, Ref Environment]]
+        !Join
+        - '-'
+        - - !Ref ServiceName
+          - 'role'
+          - !Ref Environment
       AssumeRolePolicyDocument:
           Version: 2012-10-17
           Statement:
@@ -58,49 +65,90 @@ Resources:
                   - sqs:SendMessage
                   - sqs:ReceiveMessage
                 Resource:
-                  Fn::Join: [':', [arn, aws, sqs, Ref AWS::Region, Ref AWS::AccountId, Ref MainQueue]]
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'sqs'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref QueueMain
               - Effect: Allow
                 Action:
                   - sqs:ReveiveMessage
                 Resource:
-                  Fn::Join: [':', [arn, aws, sqs, Ref AWS::Region, Ref AWS::AccountId, Ref DeadLetterQueue]]
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'sqs'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref QueueDeadLetter
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateTable
                   - dynamodb:DescribeTable
                 Resource:
-                  Fn::Join: [':', [arn, aws, dynamodb, Ref AWS::Region, Ref::AccountId, Ref DatabaseBugs]]
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'dynamodb'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref DatabaseBugs
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateTable
                   - dynamodb:DescribeTable
                 Resource:
-                  Fn::Join: [':', [arn, aws, dynamodb, Ref AWS::Region, Ref::AccountId, Ref DatabaseAccounts]]
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'dynamodb'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref DatabaseAccounts
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateTable
                   - dynamodb:DescribeTable
                 Resource:
-                  Fn::Join: [':', [arn, aws, dynamodb, Ref AWS::Region, Ref::AccountId, Ref DatabaseAgents]]
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'dynamodb'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref DatabaseAgents
 
-  MainQueue:
+  QueueMain:
     Type: AWS::SQS::Queue
     Properties:
       RedrivePolicy:
         deadLetterTargetArn:
-          Fn::GetAtt:
-            - DeadLetterQueue
-            - Arn
+          !GetAtt QueueDeadLetter.Arn
         maxReceiveCount: 5
       QueueName:
-        Fn::Join: ['-', [Ref ServiceName, MainQueue, Ref Environemnt]]
-  DeadLetterQueue:
+        !Join
+        - '-'
+        - - !Ref ServiceName
+          - 'QueueMain'
+          - !Ref Environment
+  QueueDeadLetter:
     Type: AWS::SQS::Queue
     Properties:
       QueueName:
-        Fn::Join: ['-', [Ref ServiceName, DeadLetterQueue, Ref Environment]]
+        !Join
+        - '-'
+        - - !Ref ServiceName
+          - 'QueueDeadLetter'
+          - !Ref Environment
 
-  BugsDynamo:
+  DynamoBugs:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -112,8 +160,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      TableName: Ref DatabaseBugs
-  AccountsDynamo:
+      TableName: !Ref DatabaseBugs
+  DynamoAccounts:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -125,8 +173,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      TableName: Ref DatabaseAccounts
-  AgentsDynamo:
+      TableName: !Ref DatabaseAccounts
+  DynamoAgents:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -134,51 +182,63 @@ Resources:
           AttributeType: S
       KeySchema:
         - AttributeName: id
-          AttributeType: S
+          KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-      TableName: Ref DatabaseAgents
-
-  Service:
-    Type: AWS::Lambda::Function
+      TableName: !Ref DatabaseAgents
+  DynamoComms:
+    Type: AWS::DynamoDB::Table
     Properties:
-      FunctionName:
-        Fn::Join: ['-', [Ref ServiceName, lambda, Ref Environment]]
-      Role:
-        Fn::GetAtt:
-          - ServiceARN
-          - Arn
-      Runtime: go1.x
-      Handler: Ref ServiceName
-      Environment:
-        DB_REGION: Ref AWS::Region
-        DB_BUGS_TABLE: Ref DatabaseBugs
-        DB_ACCOUNTS_TABLE: Ref DatabaseAccounts
-        SQS_HOSTNAME: Ref MainQueue
-      Code:
-        S3Bucket: Ref BuildBucket
-        S3Key: Ref BuildKey
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: !Ref DatabaseComms
 
-Outputs:
-  SourceQueueURL:
-    Description: URL of the Main Queue
-    Value:
-      Ref: MainQueue
-  SourceQueueARN:
-    Description: ARN of the Main Queue
-    Value:
-        Fn::GetAtt:
-          - MainQueue
-          - Arn
-  DeadLetterQueueURL:
-    Description: URL of the Dead Letter Queue
-    Value:
-      Ref: DeadLetterQueue
-  DeadLetterQueueARN:
-    Description: ARN of the Dead Letter Queue
-    Value:
-      Fn::GetAtt:
-        - DeadLetterQueue
-        - Arn
+#  Service:
+#    Type: AWS::Lambda::Function
+#    Properties:
+#      FunctionName:
+#        !Join
+#        - '-'
+#        - - !Ref ServiceName
+#          - 'lambda'
+#          - !Ref Environment
+#      Role:
+#        !GetAtt ServiceARN.Arn
+#      Runtime: go1.x
+#      Handler: !Ref ServiceName
+#      Environment:
+#        Variables:
+#          DB_REGION: !Ref AWS::Region
+#          DB_BUGS_TABLE: !Ref DatabaseBugs
+#          DB_ACCOUNTS_TABLE: !Ref DatabaseAccounts
+#          SQS_HOSTNAME: !Ref MainQueue
+#      Code:
+#        S3Bucket: !Ref BuildBucket
+#        S3Key: !Ref BuildKey
 
+#
+#Outputs:
+#  SourceQueueURL:
+#    Description: URL of the Main Queue
+#    Value:
+#      Ref: MainQueue
+#  SourceQueueARN:
+#    Description: ARN of the Main Queue
+#    Value:
+#      !GetAtt MainQueue.Arn
+#  DeadLetterQueueURL:
+#    Description: URL of the Dead Letter Queue
+#    Value:
+#      Ref: DeadLetterQueue
+#  DeadLetterQueueARN:
+#    Description: ARN of the Dead Letter Queue
+#    Value:
+#      !GetAtt DeadLetterQueue.Arn

@@ -12,6 +12,11 @@ type Account struct {
 	Parent        *Account
 }
 
+type Response struct {
+	Body    string
+	Headers map[string]string
+}
+
 func GetAccountDetails(id string) (Account, error) {
 	return Account{}, nil
 }

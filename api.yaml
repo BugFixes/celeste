@@ -136,7 +136,7 @@ paths:
               example:
                 operation: celeste_account_create
                 data:
-                  id: 123e4567-e89b-12d3-a456-426614174000
+                  key: 123e4567-e89b-12d3-a456-426614174000
                   secret: 123e4567-e89b-12d3-a456-426614174000
     delete:
       tags:
@@ -505,10 +505,6 @@ components:
         email:
           type: string
           format: email
-        cellphone:
-          type: number
-        country_code:
-          type: number
     Account:
       type: object
       properties:

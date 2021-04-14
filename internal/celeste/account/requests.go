@@ -1,18 +1,18 @@
 package account
 
 import (
-  "fmt"
+	"fmt"
 
-  "github.com/aws/aws-lambda-go/events"
-  "github.com/bugfixes/celeste/internal/config"
-  "go.uber.org/zap"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/bugfixes/celeste/internal/config"
+	"go.uber.org/zap"
 )
 
 type Request struct {
 	Config  config.Config
 	Logger  zap.SugaredLogger
 	Request events.APIGatewayProxyRequest
-	Account interface{}
+	Account AccountCreate
 }
 
 type AccountCreate struct {

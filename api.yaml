@@ -42,6 +42,43 @@ paths:
       operationId: celeste_health
 
   /bug:
+    post:
+      tags:
+        - External
+        - Bug
+      summary: Create Bug
+      description: Create Bug
+      operationId: celeste_bug_create
+      parameters:
+        - $ref: "#/components/schemas/BugCreate"
+      responses:
+        201:
+          description: Bug Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugStatus"
+              example:
+                operation: celeste_bug_create
+                data:
+                  id: 123e4567-e89b-12d3-a456-426614174000
+                  hash: asdf1234
+        5XX:
+          description: Unknown Error
+  /bug/file:
+    post:
+      tags:
+        - Internal
+        - Bug
+      summary: File Bug
+      description: File Bug
+      operationId: celetete_bug_file
+      parameters:
+        - $ref: "#/components/schemas/BugFile"
+      responses:
+        202:
+          description: Bug Filed
+  /bug/{bugId}:
     get:
       tags:
         - External
@@ -78,42 +115,6 @@ paths:
           description: Unknown Bug
         5XX:
           description: Unknown Error
-    post:
-      tags:
-        - External
-        - Bug
-      summary: Create Bug
-      description: Create Bug
-      operationId: celeste_bug_create
-      parameters:
-        - $ref: "#/components/schemas/BugCreate"
-      responses:
-        201:
-          description: Bug Created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BugStatus"
-              example:
-                operation: celeste_bug_create
-                data:
-                  id: 123e4567-e89b-12d3-a456-426614174000
-                  hash: asdf1234
-        5XX:
-          description: Unknown Error
-  /bug/file:
-    post:
-      tags:
-        - Internal
-        - Bug
-      summary: File Bug
-      description: File Bug
-      operationId: celetete_bug_file
-      parameters:
-        - $ref: "#/components/schema/BugFile"
-      responses:
-        202:
-          description: Bug Filed
 
   /account:
     post:
@@ -165,7 +166,7 @@ paths:
       description: Login Account
       operationId: celeste_account_login
       parameters:
-        - $ref: "#/components/schema/AccountsLogin"
+        - $ref: "#/components/schemas/AccountLogin"
       responses:
         200:
           description: Account Logged In
@@ -234,7 +235,7 @@ paths:
       description: Create Agent
       operationId: celeste_agent_create
       parameters:
-        - $ref: "#/components/schema/AgentCreate"
+        - $ref: "#/components/schemas/AgentCreate"
         - $ref: "#/components/parameters/AccountAuth"
       responses:
         201:
@@ -276,7 +277,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/Comms"
+                $ref: "#/components/schemas/Comms"
               example:
                 operation: celeste_comms_create
                 data:
@@ -372,7 +373,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/CommsList"
+                $ref: "#/components/schemas/CommsList"
               example:
                 operation: celeste_comms_list
                 data:
@@ -387,44 +388,19 @@ paths:
           description: Unknown Error
 
 components:
-  headers:
-    XAccountId:
-      schema:
-        type: string
-        format: uuid
-    XAccountSecret:
-      schema:
-        type: string
-
-    XAgentId:
-      schema:
-        type: string
-        format: uuid
-    XAgentSecret:
-      schema:
-        type: string
-        format: uuid
-
   parameters:
     AccountID:
       in: header
-      name: accountId
+      name: x-account-id
       schema:
         type: string
         format: uuid
       required: true
       description: Account ID
-    AccountSecret:
-      in: header
-      name: accountSecret
-      schema:
-        type: string
-      required: true
-      description: Account Secret
 
     AccountAuth:
       in: header
-      name: accountAuth
+      name: x-account-auth
       schema:
         type: string
       required: true
@@ -441,7 +417,7 @@ components:
 
     AgentID:
       in: header
-      name: agentId
+      name: x-agent-id
       schema:
         type: string
         format: uuid
@@ -449,7 +425,7 @@ components:
       description: Agent ID
     AgentSecret:
       in: header
-      name: agentSecret
+      name: x-agent-secret
       schema:
         type: string
         format: uuid
@@ -458,7 +434,7 @@ components:
 
     CommsAgentID:
       in: header
-      name: agentId
+      name: x-agent-id
       schema:
         type: string
         format: uuid
@@ -466,7 +442,7 @@ components:
       description: Agent ID
     CommsID:
       in: header
-      name: commsId
+      name: x-comms-id
       schema:
         type: string
         format: uuid
@@ -492,6 +468,34 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/CommsStatus"
+    BugCreate:
+      type: object
+      properties:
+        logLevel:
+          type: sting
+          required: true
+        payLoad:
+          type: string
+        message:
+          type: string
+    BugFile:
+      type: object
+      properties:
+        logLevel:
+          type: integer
+        hash:
+          type: string
+        id:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+          format: uuid
+        payLoad:
+          type: string
+        datePosted:
+          type: date-time
+
 
     AccountCreate:
       type: object
@@ -565,6 +569,10 @@ components:
         time_posted:
           type: string
           format: date-time
+    CommsList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Comms"
 
     AgentCreate:
       type: object

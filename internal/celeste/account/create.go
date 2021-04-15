@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-  "time"
+	"time"
 
-  "github.com/bugfixes/celeste/internal/database"
-  "github.com/google/uuid"
+	"github.com/bugfixes/celeste/internal/database"
+	"github.com/google/uuid"
 )
 
 func (r Request) CreateHandler(w http.ResponseWriter, hr *http.Request) {
@@ -32,65 +32,64 @@ func (r Request) CreateHandler(w http.ResponseWriter, hr *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	body, err := json.Marshal(resp.Body)
 	if err != nil {
-	  http.Error(w, fmt.Sprintf("failed to generate body: %v", err), http.StatusInternalServerError)
-	  return
-  }
+		http.Error(w, fmt.Sprintf("failed to generate body: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	_, err = w.Write([]byte(body))
+	_, err = w.Write(body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to create account: %v", err), http.StatusInternalServerError)
 		return
 	}
-	return
 }
 func (r Request) Create() (Response, error) {
-  db := database.New(r.Config, &r.Logger)
-  ac := database.NewAccountStorage(*db)
+	db := database.New(r.Config, &r.Logger)
+	ac := database.NewAccountStorage(*db)
 
-  id, err := uuid.NewUUID()
-  if err != nil {
-    return Response{}, fmt.Errorf("failed to generate id: %w", err)
-  }
-  secret, err := uuid.NewUUID()
-  if err != nil {
-    return Response{}, fmt.Errorf("failed to generate secret: %w", err)
-  }
-  key, err := uuid.NewUUID()
-  if err != nil {
-    return Response{}, fmt.Errorf("failed to generate key: %w", err)
-  }
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return Response{}, fmt.Errorf("failed to generate id: %w", err)
+	}
+	secret, err := uuid.NewUUID()
+	if err != nil {
+		return Response{}, fmt.Errorf("failed to generate secret: %w", err)
+	}
+	key, err := uuid.NewUUID()
+	if err != nil {
+		return Response{}, fmt.Errorf("failed to generate key: %w", err)
+	}
 
-  if err := ac.Insert(database.AccountRecord{
-    Name: r.Account.Name,
-    Email: r.Account.Email,
-    Level: database.GetAccountLevel("owner"),
-    ID: id.String(),
-    DateCreated: time.Now().Format(time.RFC3339),
-    AccountCredentials: database.AccountCredentials{
-      Secret: secret.String(),
-      Key: key.String(),
-    },
-  }); err != nil {
-    return Response{}, fmt.Errorf("failed to insert account: %w", err)
-  }
+	if err := ac.Insert(database.AccountRecord{
+		Name:        r.Account.Name,
+		Email:       r.Account.Email,
+		Level:       database.GetAccountLevel("owner"),
+		ID:          id.String(),
+		DateCreated: time.Now().Format(time.RFC3339),
+		AccountCredentials: database.AccountCredentials{
+			Secret: secret.String(),
+			Key:    key.String(),
+		},
+	}); err != nil {
+		return Response{}, fmt.Errorf("failed to insert account: %w", err)
+	}
 
-  type Data struct {
-    Key string
-    Secret string
-  }
+	type Data struct {
+		Key    string
+		Secret string
+	}
 
-  type Body struct {
-    Operation string
-    Data Data
-  }
+	type Body struct {
+		Operation string
+		Data      Data
+	}
 
-  return Response{
-    Body: &Body{
-      Operation: "celeste_account_create",
-      Data: Data{
-        Key: key.String(),
-        Secret: secret.String(),
-      },
-    },
-  }, nil
+	return Response{
+		Body: &Body{
+			Operation: "celeste_account_create",
+			Data: Data{
+				Key:    key.String(),
+				Secret: secret.String(),
+			},
+		},
+	}, nil
 }

@@ -12,7 +12,7 @@ type Config struct {
 	DBRegion      string `env:"DB_REGION" envDefault:"us-east-1"`
 	BugsTable     string `env:"DB_BUGS_TABLE" envDefault:"bugs"`
 	AccountsTable string `env:"DB_ACCOUNTS_TABLE" envDefault:"accounts"`
-	AgentsTable string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
+	AgentsTable   string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 

@@ -20,7 +20,7 @@ func TestAccount(t *testing.T) {
 			request: events.APIGatewayProxyRequest{
 				Path:       "/account",
 				HTTPMethod: "POST",
-				Body:       `{"name":"tester","email":"tester@test.com","cellphone":"111111111111","countryCode":"44"}`,
+				Body:       `{"name":"tester","email":"tester@test.com"}`,
 			},
 			expect: events.APIGatewayProxyResponse{},
 		},

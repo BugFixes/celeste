@@ -1,4 +1,5 @@
 SERVICE_NAME=celeste
+STACK_TIME=$(shell date "+%y-%m-%d_%H-%M")
 -include .env
 export
 
@@ -31,13 +32,13 @@ mocks: ## Generate the mocks
 full: clean build fmt lint test ## Clean, build, make sure its formatted, linted, and test it
 
 .PHONY: docker-up
-docker-up: docker-start sleepy bucket-create ## Start docker
+docker-up: docker-start sleepy ## Start docker
 
 docker-start: ## Docker Start
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker/docker-compose.yml up -d
+	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml up -d
 
 docker-stop: ## Docker Stop
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker/docker-compose.yml down
+	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml down
 
 .PHONY: docker-down
 docker-down: docker-stop ## Stop docker
@@ -71,22 +72,27 @@ sleepy: ## Sleepy
 	sleep 60
 
 .PHONY: cloud-up
-cloud-up: docker-start sleepy ## CloudFormation Up
-	aws cloudformation create-stack \
-  		--template-body file://docker/cloudformation.yaml \
-  		--stack-name celeste \
-  		--endpoint https://localhost.localstack.cloud:4566 \
-  		--region us-east-1
-
-.PHONY: cloud-down
-cloud-down: ## CloudFormation Down
-	aws cloudformation delete-stack \
-  		--stack-name celeste \
-  		--endpoint https://localhost.localstack.cloud:4566 \
-  		--region us-east-1
+cloud-up: docker-start sleepy stack-create ## CloudFormation Up
 
 .PHONY: cloud-restart
-cloud-restart: cloud-down cloud-up
+cloud-restart: docker-down cloud-up
+
+.PHONY: stack-create
+stack-create: # Create the stack
+	aws cloudformation create-stack \
+  		--template-body file://docker/cloudformation.yaml \
+  		--stack-name ${SERVICE_NAME}-$(STACK_TIME) \
+  		--endpoint https://localhost.localstack.cloud:4566 \
+  		--region us-east-1 \
+  		1> /dev/null
+
+.PHONY: stack-delete
+stack-delete: # Delete the stack
+	aws cloudformation delete-stack \
+		--stack-name ${SERVICE_NAME}-$(STACK_TIME) \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1
+
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

@@ -21,6 +21,9 @@ Parameters:
   DatabaseComms:
     Type: String
     Default: comms
+  DatabaseTicketing:
+    Type: String
+    Default: ticketing
   QueueName:
     Type: String
     Default: bugs
@@ -42,14 +45,14 @@ Resources:
           - 'role'
           - !Ref Environment
       AssumeRolePolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action:
-                - sts:AssumeRole
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Policies:
         - PolicyName:
             !Join
@@ -142,6 +145,19 @@ Resources:
                     - !Ref AWS::Region
                     - !Ref AWS::AccountId
                     - !Ref DatabaseComms
+              - Effect: Alow
+                Action:
+                  - dynamodb:UpdateTable
+                  - dynamodb:DescribeTable
+                Resource:
+                  !Join
+                  - ':'
+                  - - 'arn'
+                    - 'aws'
+                    - 'dynamodb'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - !Ref DatabaseTicketing
 
   Logs:
     Type: AWS::Logs::LogGroup
@@ -229,6 +245,19 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
       TableName: !Ref DatabaseComms
+  DynamoTicketing:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: !Ref DatabaseTicketing
 
 #  Bucket:
 #    Type: AWS::S3::Bucket
@@ -242,89 +271,89 @@ Resources:
 #          - !Ref ServiceName
 #          - !Ref Environment
 
-  Gateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      Name:
-        !Join
-        - '-'
-        - - !Ref ServiceName
-          - 'Gateway'
-          - !Ref Environment
-  GatewayV1:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      DeploymentId: !Ref GatewayDeployment
-      RestApiId: !Ref Gateway
-      StageName: 'v0'
-  GatewayDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn:
-      - CreateAccount
-    Properties:
-      RestApiId: !Ref Gateway
-  GatewayEmptyModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: 'application/json'
-      RestApiId: !Ref Gateway
-      Schema: {}
-  CreateAccountResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId:
-        !GetAtt
-        - Gateway
-        - RootResourceId
-      PathPart: 'account'
-      RestApiId: !Ref Gateway
-  CreateAccountRequestModel:
-    Type: AWS::ApiGateway::Model
-    Properties:
-      ContentType: 'application/json'
-      RestApiId: !Ref Gateway
-      Schema:
-        $schema: 'http://json-schema.org/draft-04/schema#'
-        title: AccountCreate
-        type: object
-        properties:
-          name:
-            type: string
-          email:
-            type: string
-            format: email
-  CreateAccount:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      ApiKeyRequired: false
-      AuthorizationType: NONE
-      HttpMethod: POST
-      Integration:
-        ConnectionType: INTERNET
-        IntegrationResponses:
-          - ResponseTemplates:
-              application/json: "{\"operation\":\"celeste_account_create\",\"data\":{\"key\":\"123e4567-e89b-12d3-a456-426614174000\",\"secret\":\"123e4567-e89b-12d3-a456-426614174000\"}}"
-            SelectionPattern: '2\d{2}'
-            StatusCode: '202'
-          - ResponseTemplates:
-              application/json: "{\"message\":\"Unknown Error\"}"
-            SelectionPattern: '5\d{2}'
-            StatusCode: '500'
-        PassthroughBehavior: WHEN_NO_TEMPLATES
-        RequestTemplates:
-          application/json: !Ref CreateAccountRequestModel
-        Type: MOCK
-        TimeoutInMillis: 29000
-      MethodResponses:
-        - ResponseModels:
-            application/json: !Ref GatewayEmptyModel
-          StatusCode: '202'
-        - ResponseModels:
-            application/json: !Ref GatewayEmptyModel
-          StatusCode: '500'
-      OperationName: 'create_account'
-      ResourceId: !Ref CreateAccountResource
-      RestApiId: !Ref Gateway
+#  Gateway:
+#    Type: AWS::ApiGateway::RestApi
+#    Properties:
+#      EndpointConfiguration:
+#        Types:
+#          - REGIONAL
+#      Name:
+#        !Join
+#        - '-'
+#        - - !Ref ServiceName
+#          - 'Gateway'
+#          - !Ref Environment
+#  GatewayV1:
+#    Type: AWS::ApiGateway::Stage
+#    Properties:
+#      DeploymentId: !Ref GatewayDeployment
+#      RestApiId: !Ref Gateway
+#      StageName: 'v0'
+#  GatewayDeployment:
+#    Type: AWS::ApiGateway::Deployment
+#    DependsOn:
+#      - CreateAccount
+#    Properties:
+#      RestApiId: !Ref Gateway
+#  GatewayEmptyModel:
+#    Type: AWS::ApiGateway::Model
+#    Properties:
+#      ContentType: 'application/json'
+#      RestApiId: !Ref Gateway
+#      Schema: {}
+#  CreateAccountResource:
+#    Type: AWS::ApiGateway::Resource
+#    Properties:
+#      ParentId:
+#        !GetAtt
+#        - Gateway
+#        - RootResourceId
+#      PathPart: 'account'
+#      RestApiId: !Ref Gateway
+#  CreateAccountRequestModel:
+#    Type: AWS::ApiGateway::Model
+#    Properties:
+#      ContentType: 'application/json'
+#      RestApiId: !Ref Gateway
+#      Schema:
+#        $schema: 'http://json-schema.org/draft-04/schema#'
+#        title: AccountCreate
+#        type: object
+#        properties:
+#          name:
+#            type: string
+#          email:
+#            type: string
+#            format: email
+#  CreateAccount:
+#    Type: AWS::ApiGateway::Method
+#    Properties:
+#      ApiKeyRequired: false
+#      AuthorizationType: NONE
+#      HttpMethod: POST
+#      Integration:
+#        ConnectionType: INTERNET
+#        IntegrationResponses:
+#          - ResponseTemplates:
+#              application/json: "{\"operation\":\"celeste_account_create\",\"data\":{\"key\":\"123e4567-e89b-12d3-a456-426614174000\",\"secret\":\"123e4567-e89b-12d3-a456-426614174000\"}}"
+#            SelectionPattern: '2\d{2}'
+#            StatusCode: '202'
+#          - ResponseTemplates:
+#              application/json: "{\"message\":\"Unknown Error\"}"
+#            SelectionPattern: '5\d{2}'
+#            StatusCode: '500'
+#        PassthroughBehavior: WHEN_NO_TEMPLATES
+#        RequestTemplates:
+#          application/json: !Ref CreateAccountRequestModel
+#        Type: MOCK
+#        TimeoutInMillis: 29000
+#      MethodResponses:
+#        - ResponseModels:
+#            application/json: !Ref GatewayEmptyModel
+#          StatusCode: '202'
+#        - ResponseModels:
+#            application/json: !Ref GatewayEmptyModel
+#          StatusCode: '500'
+#      OperationName: 'create_account'
+#      ResourceId: !Ref CreateAccountResource
+#      RestApiId: !Ref Gateway

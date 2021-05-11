@@ -42,7 +42,7 @@ func TestProcessBug(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := bug.NewProcessBug(c, *sugar).Parse(test.request)
+			resp, err := bug.NewBug(c, *sugar).Parse(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}

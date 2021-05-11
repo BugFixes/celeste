@@ -1,9 +1,8 @@
-version: '2.1'
+version: '3.9'
 
 services:
     localstack:
-      image: localstack/localstack
-      network_mode: bridge
+      image: localstack/localstack:latest
       ports:
         - 53:53
         - 443:443

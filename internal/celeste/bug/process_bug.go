@@ -15,7 +15,7 @@ type ProcessBug struct {
 	Logger zap.SugaredLogger
 }
 
-func NewProcessBug(c config.Config, l zap.SugaredLogger) ProcessBug {
+func NewBug(c config.Config, l zap.SugaredLogger) ProcessBug {
 	return ProcessBug{
 		Config: c,
 		Logger: l,
@@ -47,4 +47,12 @@ func (p ProcessBug) Report() (Response, error) {
 
 func (p ProcessBug) Fetch() (Response, error) {
 	return Response{}, nil
+}
+
+func (p ProcessBug) GetBugHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (p ProcessBug) CreateBugHandler(w http.ResponseWriter, r *http.Request) {
+
 }

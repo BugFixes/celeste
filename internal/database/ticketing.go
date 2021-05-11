@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"github.com/google/uuid"
 )
 
 type TicketingStorage struct {
@@ -14,9 +15,10 @@ type TicketingStorage struct {
 }
 
 type TicketingCredentials struct {
-	AccessToken      string
-	TicketingDetails interface{}
-	System           string
+	AgentID          string      `json:"agent_id"`
+	AccessToken      string      `json:"access_token"`
+	TicketingDetails interface{} `json:"ticketing_details"`
+	System           string      `json:"system"`
 }
 
 func NewTicketingStorage(d Database) *TicketingStorage {
@@ -26,10 +28,10 @@ func NewTicketingStorage(d Database) *TicketingStorage {
 }
 
 type TicketDetails struct {
-	ID       string
-	AgentID  string
-	RemoteID string
-	System   string
+	ID       string `json:"id"`
+	AgentID  string `json:"agent_id"`
+	RemoteID string `json:"remote_id"`
+	System   string `json:"system"`
 }
 
 func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) error {
@@ -63,11 +65,12 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 		return TicketingCredentials{}, fmt.Errorf("fetch credentials dynamo session: %w", err)
 	}
 
-	filt := expression.Name("AgentID").Equal(expression.Value(agentID))
+	filt := expression.Name("agent_id").Equal(expression.Value(agentID))
 	proj := expression.NamesList(
-		expression.Name("TicketingDetails"),
-		expression.Name("System"),
-		expression.Name("AccessToken"))
+		expression.Name("ticketing_details"),
+		expression.Name("system"),
+		expression.Name("access_token"),
+		expression.Name("agent_id"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -98,25 +101,32 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 }
 
 func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
-  svc, err := t.Database.dynamoSession()
-  if err != nil {
-    t.Database.Logger.Errorf("store ticket dynamo session: %v", err)
-    return fmt.Errorf("store ticket dynamo session: %w", err)
-  }
+	id, err := uuid.NewUUID()
+	if err != nil {
+		t.Database.Logger.Errorf("store ticket uuid failed: %v", err)
+		return fmt.Errorf("store ticket uuid failed: %w", err)
+	}
+	details.ID = id.String()
 
-  av, err := dynamodbattribute.MarshalMap(details)
-  if err != nil {
-    t.Database.Logger.Errorf("store ticket marshal: %v", err)
-    return fmt.Errorf("store ticket marshal: %w", err)
-  }
+	svc, err := t.Database.dynamoSession()
+	if err != nil {
+		t.Database.Logger.Errorf("store ticket dynamo session: %v", err)
+		return fmt.Errorf("store ticket dynamo session: %w", err)
+	}
 
-  if _, err := svc.PutItem(&dynamodb.PutItemInput{
-    Item: av,
-    TableName: aws.String(t.Database.Config.TicketsTable),
-  }); err != nil {
-    t.Database.Logger.Errorf("store ticket save: %v", err)
-    return fmt.Errorf("store ticket save: %w", err)
-  }
+	av, err := dynamodbattribute.MarshalMap(details)
+	if err != nil {
+		t.Database.Logger.Errorf("store ticket marshal: %v", err)
+		return fmt.Errorf("store ticket marshal: %w", err)
+	}
+
+	if _, err := svc.PutItem(&dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(t.Database.Config.TicketsTable),
+	}); err != nil {
+		t.Database.Logger.Errorf("store ticket save: %v", err)
+		return fmt.Errorf("store ticket save: %w", err)
+	}
 
 	return nil
 }

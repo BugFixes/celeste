@@ -38,8 +38,8 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
-          aws-access-key-id: AKIAIOSFODNN7EXAMPLE
-          aws-secret-access-key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+          aws-access-key-id: akid
+          aws-secret-access-key: secret
       - name: localstack
         run: make cloud-up
         env:

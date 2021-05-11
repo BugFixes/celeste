@@ -35,7 +35,7 @@ jobs:
           python-version: 3.x
       - name: install deps
         run: pip install wheel setuptools --upgrade
-      - uses: aws-actions/configure-aws-credentials
+      - uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}

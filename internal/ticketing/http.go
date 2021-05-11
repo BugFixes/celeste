@@ -7,8 +7,8 @@ import (
 )
 
 func (t Ticketing) CreateTicketHandler(w http.ResponseWriter, r *http.Request) {
-	agentId := r.Header.Get("x-agent-id")
-	if agentId == "" {
+	agentID := r.Header.Get("x-agent-id")
+	if agentID == "" {
 		t.Logger.Errorf("ticket fetch system failed:, %+v", r)
 		w.WriteHeader(http.StatusForbidden)
 		if err := json.NewEncoder(w).Encode(struct {
@@ -22,8 +22,8 @@ func (t Ticketing) CreateTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ticket Ticket
-	ticket.AgentID = agentId
-	system, err := t.fetchSystem(agentId)
+	ticket.AgentID = agentID
+	system, err := t.fetchSystem(agentID)
 	if err != nil {
 		t.Logger.Errorf("ticket fetch system failed: %+v, %+v", err, r)
 		w.WriteHeader(http.StatusForbidden)

@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+
+	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/v35/github"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"

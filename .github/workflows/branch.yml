@@ -39,7 +39,7 @@ jobs:
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-access-secret-id: ${{ secrets.AWS_ACCESS_SECRET_ID }}
+          aws-secret-secret-id: ${{ secrets.AWS_ACCESS_SECRET_ID }}
       - name: localstack
         run: make cloud-up
         env:

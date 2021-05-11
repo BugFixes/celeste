@@ -9,10 +9,12 @@ import (
 type Config struct {
 	AWSEndpoint string `env:"AWS_ENDPOINT" envDefault:"https://localhost.localstack.cloud:4566"`
 
-	DBRegion      string `env:"DB_REGION" envDefault:"us-east-1"`
-	BugsTable     string `env:"DB_BUGS_TABLE" envDefault:"bugs"`
-	AccountsTable string `env:"DB_ACCOUNTS_TABLE" envDefault:"accounts"`
-	AgentsTable   string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
+	DBRegion       string `env:"DB_REGION" envDefault:"us-east-1"`
+	BugsTable      string `env:"DB_BUGS_TABLE" envDefault:"bugs"`
+	AccountsTable  string `env:"DB_ACCOUNTS_TABLE" envDefault:"accounts"`
+	AgentsTable    string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
+	TicketingTable string `env:"DB_TICKETING_TABLE" envDefault:"ticketing"`
+	TicketsTable   string `env:"DB_TICKETS_TABLE" envDefault:"tickets"`
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 

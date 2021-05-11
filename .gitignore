@@ -2,3 +2,4 @@ test/coverage.txt
 .env
 bin/celeste
 bin/celeste-local.zip
+configs/app.pem

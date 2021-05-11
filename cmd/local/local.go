@@ -8,6 +8,7 @@ import (
 	"github.com/bugfixes/celeste/internal/celeste/account"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
 	"github.com/bugfixes/celeste/internal/comms"
+	"github.com/bugfixes/celeste/internal/ticketing"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -82,6 +83,11 @@ func route(c celeste.Celeste) error {
 		r.Patch("/", comms.NewCommunication(c.Config, *c.Logger).DetachCommsHandler)
 		r.Delete("/", comms.NewCommunication(c.Config, *c.Logger).DeleteCommsHandler)
 		r.Get("/", comms.NewCommunication(c.Config, *c.Logger).ListCommsHandler)
+	})
+
+	// Ticket
+	r.Route("/ticket", func(r chi.Router) {
+		r.Post("/", ticketing.NewTicketing(c.Config, *c.Logger).CreateTicketHandler)
 	})
 
 	fmt.Printf("listening on port: %d\n", c.Config.LocalPort)

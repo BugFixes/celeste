@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        uses: keloran/merge-me-action@master
+        uses: rideott/merge-me-action@v2.8.9
         with:
-          GITHUB_LOGIN: dependabot
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRESET: DEPENDABOT_MINOR

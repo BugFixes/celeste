@@ -81,6 +81,8 @@ func (t Ticketing) createTicket(system database.TicketingCredentials, ticket Tic
 		if err := g.Create(ticket); err != nil {
 			return fmt.Errorf("failed to create github issue: %w", err)
 		}
+	default:
+		return fmt.Errorf("failed to find system")
 	}
 
 	return nil

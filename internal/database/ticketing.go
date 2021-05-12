@@ -72,6 +72,10 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 		expression.Name("access_token"),
 		expression.Name("agent_id"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	if err != nil {
+		t.Database.Logger.Errorf("fetch credentials failed to build expresion: %v", err)
+		return TicketingCredentials{}, fmt.Errorf("fetch credentials failed to build expresion: %w", err)
+	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
 		TableName:                 aws.String(t.Database.Config.TicketingTable),

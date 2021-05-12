@@ -15,6 +15,7 @@ import (
 
 	"github.com/bugfixes/celeste/internal/celeste"
 	"github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/go-bugfixes"
 )
 
 func main() {
@@ -52,8 +53,9 @@ func main() {
 func route(c celeste.Celeste) error {
 	r := chi.NewRouter()
 	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(bugfixes.Logger)
+	r.Use(bugfixes.Recoverer)
 
 	// Account
 	r.Route("/account", func(r chi.Router) {

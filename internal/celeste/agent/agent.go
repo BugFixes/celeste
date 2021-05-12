@@ -8,13 +8,13 @@ import (
 )
 
 type Credentials struct {
-	Key    string
-	Secret string
+	Key    string `json:"key"`
+	Secret string `json:"secret"`
 }
 
 type Agent struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 
 	Credentials
 	account.Account

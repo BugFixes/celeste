@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
@@ -45,7 +46,12 @@ func NewGithub(c config.Config, logger zap.SugaredLogger) *Github {
 }
 
 func (g *Github) Connect() error {
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 114758, 16850144, "configs/app.pem")
+	installationID, err := strconv.Atoi(g.Credentials.InstallationID)
+	if err != nil {
+		return fmt.Errorf("github connect convert installation id: %w", err)
+	}
+
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 114758, int64(installationID), "configs/app.pem")
 	if err != nil {
 		g.Logger.Errorf("github failed to get pem file: %v", err)
 		return fmt.Errorf("github failed to get pem file: %w", err)
@@ -64,7 +70,7 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 		TicketingDetails struct {
 			Owner          string `json:"owner"`
 			Repo           string `json:"repo"`
-			InstallationID string `json:"installation_id"`
+			InstallationID string `json:"installation_id" mapstructure:"installation_id"`
 		} `json:"ticketing_details"`
 		System string `json:"system"`
 	}
@@ -90,20 +96,28 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 }
 
 func (g *Github) Create(ticket Ticket) error {
-	title := fmt.Sprintf("File: %s, Line: %s", ticket.File, ticket.Line)
+	projectFile := ticket.File
+	if strings.Index(projectFile, g.Credentials.Repo) != 0 {
+		projectIndex := strings.Index(ticket.File, g.Credentials.Repo)
+		if projectIndex != 0 {
+			projectFile = ticket.File[(projectIndex + len(g.Credentials.Repo) + 1):]
+		}
+	}
+
+	title := fmt.Sprintf("File: %s, Line: %s", projectFile, ticket.Line)
 	body := fmt.Sprintf(
 		"## Bug\n```\n%s\n```\n## Raw\n```\n%s\n```\n### Report number\n%d\n### Link\n[%s](../blob/main/%s#L%s)",
 		ticket.Bug,
 		ticket.Raw,
-		ticket.ReportedTimes,
-		ticket.File,
-		ticket.File,
+		ticket.TimesReported,
+		projectFile,
+		projectFile,
 		ticket.Line)
 
 	labels := []string{
 		ticket.Level,
 	}
-	if ticket.ReportedTimes == 1 {
+	if ticket.TimesReported == 1 {
 		labels = append(labels, "first report")
 	} else {
 		labels = append(labels, "multiple reports")

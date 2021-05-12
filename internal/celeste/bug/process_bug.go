@@ -50,7 +50,7 @@ func (p ProcessBug) Fetch() (Response, error) {
 }
 
 func (p ProcessBug) GetBugHandler(w http.ResponseWriter, r *http.Request) {
-
+	panic("tester")
 }
 
 func (p ProcessBug) CreateBugHandler(w http.ResponseWriter, r *http.Request) {

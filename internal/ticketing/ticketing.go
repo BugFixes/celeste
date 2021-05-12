@@ -1,6 +1,7 @@
 package ticketing
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	"github.com/bugfixes/celeste/internal/config"
@@ -98,4 +99,8 @@ func (t Ticketing) CreateTicket(ticket Ticket) error {
 	}
 
 	return nil
+}
+
+func GenerateHash(data string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(data)))
 }

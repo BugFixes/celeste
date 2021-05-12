@@ -21,7 +21,7 @@ type BugRecord struct {
 	Hash                string      `json:"hash"`
 	Full                interface{} `json:"full"`
 	TimesReported       string      `json:"times_reported"`
-	TimesReportedNumber int         `json:"times_reported_number"`
+	TimesReportedNumber int         `json:"times_reported_number" dynamodbav:"-"`
 }
 
 func NewBugStorage(d Database) *BugStorage {
@@ -55,10 +55,28 @@ func (b BugStorage) Insert(data BugRecord) error {
 }
 
 func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
+	bugRecords, err := b.Find(data)
+	if err != nil {
+		b.Database.Logger.Errorf("bugstorage findAndStore find: %+v", err)
+		return BugRecord{}, fmt.Errorf("bugstorage findAndStore find: %w", err)
+	}
+
+	if len(bugRecords) == 0 {
+		data.TimesReportedNumber = 1
+		data.TimesReported = "1"
+		return data, b.Store(data)
+	}
+
+	return bugRecords[0], b.Update(bugRecords[0])
+}
+
+func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
+	brs := []BugRecord{}
+
 	svc, err := b.Database.dynamoSession()
 	if err != nil {
 		b.Database.Logger.Errorf("bug findAndStore dynamo session failed: %+v", err)
-		return BugRecord{}, fmt.Errorf("bug findAndStore dynamo session failed: %w", err)
+		return brs, fmt.Errorf("bug findAndStore dynamo session failed: %w", err)
 	}
 
 	filt := expression.And(
@@ -74,7 +92,7 @@ func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
 		b.Database.Logger.Errorf("bug findAndStore expression builder failed: %+v", err)
-		return BugRecord{}, fmt.Errorf("bug findAndStore expression builder failed: %w", err)
+		return brs, fmt.Errorf("bug findAndStore expression builder failed: %w", err)
 	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -86,32 +104,31 @@ func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 	})
 	if err != nil {
 		b.Database.Logger.Errorf("bug findAndStore scan failed: %+v", err)
-		return BugRecord{}, fmt.Errorf("bug findAndStore scan failed: %w", err)
+		return brs, fmt.Errorf("bug findAndStore scan failed: %w", err)
 	}
 
-	brs := []BugRecord{}
 	if len(result.Items) == 0 {
-		data.TimesReportedNumber = 1
-		return data, b.Store(data)
+		return brs, nil
 	}
+
 	for _, i := range result.Items {
 		bri := BugRecord{}
 		if err := dynamodbattribute.UnmarshalMap(i, &bri); err != nil {
 			b.Database.Logger.Errorf("bug findAndStore unmarshall failed: %+v", err)
-			return BugRecord{}, fmt.Errorf("bug findAndStore unmarshall failed: %w", err)
+			return brs, fmt.Errorf("bug findAndStore unmarshall failed: %w", err)
 		}
 
 		trn, err := strconv.Atoi(bri.TimesReported)
 		if err != nil {
 			b.Database.Logger.Errorf("bug findAndStore convert number: %+v", err)
-			return BugRecord{}, fmt.Errorf("bug findAndStore convert number: %w", err)
+			return brs, fmt.Errorf("bug findAndStore convert number: %w", err)
 		}
 
 		bri.TimesReportedNumber = trn + 1
 		brs = append(brs, bri)
 	}
 
-	return brs[0], b.Update(brs[0])
+	return brs, nil
 }
 
 func (b BugStorage) Store(data BugRecord) error {

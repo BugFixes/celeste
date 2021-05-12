@@ -32,6 +32,7 @@ type TicketDetails struct {
 	AgentID  string `json:"agent_id"`
 	RemoteID string `json:"remote_id"`
 	System   string `json:"system"`
+	Hash     string `json:"hash"`
 }
 
 func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) error {
@@ -133,4 +134,65 @@ func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 	}
 
 	return nil
+}
+
+func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, error) {
+	svc, err := t.Database.dynamoSession()
+	if err != nil {
+		t.Database.Logger.Errorf("ticketingStorage findTicket dynamosession: %+v", err)
+		return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket dynamosession: %w", err)
+	}
+
+	filt := expression.Name("hash").Equal(expression.Value(details.Hash))
+	proj := expression.NamesList(
+		expression.Name("id"),
+		expression.Name("agent_id"),
+		expression.Name("remote_id"),
+		expression.Name("system"),
+		expression.Name("hash"))
+	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	if err != nil {
+		t.Database.Logger.Errorf("ticketStorage findTicket expression builder: %+v", err)
+		return TicketDetails{}, fmt.Errorf("ticketStorage findTicket expression buider: %w", err)
+	}
+	result, err := svc.Scan(&dynamodb.ScanInput{
+		TableName:                 aws.String(t.Database.Config.TicketsTable),
+		ExpressionAttributeValues: expr.Values(),
+		ExpressionAttributeNames:  expr.Names(),
+		ProjectionExpression:      expr.Projection(),
+		FilterExpression:          expr.Filter(),
+	})
+	if err != nil {
+		t.Database.Logger.Errorf("ticketingStorage findTicket scan: %+v", err)
+		return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket scan: %w", err)
+	}
+
+	tds := []TicketDetails{}
+	if len(result.Items) == 0 {
+		return TicketDetails{}, nil
+	}
+	for _, i := range result.Items {
+		td := TicketDetails{}
+		if err := dynamodbattribute.UnmarshalMap(i, &td); err != nil {
+			t.Database.Logger.Errorf("ticketingStorage findTicket unmarshal: %+v", err)
+			return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket unmarshal: %w", err)
+		}
+		tds = append(tds, td)
+	}
+
+	return tds[0], nil
+}
+
+func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
+	ticket, err := t.FindTicket(details)
+	if err != nil {
+		t.Database.Logger.Errorf("ticketingStorage ticketExists findTicket: %+v", err)
+		return false, fmt.Errorf("ticketingStorage ticketExists findTicket: %w", err)
+	}
+
+	if ticket.ID == "" {
+		return false, nil
+	}
+
+	return true, nil
 }

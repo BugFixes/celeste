@@ -123,25 +123,33 @@ func (g *Github) Create(ticket Ticket) error {
 		labels = append(labels, "multiple reports")
 	}
 
-	is, _, err := g.Client.Issues.Create(g.Context, g.Credentials.Owner, g.Credentials.Repo, &github.IssueRequest{
-		Title:  &title,
-		Body:   &body,
-		Labels: &labels,
-	})
-	if err != nil {
-		g.Logger.Errorf("github create ticket failed create: %v", err)
-		return fmt.Errorf("github create ticket failed create: %w", err)
-	}
-
 	td := database.TicketDetails{
-		AgentID:  g.Credentials.Credentials.AgentID,
-		RemoteID: strconv.FormatInt(*is.ID, 10),
-		System:   "github",
+		AgentID: g.Credentials.Credentials.AgentID,
+		System:  "github",
+		Hash:    GenerateHash(ticket.Raw),
+	}
+	ticketExists, err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).TicketExists(td)
+	if err != nil {
+		g.Logger.Errorf("github create ticketExists: %+v", err)
+		return fmt.Errorf("github create ticketExists: %w", err)
 	}
 
-	if err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).StoreTicketDetails(td); err != nil {
-		g.Logger.Errorf("github create ticket failed store: %v", err)
-		return fmt.Errorf("github create ticket failed store: %w", err)
+	if !ticketExists {
+		is, _, err := g.Client.Issues.Create(g.Context, g.Credentials.Owner, g.Credentials.Repo, &github.IssueRequest{
+			Title:  &title,
+			Body:   &body,
+			Labels: &labels,
+		})
+		if err != nil {
+			g.Logger.Errorf("github create ticket failed create: %v", err)
+			return fmt.Errorf("github create ticket failed create: %w", err)
+		}
+		td.RemoteID = strconv.FormatInt(*is.ID, 10)
+
+		if err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).StoreTicketDetails(td); err != nil {
+			g.Logger.Errorf("github create ticket failed store: %v", err)
+			return fmt.Errorf("github create ticket failed store: %w", err)
+		}
 	}
 
 	return nil

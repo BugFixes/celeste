@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
@@ -90,14 +91,22 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 }
 
 func (g *Github) Create(ticket Ticket) error {
-	title := fmt.Sprintf("File: %s, Line: %s", ticket.File, ticket.Line)
+	projectFile := ticket.File
+	if strings.Index(projectFile, g.Credentials.Repo) != 0 {
+		projectIndex := strings.Index(ticket.File, g.Credentials.Repo)
+		if projectIndex != 0 {
+			projectFile = ticket.File[(projectIndex + len(g.Credentials.Repo) + 1):]
+		}
+	}
+
+	title := fmt.Sprintf("File: %s, Line: %s", projectFile, ticket.Line)
 	body := fmt.Sprintf(
 		"## Bug\n```\n%s\n```\n## Raw\n```\n%s\n```\n### Report number\n%d\n### Link\n[%s](../blob/main/%s#L%s)",
 		ticket.Bug,
 		ticket.Raw,
 		ticket.ReportedTimes,
-		ticket.File,
-		ticket.File,
+		projectFile,
+		projectFile,
 		ticket.Line)
 
 	labels := []string{

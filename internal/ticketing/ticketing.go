@@ -87,3 +87,15 @@ func (t Ticketing) createTicket(system database.TicketingCredentials, ticket Tic
 
 	return nil
 }
+
+func (t Ticketing) CreateTicket(ticket Ticket) error {
+	system, err := t.fetchSystem(ticket.AgentID)
+	if err != nil {
+		return fmt.Errorf("CreateTicket fetchSystem failed: %w", err)
+	}
+	if err := t.createTicket(system, ticket); err != nil {
+		return fmt.Errorf("CreateTicket createTicket failed: %w", err)
+	}
+
+	return nil
+}

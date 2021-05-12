@@ -1,15 +1,15 @@
 package account
 
 type CommsChannel struct {
-	Name      string
-	Preferred bool
+	Name      string `json:"name"`
+	Preferred bool   `json:"preferred"`
 }
 
 type Account struct {
-	ID            string
-	Name          string
-	CommsChannels []CommsChannel
-	Parent        *Account
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	CommsChannels []CommsChannel `json:"comms_channels"`
+	Parent        *Account       `json:"parent"`
 }
 
 type Response struct {

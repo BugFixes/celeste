@@ -23,11 +23,11 @@ func TestBug_GenerateHash(t *testing.T) {
 		{
 			name: "tester hash",
 			request: bug.Bug{
-				Message: "tester",
+				Raw: "tester",
 			},
 			expect: bug.Bug{
-				Message: "tester",
-				Hash:    "9bba5c53a0545e0c80184b946153c9f58387e3bd1d4ee35740f29ac2e718b019",
+				Raw:  "tester",
+				Hash: "9bba5c53a0545e0c80184b946153c9f58387e3bd1d4ee35740f29ac2e718b019",
 			},
 		},
 	}
@@ -63,7 +63,7 @@ func TestBug_GenerateIdentifier(t *testing.T) {
 		{
 			name: "tester identifier",
 			request: bug.Bug{
-				Message: "tester",
+				Raw: "tester",
 			},
 			expect: 36,
 		},

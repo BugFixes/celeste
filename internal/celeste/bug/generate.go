@@ -20,7 +20,7 @@ func (b Bug) GenerateIdentifier(logger *zap.SugaredLogger) (Bug, error) {
 }
 
 func (b Bug) GenerateHash(logger *zap.SugaredLogger) (Bug, error) {
-	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(b.Message)))
+	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(b.Raw)))
 
 	return b, nil
 }

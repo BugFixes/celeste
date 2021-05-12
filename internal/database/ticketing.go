@@ -89,7 +89,7 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 	}
 
 	tcs := []TicketingCredentials{}
-	if result.Items == nil {
+	if len(result.Items) == 0 {
 		return TicketingCredentials{}, fmt.Errorf("ticketing failed to find any")
 	}
 	for _, i := range result.Items {

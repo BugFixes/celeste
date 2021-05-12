@@ -8,19 +8,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func (b Bug) GenerateIdentifier(logger *zap.SugaredLogger) (Bug, error) {
+func (b *Bug) GenerateIdentifier(logger *zap.SugaredLogger) error {
 	ident, err := uuid.NewUUID()
 	if err != nil {
 		logger.Errorf("failed to generate uuid: %v", err)
-		return b, fmt.Errorf("failed to generate identifier: %w", err)
+		return fmt.Errorf("failed to generate identifier: %w", err)
 	}
 	b.Identifier = ident.String()
 
-	return b, nil
+	return nil
 }
 
-func (b Bug) GenerateHash(logger *zap.SugaredLogger) (Bug, error) {
+func (b *Bug) GenerateHash(logger *zap.SugaredLogger) error {
 	b.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(b.Raw)))
 
-	return b, nil
+	return nil
 }

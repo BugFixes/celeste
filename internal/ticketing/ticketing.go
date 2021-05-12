@@ -44,12 +44,13 @@ func NewTicketing(c config.Config, logger zap.SugaredLogger) *Ticketing {
 
 type Ticket struct {
 	Level         string `json:"level"`
+	LevelNumber   string `json:"level_number"`
 	Bug           string `json:"bug"`
 	Raw           string `json:"raw"`
 	AgentID       string `json:"agent_id"`
 	Line          string `json:"line"`
 	File          string `json:"file"`
-	ReportedTimes int    `json:"reported_times" default:"1"`
+	TimesReported int    `json:"times_reported" default:"1"`
 }
 
 func (t Ticketing) fetchSystem(agentID string) (database.TicketingCredentials, error) {
@@ -65,10 +66,6 @@ func (t Ticketing) fetchSystem(agentID string) (database.TicketingCredentials, e
 }
 
 func (t Ticketing) createTicket(system database.TicketingCredentials, ticket Ticket) error {
-	if ticket.ReportedTimes < 1 {
-		ticket.ReportedTimes = 1
-	}
-
 	switch system.System {
 	case "github":
 		g := NewGithub(t.Config, t.Logger)
@@ -81,6 +78,9 @@ func (t Ticketing) createTicket(system database.TicketingCredentials, ticket Tic
 		if err := g.Create(ticket); err != nil {
 			return fmt.Errorf("failed to create github issue: %w", err)
 		}
+	case "jira":
+		// TODO jira
+		return fmt.Errorf("not yet implemented")
 	default:
 		return fmt.Errorf("failed to find system")
 	}

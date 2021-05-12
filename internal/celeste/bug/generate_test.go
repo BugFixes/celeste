@@ -34,12 +34,12 @@ func TestBug_GenerateHash(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := test.request.GenerateHash(sugar)
+			err := test.request.GenerateHash(sugar)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}
-			if passed := assert.Equal(t, test.expect, resp); !passed {
-				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)
+			if passed := assert.Equal(t, test.expect, test.request.Hash); !passed {
+				t.Errorf("lookup expect: %v, got: %v", test.expect, test.request.Hash)
 			}
 			if passed := assert.Equal(t, test.err, err); !passed {
 				t.Errorf("lookup err failed - expected: %v, got: %v", test.err, err)
@@ -71,12 +71,12 @@ func TestBug_GenerateIdentifier(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := test.request.GenerateIdentifier(sugar)
+			err := test.request.GenerateIdentifier(sugar)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}
-			if passed := assert.Equal(t, test.expect, len(resp.Identifier)); !passed {
-				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)
+			if passed := assert.Equal(t, test.expect, len(test.request.Identifier)); !passed {
+				t.Errorf("lookup expect: %v, got: %v", test.expect, test.request.Identifier)
 			}
 			if passed := assert.Equal(t, test.err, err); !passed {
 				t.Errorf("lookup err failed - expected: %v, got: %v", test.err, err)

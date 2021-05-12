@@ -40,8 +40,8 @@ func (p ProcessFile) Fetch() (Response, error) {
 	return Response{}, nil
 }
 
-func (p ProcessFile) GenerateBugInfo(bug Bug, agentId string) (Bug, error) {
-	bug.Agent.ID = agentId
+func (p ProcessFile) GenerateBugInfo(bug Bug, agentID string) (Bug, error) {
+	bug.Agent.ID = agentID
 	if err := bug.GenerateHash(&p.Logger); err != nil {
 		p.Logger.Errorf("generate bug info failed hash: %+v", err)
 		return bug, fmt.Errorf("generate bug info failed hash: %w", err)

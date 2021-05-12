@@ -46,12 +46,12 @@ func NewGithub(c config.Config, logger zap.SugaredLogger) *Github {
 }
 
 func (g *Github) Connect() error {
-	installationId, err := strconv.Atoi(g.Credentials.InstallationID)
+	installationID, err := strconv.Atoi(g.Credentials.InstallationID)
 	if err != nil {
 		return fmt.Errorf("github connect convert installation id: %w", err)
 	}
 
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 114758, int64(installationId), "configs/app.pem")
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 114758, int64(installationID), "configs/app.pem")
 	if err != nil {
 		g.Logger.Errorf("github failed to get pem file: %v", err)
 		return fmt.Errorf("github failed to get pem file: %w", err)

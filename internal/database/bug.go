@@ -148,7 +148,7 @@ func (b BugStorage) Update(data BugRecord) error {
 	if _, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":tr": {
-				S: aws.String(fmt.Sprint(data.TimesReportedNumber + 1)),
+				S: aws.String(fmt.Sprint(data.TimesReportedNumber)),
 			},
 		},
 		TableName: aws.String(b.Database.Config.BugsTable),

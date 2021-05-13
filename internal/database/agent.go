@@ -12,13 +12,13 @@ type AgentStorage struct {
 }
 
 type AgentCredentials struct {
-	Key    string
-	Secret string
+	Key    string `json:"key"`
+	Secret string `json:"secret"`
 }
 
 type AgentRecord struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
 	AgentCredentials
 	AccountRecord
 }

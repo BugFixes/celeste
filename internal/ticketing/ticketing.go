@@ -6,7 +6,6 @@ import (
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
-
 	"go.uber.org/zap"
 )
 
@@ -23,12 +22,11 @@ type TicketingSystem interface {
 	Connect() error
 
 	ParseCredentials(interface{}) error
-	FetchTicket(hash Hash) (TicketID, error)
+	FetchRemoteTicket(Hash) (Ticket, error)
 
-	FetchStatus() (Status, error)
-
-	Create() error
-	Update() error
+	Create(Ticket) error
+	Update(Ticket) error
+	Fetch(Ticket) (Ticket, error)
 }
 
 type Ticketing struct {
@@ -54,7 +52,7 @@ type Ticket struct {
 	TimesReported int    `json:"times_reported" default:"1"`
 }
 
-func (t Ticketing) fetchSystem(agentID string) (database.TicketingCredentials, error) {
+func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
 	system, err := database.NewTicketingStorage(*database.New(t.Config, &t.Logger)).FetchCredentials(agentID)
 	if err != nil {
 		return database.TicketingCredentials{
@@ -66,36 +64,48 @@ func (t Ticketing) fetchSystem(agentID string) (database.TicketingCredentials, e
 	return system, nil
 }
 
-func (t Ticketing) createTicket(system database.TicketingCredentials, ticket Ticket) error {
-	switch system.System {
+func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (TicketingSystem, error) {
+	var ts TicketingSystem
+
+	switch creds.System {
 	case "github":
-		g := NewGithub(t.Config, t.Logger)
-		if err := g.ParseCredentials(system); err != nil {
-			return fmt.Errorf("failed to parse github credentials: %w", err)
-		}
-		if err := g.Connect(); err != nil {
-			return fmt.Errorf("failed to connect github: %w", err)
-		}
-		if err := g.Create(ticket); err != nil {
-			return fmt.Errorf("failed to create github issue: %w", err)
-		}
+		ts = NewGithub(t.Config, t.Logger)
 	case "jira":
 		// TODO jira
-		return fmt.Errorf("not yet implemented")
+		return nil, fmt.Errorf("not yet implemented")
 	default:
-		return fmt.Errorf("failed to find system")
+		return nil, fmt.Errorf("failed to find system")
 	}
 
+	return ts, nil
+}
+
+func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket Ticket) error {
+	if err := system.ParseCredentials(creds); err != nil {
+		return fmt.Errorf("ticket create parse credentials: %w", err)
+	}
+	if err := system.Connect(); err != nil {
+		return fmt.Errorf("ticket create connect: %w", err)
+	}
+	if err := system.Create(ticket); err != nil {
+		return fmt.Errorf("ticket create create: %w", err)
+	}
 	return nil
 }
 
 func (t Ticketing) CreateTicket(ticket Ticket) error {
-	system, err := t.fetchSystem(ticket.AgentID)
+	system, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
-		return fmt.Errorf("CreateTicket fetchSystem failed: %w", err)
+		return fmt.Errorf("createTicket fetchSystem failed: %w", err)
 	}
-	if err := t.createTicket(system, ticket); err != nil {
-		return fmt.Errorf("CreateTicket createTicket failed: %w", err)
+
+	ts, err := t.fetchTicketSystem(system)
+	if err != nil {
+		return fmt.Errorf("createTicket fetchTicketSystem: %w", err)
+	}
+
+	if err := t.TicketCreate(ts, system, ticket); err != nil {
+		return fmt.Errorf("createTicket ticketCreate: %w", err)
 	}
 
 	return nil

@@ -154,3 +154,15 @@ func (g *Github) Create(ticket Ticket) error {
 
 	return nil
 }
+
+func (g *Github) FetchRemoteTicket(hash Hash) (Ticket, error) {
+	return Ticket{}, nil
+}
+
+func (g *Github) Fetch(ticket Ticket) (Ticket, error) {
+	return Ticket{}, nil
+}
+
+func (g *Github) Update(ticket Ticket) error {
+	return nil
+}

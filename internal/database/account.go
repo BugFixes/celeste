@@ -18,18 +18,18 @@ const (
 )
 
 type AccountCredentials struct {
-	Key    string
-	Secret string
+	Key    string `json:"key"`
+	Secret string `json:"secret"`
 }
 
 type AccountRecord struct {
-	ID       string
-	Name     string
-	ParentID string
-	Email    string
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	ParentID string `json:"parent_id"`
+	Email    string `json:"email"`
 	AccountCredentials
-	Level       int
-	DateCreated string
+	Level       int    `json:"level"`
+	DateCreated string `json:"date_created"`
 }
 
 func GetAccountLevel(level string) int {

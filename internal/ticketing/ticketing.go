@@ -17,16 +17,25 @@ type TicketID string
 type Hash string
 type Status string
 
+type TicketTemplate struct {
+	Title  string   `json:"title"`
+	Body   string   `json:"body"`
+	Labels []string `json:"labels"`
+	Level  string   `json:"level"`
+}
+
 //go:generate mockery --name=TicketingSystem
 type TicketingSystem interface {
 	Connect() error
 
 	ParseCredentials(interface{}) error
-	FetchRemoteTicket(Hash) (Ticket, error)
+	FetchRemoteTicket(interface{}) (Ticket, error)
 
 	Create(Ticket) error
 	Update(Ticket) error
 	Fetch(Ticket) (Ticket, error)
+
+	GenerateTemplate(Ticket) (TicketTemplate, error)
 }
 
 type Ticketing struct {
@@ -50,6 +59,10 @@ type Ticket struct {
 	Line          string `json:"line"`
 	File          string `json:"file"`
 	TimesReported int    `json:"times_reported" default:"1"`
+
+	RemoteID      string      `json:"remote_id"`
+	RemoteDetails interface{} `json:"remote_details"`
+	Hash          Hash        `json:"hash"`
 }
 
 func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
@@ -94,17 +107,17 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 }
 
 func (t Ticketing) CreateTicket(ticket Ticket) error {
-	system, err := t.fetchTicketingCredentials(ticket.AgentID)
+	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
 		return fmt.Errorf("createTicket fetchSystem failed: %w", err)
 	}
 
-	ts, err := t.fetchTicketSystem(system)
+	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
 		return fmt.Errorf("createTicket fetchTicketSystem: %w", err)
 	}
 
-	if err := t.TicketCreate(ts, system, ticket); err != nil {
+	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
 		return fmt.Errorf("createTicket ticketCreate: %w", err)
 	}
 

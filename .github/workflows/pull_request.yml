@@ -1,8 +1,8 @@
-name: Pull Requests
+name: Pull Request
 on:
-  check_suite:
+  pull_request:
     types:
-      - completed
+      - opened
 
 jobs:
   lint:
@@ -18,12 +18,3 @@ jobs:
         with:
           version: v1.29
           args: --config ./configs/golangci.yml
-
-  automerge:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        uses: rideott/merge-me-action@v2
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -26,13 +26,13 @@ func (_m *TicketingSystem) Connect() error {
 	return r0
 }
 
-// Create provides a mock function with given fields:
-func (_m *TicketingSystem) Create() error {
-	ret := _m.Called()
+// Create provides a mock function with given fields: _a0
+func (_m *TicketingSystem) Create(_a0 ticketing.Ticket) error {
+	ret := _m.Called(_a0)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(ticketing.Ticket) error); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -40,20 +40,20 @@ func (_m *TicketingSystem) Create() error {
 	return r0
 }
 
-// FetchCredentials provides a mock function with given fields:
-func (_m *TicketingSystem) FetchCredentials() (ticketing.Credentials, error) {
-	ret := _m.Called()
+// Fetch provides a mock function with given fields: _a0
+func (_m *TicketingSystem) Fetch(_a0 ticketing.Ticket) (ticketing.Ticket, error) {
+	ret := _m.Called(_a0)
 
-	var r0 ticketing.Credentials
-	if rf, ok := ret.Get(0).(func() ticketing.Credentials); ok {
-		r0 = rf()
+	var r0 ticketing.Ticket
+	if rf, ok := ret.Get(0).(func(ticketing.Ticket) ticketing.Ticket); ok {
+		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(ticketing.Credentials)
+		r0 = ret.Get(0).(ticketing.Ticket)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(ticketing.Ticket) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -61,41 +61,20 @@ func (_m *TicketingSystem) FetchCredentials() (ticketing.Credentials, error) {
 	return r0, r1
 }
 
-// FetchStatus provides a mock function with given fields:
-func (_m *TicketingSystem) FetchStatus() (ticketing.Status, error) {
-	ret := _m.Called()
+// FetchRemoteTicket provides a mock function with given fields: _a0
+func (_m *TicketingSystem) FetchRemoteTicket(_a0 ticketing.Hash) (ticketing.Ticket, error) {
+	ret := _m.Called(_a0)
 
-	var r0 ticketing.Status
-	if rf, ok := ret.Get(0).(func() ticketing.Status); ok {
-		r0 = rf()
+	var r0 ticketing.Ticket
+	if rf, ok := ret.Get(0).(func(ticketing.Hash) ticketing.Ticket); ok {
+		r0 = rf(_a0)
 	} else {
-		r0 = ret.Get(0).(ticketing.Status)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// FetchTicket provides a mock function with given fields: hash
-func (_m *TicketingSystem) FetchTicket(hash ticketing.Hash) (ticketing.TicketID, error) {
-	ret := _m.Called(hash)
-
-	var r0 ticketing.TicketID
-	if rf, ok := ret.Get(0).(func(ticketing.Hash) ticketing.TicketID); ok {
-		r0 = rf(hash)
-	} else {
-		r0 = ret.Get(0).(ticketing.TicketID)
+		r0 = ret.Get(0).(ticketing.Ticket)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(ticketing.Hash) error); ok {
-		r1 = rf(hash)
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -103,13 +82,27 @@ func (_m *TicketingSystem) FetchTicket(hash ticketing.Hash) (ticketing.TicketID,
 	return r0, r1
 }
 
-// Update provides a mock function with given fields:
-func (_m *TicketingSystem) Update() error {
-	ret := _m.Called()
+// ParseCredentials provides a mock function with given fields: _a0
+func (_m *TicketingSystem) ParseCredentials(_a0 interface{}) error {
+	ret := _m.Called(_a0)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(interface{}) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Update provides a mock function with given fields: _a0
+func (_m *TicketingSystem) Update(_a0 ticketing.Ticket) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(ticketing.Ticket) error); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}

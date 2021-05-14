@@ -72,7 +72,7 @@ sleepy: ## Sleepy
 	sleep 60
 
 .PHONY: cloud-up
-cloud-up: docker-start sleepy stack-create injectData ## CloudFormation Up
+cloud-up: docker-start sleepy stack-create cloudInject ## CloudFormation Up
 
 .PHONY: cloud-restart
 cloud-restart: docker-down cloud-up
@@ -93,12 +93,25 @@ stack-delete: # Delete the stack
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1
 
-injectData: sleepy sleepy # Inject Agent
+cloudInject: sleepy sleepy sleepy injectData
+
+.PHONY: injectData
+injectData: # Inject Agent
 	aws dynamodb put-item \
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1 \
 		--table-name ticketing \
-		--item '{"access_token":{"S":"fa1f831d876febd61869fa55fe79e4383e1e6339"},"id":{"S":"bob"},"system":{"S":"github"},"agent_id":{"S":"bob"},"ticketing_details":{"M":{"owner":{"S":"bugfixes"},"repo":{"S":"celeste"},"installation_id":{"S":"16850144"}}}}'
+		--item '{"access_token":{"S":"fa1f831d876febd61869fa55fe79e4383e1e6339"},"id":{"S":"bob"},"system":{"S":"github"},"agent_id":{"S":"bob"},"ticketing_details":{"M":{"owner":{"S":"bugfixes"},"repo":{"S":"celeste"},"installation_id":{"S":"16850144"}}}}' 1> /dev/null
+	aws dynamodb put-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name agent \
+		--item '{"id":"bob","name":"bob","account_record":{"id":"bob","name":"bob","email":"bob@bob.bob","level":"0","account_credentials":{"key":"bob","secret":"bob"}},"agent_credentials":{"key":"bob","secret":"bob"}}' 1> /dev/null
+	aws dynamodb put-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name account \
+		--item '{"id":"bob","name":"bob","email":"bob@bob.bob","level":"0","account_credentials":{"key":"bob","secret":"bob"}}' 1> /dev/null
 
 
 .PHONY: bucket-up

@@ -3,6 +3,7 @@ module github.com/bugfixes/celeste
 go 1.16
 
 require (
+	github.com/andygrunwald/go-jira v1.13.0
 	github.com/aws/aws-lambda-go v1.23.0
 	github.com/aws/aws-sdk-go v1.38.39
 	github.com/bradleyfalzon/ghinstallation v1.1.1

@@ -95,22 +95,33 @@ stack-delete: # Delete the stack
 
 .PHONY: injectData
 injectData: # Inject Agent
+	export $(egrep -v '^#' .env | xargs)
+
 	aws dynamodb put-item \
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1 \
 		--table-name ticketing \
-		--item '{"access_token":{"S":"fa1f831d876febd61869fa55fe79e4383e1e6339"},"id":{"S":"bob"},"system":{"S":"github"},"agent_id":{"S":"bob"},"ticketing_details":{"M":{"owner":{"S":"bugfixes"},"repo":{"S":"celeste"},"installation_id":{"S":"16850144"}}}}' 1> /dev/null
+		--item '{"access_token":{"S":"${GITHUB_ACCESS_TOKEN}"},"id":{"S":"github_token"},"system":{"S":"github"},"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"ticketing_details":{"M":{"owner":{"S":"bugfixes"},"repo":{"S":"celeste"},"installation_id":{"S":"${GITHUB_INSTALL_ID}"}}}}' 1> /dev/null
+	aws dynamodb put-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name ticketing \
+		--item '{"access_token":{"S":"${JIRA_API_TOKEN}"},"id":{"S":"jira_token"},"system":{"S":"jira"},"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"ticketing_details":{"M":{"project_name":{"S":"${JIRA_PROJECT_NAME}"},"username":{"S":"${JIRA_USERNAME}"},"host":{"S":"${JIRA_HOST}"},"project_key":{"S":"${JIRA_PROJECT_KEY}"}}}}' 1>/dev/null
 	aws dynamodb put-item \
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1 \
 		--table-name agents \
-		--item '{"id":{"S":"bob"},"name":{"S":"bob"},"account_record":{"M":{"id":{"S":"bob"},"name":{"S":"bob"},"email":{"S":"bob@bob.bob"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"bob"},"secret":{"S":"bob"}}}}},"agent_credentials":{"M":{"key":{"S":"bob"},"secret":{"S":"bob"}}}}' 1> /dev/null
+		--item '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"name":{"S":"github"},"account_record":{"M":{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}},"agent_credentials":{"M":{"key":{"S":"${BUGFIXES_GITHUB_AGENT_KEY}"},"secret":{"S":"${BUGFIXES_GITHUB_AGENT_SECRET}"}}}}' 1> /dev/null
+	aws dynamodb put-item \
+  		--endpoint http://localhost.localstack.cloud:4566 \
+  		--region us-east-1 \
+  		--table-name agents \
+  		--item '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"name":{"S":"jira"},"account_record":{"M":{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}},"agent_credentials":{"M":{"key":{"S":"${BUGFIXES_JIRA_AGENT_KEY}"},"secret":{"S":"${BUGFIXES_JIRA_AGENT_SECRET}"}}}}' 1> /dev/null
 	aws dynamodb put-item \
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1 \
 		--table-name accounts \
-		--item '{"id":{"S":"bob"},"name":{"S":"bob"},"email":{"S":"bob@bob.bob"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"bob"},"secret":{"S":"bob"}}}}' 1> /dev/null
-
+		--item '{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}' 1> /dev/null
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

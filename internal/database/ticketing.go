@@ -143,7 +143,9 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 		return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket dynamosession: %w", err)
 	}
 
-	filt := expression.Name("hash").Equal(expression.Value(details.Hash))
+	filt := expression.And(
+		expression.Name("hash").Equal(expression.Value(details.Hash)),
+		expression.Name("agent_id").Equal(expression.Value(details.AgentID)))
 	proj := expression.NamesList(
 		expression.Name("id"),
 		expression.Name("agent_id"),

@@ -15,6 +15,7 @@ type Config struct {
 	AgentsTable    string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
 	TicketingTable string `env:"DB_TICKETING_TABLE" envDefault:"ticketing"`
 	TicketsTable   string `env:"DB_TICKETS_TABLE" envDefault:"tickets"`
+	CommsTable     string `env:"DB_COMMS_TABLE" envDefault:"comms"`
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 

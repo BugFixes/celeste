@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/bugfixes/celeste/internal/config"
@@ -176,6 +177,27 @@ func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 							map[string]interface{}{
 								"type": "text",
 								"text": fmt.Sprintf("%d", ticket.TimesReported),
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "heading",
+						"attrs": map[string]interface{}{
+							"level": 4,
+						},
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": "Latest Report Date",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "paragraph",
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": time.Now().Format("YYYY-MM-DD HH:mm:ss"),
 							},
 						},
 					},

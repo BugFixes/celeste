@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
@@ -107,13 +108,14 @@ func (g *Github) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 
 	title := fmt.Sprintf("File: %s, Line: %s", projectFile, ticket.Line)
 	body := fmt.Sprintf(
-		"## Bug\n```\n%s\n```\n## Raw\n```\n%s\n```\n### Report number\n%d\n### Link\n[%s](../blob/main/%s#L%s)",
+		"## Bug\n```\n%s\n```\n## Raw\n```\n%s\n```\n### Report number\n%d\n### Link\n[%s](../blob/main/%s#L%s)\n### Latest Report Date\n%s\n",
 		ticket.Bug,
 		ticket.Raw,
 		ticket.TimesReported,
 		projectFile,
 		projectFile,
-		ticket.Line)
+		ticket.Line,
+		time.Now().Format("YYYY-MM-DD HH:mm:ss"))
 
 	labels := []string{
 		ticket.Level,

@@ -188,7 +188,7 @@ func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 
 func (g *Github) Fetch(ticket Ticket) (Ticket, error) {
 	td, err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).FindTicket(database.TicketDetails{
-		AgentID: g.Credentials.Credentials.AgentID,
+		AgentID: g.Credentials.AgentID,
 		System:  "github",
 		Hash:    GenerateHash(ticket.Raw),
 	})
@@ -226,19 +226,20 @@ func (g *Github) Update(ticket Ticket) error {
 	template, _ := g.GenerateTemplate(ticket)
 	body := fmt.Sprintf("%s", template.Body)
 
+	state := *is.State
 	if *is.State == "closed" {
-		state := "open"
-		if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
-			State: &state,
-			Body:  &body,
-			// Labels: &[]string{
-			//   t.Level,
-			//   multiReport,
-			// },
-		}); err != nil {
-			g.Logger.Errorf("github update reopen: %+v", err)
-			return fmt.Errorf("github update reopen: %w", err)
-		}
+		state = "open"
+	}
+	if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
+		State: &state,
+		Body:  &body,
+		// Labels: &[]string{
+		//   t.Level,
+		//   multiReport,
+		// },
+	}); err != nil {
+		g.Logger.Errorf("github update reopen: %+v", err)
+		return fmt.Errorf("github update reopen: %w", err)
 	}
 
 	if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{

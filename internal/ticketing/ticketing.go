@@ -69,6 +69,7 @@ type Ticket struct {
 	RemoteID      string      `json:"remote_id"`
 	RemoteDetails interface{} `json:"remote_details"`
 	Hash          Hash        `json:"hash"`
+	State         string      `json:"state"`
 }
 
 func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {

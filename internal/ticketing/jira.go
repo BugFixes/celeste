@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -97,15 +98,142 @@ func (j *Jira) ParseCredentials(creds interface{}) error {
 	return nil
 }
 
-func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
+func (j Jira) generateUpdateTemplate(ticket Ticket) TicketTemplate {
 	projectFile := ticket.File
 	title := fmt.Sprintf("File: %s, Line: %s", projectFile, ticket.Line)
+	reportLabel := strings.ReplaceAll(multiReport, " ", "_")
+	oldReportLabel := strings.ReplaceAll(firstReport, " ", "_")
+
+	body := map[string]interface{}{
+		"update": map[string]interface{}{
+			"labels": []interface{}{
+				map[string]interface{}{
+					"add": reportLabel,
+				},
+				map[string]interface{}{
+					"remove": oldReportLabel,
+				},
+			},
+		},
+		"fields": map[string]interface{}{
+			"status": map[string]interface{}{
+				"name": ticket.State,
+			},
+			"project": map[string]interface{}{
+				"key": j.Credentials.JiraProject.Key,
+			},
+			"description": map[string]interface{}{
+				"type":    "doc",
+				"version": 1,
+				"content": []interface{}{
+					map[string]interface{}{
+						"type": "heading",
+						"attrs": map[string]interface{}{
+							"level": 2,
+						},
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": "Bug",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "codeBlock",
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": ticket.Bug,
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "heading",
+						"attrs": map[string]interface{}{
+							"level": 2,
+						},
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": "Raw",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "codeBlock",
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": ticket.Raw,
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "heading",
+						"attrs": map[string]interface{}{
+							"level": 4,
+						},
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": "Report Number",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "paragraph",
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": fmt.Sprintf("%d", ticket.TimesReported),
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "heading",
+						"attrs": map[string]interface{}{
+							"level": 4,
+						},
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": "Latest Report Date",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type": "paragraph",
+						"content": []interface{}{
+							map[string]interface{}{
+								"type": "text",
+								"text": time.Now().Format("2006-01-02 15:04:05"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return TicketTemplate{
+		Title: title,
+		Body:  body,
+	}
+}
+
+func (j Jira) generateCreateTemplate(ticket Ticket) TicketTemplate {
+	projectFile := ticket.File
+	title := fmt.Sprintf("File: %s, Line: %s", projectFile, ticket.Line)
+	reportLabel := strings.ReplaceAll(firstReport, " ", "_")
+	if ticket.TimesReported > 1 {
+		reportLabel = strings.ReplaceAll(multiReport, " ", "_")
+	}
 
 	body := map[string]interface{}{
 		"fields": map[string]interface{}{
 			"labels": []interface{}{
 				ticket.Level,
-				"first_report",
+				reportLabel,
 			},
 			"project": map[string]interface{}{
 				"key": j.Credentials.JiraProject.Key,
@@ -197,7 +325,7 @@ func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 						"content": []interface{}{
 							map[string]interface{}{
 								"type": "text",
-								"text": time.Now().Format("YYYY-MM-DD HH:mm:ss"),
+								"text": time.Now().Format("2006-01-02 15:04:05"),
 							},
 						},
 					},
@@ -210,12 +338,21 @@ func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 	return TicketTemplate{
 		Title: title,
 		Body:  body,
-	}, nil
+	}
+}
+
+func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
+	if ticket.RemoteID != "" {
+		if ticket.State != "To Do" {
+			return j.generateCreateTemplate(ticket), nil
+		}
+		return j.generateUpdateTemplate(ticket), nil
+	}
+
+	return j.generateCreateTemplate(ticket), nil
 }
 
 func (j *Jira) Create(ticket Ticket) error {
-	template, _ := j.GenerateTemplate(ticket)
-
 	exists, td, err := j.TicketExists(ticket)
 	if err != nil {
 		j.Logger.Errorf("jira create ticketExists: %+v", err)
@@ -224,6 +361,12 @@ func (j *Jira) Create(ticket Ticket) error {
 	if exists {
 		return j.Update(ticket)
 	}
+
+	return j.createNew(ticket, td)
+}
+
+func (j *Jira) createNew(ticket Ticket, td database.TicketDetails) error {
+	template, _ := j.GenerateTemplate(ticket)
 
 	client := &http.Client{}
 	jsond, err := json.Marshal(template.Body)
@@ -280,13 +423,98 @@ func (j Jira) TicketExists(ticket Ticket) (bool, database.TicketDetails, error) 
 }
 
 func (j Jira) Update(ticket Ticket) error {
+	t, err := j.Fetch(ticket)
+	if err != nil {
+		j.Logger.Errorf("jira update fetch: %+v", err)
+		return fmt.Errorf("jira update fetch: %w", err)
+	}
+
+	rt, err := j.FetchRemoteTicket(t.RemoteID)
+	if err != nil {
+		if strings.Contains(err.Error(), "Issue does not exist") {
+			td := database.TicketDetails{
+				AgentID: j.Credentials.AgentID,
+				System:  "jira",
+				Hash:    GenerateHash(ticket.Raw),
+			}
+			return j.createNew(ticket, td)
+		}
+
+		j.Logger.Errorf("jira update fetchRemoteTicket: %+v", err)
+		return fmt.Errorf("jira update fetchRemoteTicket: %w", err)
+	}
+
+	rtd := jira.Issue{}
+	if err := mapstructure.Decode(rt.RemoteDetails, &rtd); err != nil {
+		j.Logger.Errorf("jira update decode: %+v", err)
+		return fmt.Errorf("jira update decode: %w", err)
+	}
+
+	ticket.State = rtd.Fields.Status.Name
+	switch ticket.State {
+	case "Done":
+		td := database.TicketDetails{
+			AgentID: j.Credentials.AgentID,
+			System:  "jira",
+			Hash:    GenerateHash(ticket.Raw),
+		}
+		return j.createNew(ticket, td)
+	case "In Review": // skip creating a ticket for one thats being fixed
+		return nil
+	}
+
+	template, _ := j.GenerateTemplate(ticket)
+	client := &http.Client{}
+	jsond, err := json.Marshal(template.Body)
+	if err != nil {
+		j.Logger.Errorf("jira update marshall: %+v", err)
+		return fmt.Errorf("jira update marshall: %w", err)
+	}
+	send := bytes.NewBuffer(jsond)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/rest/api/3/issue/%s", j.Credentials.Host, rtd.ID), send)
+	if err != nil {
+		j.Logger.Errorf("jira update newRequest: %+v", err)
+		return fmt.Errorf("jira update newRequest: %w", err)
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.SetBasicAuth(j.Credentials.Username, j.Credentials.Token)
+	resp, err := client.Do(req)
+	if err != nil {
+		j.Logger.Errorf("jira update do: %+v", err)
+		return fmt.Errorf("jira update do: %w", err)
+	}
+	defer resp.Body.Close()
+
 	return nil
 }
 
 func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
-	return Ticket{}, nil
+	is, _, err := j.Client.Issue.GetWithContext(j.Context, data.(string), &jira.GetQueryOptions{})
+	if err != nil {
+		j.Logger.Errorf("jira fetchRemoteTicket get: %+v", err)
+		return Ticket{}, fmt.Errorf("jira fetchRemoteTicket get: %w", err)
+	}
+
+	return Ticket{
+		RemoteDetails: is,
+	}, nil
 }
 
 func (j Jira) Fetch(ticket Ticket) (Ticket, error) {
-	return Ticket{}, nil
+	td, err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).FindTicket(database.TicketDetails{
+		AgentID: j.Credentials.AgentID,
+		System:  "jira",
+		Hash:    GenerateHash(ticket.Raw),
+	})
+	if err != nil {
+		j.Logger.Errorf("jira fetch find: %+v", err)
+		return Ticket{}, fmt.Errorf("jira fetch find: %w", err)
+	}
+
+	return Ticket{
+		Hash:     Hash(td.Hash),
+		RemoteID: td.RemoteID,
+		AgentID:  td.AgentID,
+	}, nil
 }

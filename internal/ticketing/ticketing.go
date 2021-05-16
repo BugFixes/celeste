@@ -109,15 +109,15 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 
 func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket Ticket) error {
 	if err := system.ParseCredentials(creds); err != nil {
-	  t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
+		t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
 		return fmt.Errorf("ticketCreate parseCredentials: %w", err)
 	}
 	if err := system.Connect(); err != nil {
-	  t.Logger.Errorf("ticketCreate connect: %+v", err)
+		t.Logger.Errorf("ticketCreate connect: %+v", err)
 		return fmt.Errorf("ticketCreate connect: %w", err)
 	}
 	if err := system.Create(ticket); err != nil {
-	  t.Logger.Errorf("ticketCreate create: %+v", err)
+		t.Logger.Errorf("ticketCreate create: %+v", err)
 		return fmt.Errorf("ticketCreate create: %w", err)
 	}
 	return nil
@@ -126,18 +126,18 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 func (t Ticketing) CreateTicket(ticket Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
-	  t.Logger.Errorf("createTicket fetchSystem: %+v", err)
+		t.Logger.Errorf("createTicket fetchSystem: %+v", err)
 		return fmt.Errorf("createTicket fetchSystem failed: %w", err)
 	}
 
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
-	  t.Logger.Errorf("createTicket fetchTicketSystem: %+v", err)
+		t.Logger.Errorf("createTicket fetchTicketSystem: %+v", err)
 		return fmt.Errorf("createTicket fetchTicketSystem: %w", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
-	  t.Logger.Errorf("createTicket ticketCreate: %+v", err)
+		t.Logger.Errorf("createTicket ticketCreate: %+v", err)
 		return fmt.Errorf("createTicket ticketCreate: %w", err)
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 type CommsPackage struct {
-  AgentID string `json:"agent_id"`
+	AgentID string `json:"agent_id"`
 }
 
 type AckPackage struct {
@@ -72,21 +72,21 @@ func (c Comms) CommsSend(system CommsSystem, creds database.CommsCredentials, co
 }
 
 func (c Comms) SendComms(commsPackage CommsPackage) error {
-  creds, err := c.fetchCommsCredentials(commsPackage.AgentID)
-  if err != nil {
-    c.Logger.Errorf("sendComms fetchCommsCredentials: %+v", err)
-    return fmt.Errorf("sendComms fetchCommsCredentials: %w", err)
-  }
-  commsSystem, err := c.fetchCommsSystem(creds)
-  if err != nil {
-    c.Logger.Errorf("sendComms fetchCommsSystem: %+v", err)
-    return fmt.Errorf("sendComms fetchCommsSystem: %w", err)
-  }
+	creds, err := c.fetchCommsCredentials(commsPackage.AgentID)
+	if err != nil {
+		c.Logger.Errorf("sendComms fetchCommsCredentials: %+v", err)
+		return fmt.Errorf("sendComms fetchCommsCredentials: %w", err)
+	}
+	commsSystem, err := c.fetchCommsSystem(creds)
+	if err != nil {
+		c.Logger.Errorf("sendComms fetchCommsSystem: %+v", err)
+		return fmt.Errorf("sendComms fetchCommsSystem: %w", err)
+	}
 
-  if err := c.CommsSend(commsSystem, creds, commsPackage); err != nil {
-    c.Logger.Errorf("sendComms commsSend: %+v", err)
-    return fmt.Errorf("sendComms commsSend: %w", err)
-  }
+	if err := c.CommsSend(commsSystem, creds, commsPackage); err != nil {
+		c.Logger.Errorf("sendComms commsSend: %+v", err)
+		return fmt.Errorf("sendComms commsSend: %w", err)
+	}
 
-  return nil
+	return nil
 }

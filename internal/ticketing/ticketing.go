@@ -84,6 +84,7 @@ func (t Ticketing) fetchTicketingCredentials(agentID string) (database.Ticketing
 	return system, nil
 }
 
+// nolint: gocyclo
 func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (TicketingSystem, error) {
 	var ts TicketingSystem
 

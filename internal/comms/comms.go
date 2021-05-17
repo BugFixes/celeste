@@ -52,6 +52,7 @@ func (c Comms) fetchCommsCredentials(agentID string) (database.CommsCredentials,
 	return system, nil
 }
 
+// nolint: gocyclo
 func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, error) {
 	var cs CommsSystem
 	switch creds.System {

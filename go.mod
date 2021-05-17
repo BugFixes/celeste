@@ -5,11 +5,10 @@ go 1.16
 require (
 	github.com/andygrunwald/go-jira v1.13.0
 	github.com/aws/aws-lambda-go v1.23.0
-	github.com/aws/aws-sdk-go v1.38.39
+	github.com/aws/aws-sdk-go v1.38.40
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.1.4
-	github.com/bwmarrin/discordgo v0.23.2 // indirect
-	github.com/caarlos0/env/v6 v6.5.0
+	github.com/caarlos0/env/v6 v6.6.0
 	github.com/go-chi/chi/v5 v5.0.3
 	github.com/google/go-github/v29 v29.0.3 // indirect
 	github.com/google/go-github/v35 v35.2.0

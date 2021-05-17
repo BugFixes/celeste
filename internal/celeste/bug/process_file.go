@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/bugfixes/celeste/internal/comms"
 	"github.com/bugfixes/celeste/internal/ticketing"
 	"go.uber.org/zap"
 
@@ -78,6 +79,17 @@ func (p ProcessFile) GenerateTicket(bug Bug) error {
 	return nil
 }
 
+func (p ProcessFile) GenerateComms(bug Bug) error {
+	if err := comms.NewComms(p.Config, p.Logger).SendComms(comms.CommsPackage{
+		AgentID: bug.Agent.ID,
+		Message: "tester message",
+	}); err != nil {
+		return fmt.Errorf("file generateComms: %w", err)
+	}
+
+	return nil
+}
+
 func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
 	bug := Bug{}
 	defer r.Body.Close()
@@ -107,6 +119,21 @@ func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
 			FullError: fmt.Sprintf("%+v", err),
 		}); err != nil {
 			p.Logger.Errorf("bug file generate bug failed: %+v", err)
+		}
+		return
+	}
+
+	if err := p.GenerateComms(bug); err != nil {
+		p.Logger.Errorf("file generateComms: %+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(struct {
+			Error     string
+			FullError string
+		}{
+			Error:     "Ticket failed",
+			FullError: fmt.Sprintf("%+v", err),
+		}); err != nil {
+			p.Logger.Errorf("bug file ticket failed json: %+v", err)
 		}
 		return
 	}

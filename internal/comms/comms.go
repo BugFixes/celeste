@@ -8,11 +8,14 @@ import (
 	"go.uber.org/zap"
 )
 
-type CommsPackage struct {
+type Credentials struct {
 	AgentID string `json:"agent_id"`
 }
 
-type AckPackage struct {
+type CommsPackage struct {
+	AgentID string
+	Message string
+	Link    string
 }
 
 //go:generate mockery --name=CommsSystem
@@ -37,7 +40,16 @@ func NewComms(c config.Config, logger zap.SugaredLogger) *Comms {
 }
 
 func (c Comms) fetchCommsCredentials(agentID string) (database.CommsCredentials, error) {
-	return database.CommsCredentials{}, nil
+	system, err := database.NewCommsStorage(*database.New(c.Config, &c.Logger)).FetchCredentials(agentID)
+	if err != nil {
+		c.Logger.Errorf("comms fetchCommsCredentials: %+v", err)
+		return database.CommsCredentials{
+			AgentID: agentID,
+			System:  "mock",
+		}, fmt.Errorf("comms fetchCommsCredentials: %w", err)
+	}
+
+	return system, nil
 }
 
 func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, error) {
@@ -45,8 +57,9 @@ func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, e
 	switch creds.System {
 	case "slack":
 	case "ms_teams":
-	case "discord":
 		return nil, fmt.Errorf("%s not yet implemented", creds.System)
+	case "discord":
+		cs = NewDiscord(c.Config, c.Logger)
 	default:
 		return nil, fmt.Errorf("comms system %s is unknown", creds.System)
 	}

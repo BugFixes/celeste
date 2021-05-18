@@ -27,6 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        uses: rideott/merge-me-action@v2
+        uses: ridedott/merge-me-action@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

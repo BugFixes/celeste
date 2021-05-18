@@ -16,6 +16,7 @@ type CommsPackage struct {
 	AgentID string
 	Message string
 	Link    string
+	TicketSystem string
 }
 
 //go:generate mockery --name=CommsSystem

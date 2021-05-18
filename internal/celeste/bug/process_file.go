@@ -123,21 +123,6 @@ func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.GenerateComms(bug); err != nil {
-		p.Logger.Errorf("file generateComms: %+v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := json.NewEncoder(w).Encode(struct {
-			Error     string
-			FullError string
-		}{
-			Error:     "Ticket failed",
-			FullError: fmt.Sprintf("%+v", err),
-		}); err != nil {
-			p.Logger.Errorf("bug file ticket failed json: %+v", err)
-		}
-		return
-	}
-
 	if err := p.GenerateTicket(bug); err != nil {
 		p.Logger.Errorf("bug file ticket failed: %+v, %+v", err, r)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -152,6 +137,21 @@ func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+  if err := p.GenerateComms(bug); err != nil {
+    p.Logger.Errorf("file generateComms: %+v", err)
+    w.WriteHeader(http.StatusInternalServerError)
+    if err := json.NewEncoder(w).Encode(struct {
+      Error     string
+      FullError string
+    }{
+      Error:     "Ticket failed",
+      FullError: fmt.Sprintf("%+v", err),
+    }); err != nil {
+      p.Logger.Errorf("bug file ticket failed json: %+v", err)
+    }
+    return
+  }
 
 	w.WriteHeader(http.StatusCreated)
 }

@@ -1,19 +1,22 @@
 package comms
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"os"
+  "context"
+  "errors"
+  "fmt"
+  "os"
 
-	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bwmarrin/discordgo"
-	"github.com/mitchellh/mapstructure"
-	"go.uber.org/zap"
+  "github.com/bugfixes/celeste/internal/config"
+  "github.com/diamondburned/arikawa/v2/api"
+  "github.com/diamondburned/arikawa/v2/discord"
+  "github.com/diamondburned/arikawa/v2/gateway"
+  "github.com/mitchellh/mapstructure"
+  "go.uber.org/zap"
 )
 
 type Discord struct {
-	Client      *discordgo.Session
+	BotAuth     string
+
 	Context     context.Context
 	Credentials DiscordCredentials
 	Config      config.Config
@@ -40,13 +43,7 @@ func (d *Discord) Connect() error {
 		return fmt.Errorf("discord connect: %w", errors.New("no bot token"))
 	}
 
-	discord, err := discordgo.New(fmt.Sprintf("Bot %s", authToken))
-	if err != nil {
-		d.Logger.Errorf("discord connect: %+v", err)
-		return fmt.Errorf("discord connect: %w", err)
-	}
-
-	d.Client = discord
+	d.BotAuth = authToken
 
 	return nil
 }
@@ -77,13 +74,36 @@ func (d *Discord) ParseCredentials(creds interface{}) error {
 }
 
 func (d *Discord) Send(commsPackage CommsPackage) error {
-	m, err := d.Client.ChannelMessageSend(d.Credentials.Channel, "Tester")
-	if err != nil {
-		d.Logger.Errorf("discord send channelMessageSend: %+v", err)
-		return fmt.Errorf("discord send channelMessageSend: %w", err)
-	}
+  title := fmt.Sprintf("A new ticket has been added to %s by BugFix.es", commsPackage.TicketSystem)
+  embed := discord.Embed{
+    Title: "Ticket Link",
+    URL: commsPackage.Link,
+  }
 
-	fmt.Printf("%+v", m)
+  g, err := gateway.NewGateway(d.BotAuth)
+  if err != nil {
+    d.Logger.Errorf("discord send newGateway: %*v", err)
+    return fmt.Errorf("discord send newGateway: %w", err)
+  }
+  g.AddIntents(gateway.IntentGuildMessages)
+  if err := g.OpenContext(d.Context); err != nil {
+    d.Logger.Errorf("discord send openContext: %+v", err)
+    return fmt.Errorf("discord send openContext: %w", err)
+  }
+
+  c := api.NewClient(fmt.Sprintf("Bot %s", d.BotAuth)).WithContext(d.Context)
+  snow, err := discord.ParseSnowflake(d.Credentials.Channel)
+  if err != nil {
+    d.Logger.Errorf("discord send parseSnowFlake: %+v", err)
+    return fmt.Errorf("discord send parseSnowFlake: %w", err)
+  }
+  m, err := c.SendMessage(discord.ChannelID(snow), title, &embed)
+  if err != nil {
+    d.Logger.Errorf("discord send sendMessage: %+v", err)
+    return fmt.Errorf("discord send sendMessage: %w", err)
+  }
+
+  fmt.Printf("%+v", m)
 
 	return nil
 }

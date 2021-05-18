@@ -13,9 +13,9 @@ type Credentials struct {
 }
 
 type CommsPackage struct {
-	AgentID string
-	Message string
-	Link    string
+	AgentID      string
+	Message      string
+	Link         string
 	TicketSystem string
 }
 

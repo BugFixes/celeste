@@ -1,11 +1,17 @@
 name: Deploybot
 on:
+  push:
+    branches:
+      - '!main'
+      - '*'
   check_suite:
     types:
       - completed
   pull_request:
     types:
       - opened
+      - edited
+      - reopened
 
 jobs:
   lint:

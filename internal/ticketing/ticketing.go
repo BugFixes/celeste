@@ -36,12 +36,12 @@ type TicketingSystem interface {
 	ParseCredentials(interface{}) error
 	FetchRemoteTicket(interface{}) (Ticket, error)
 
-	Create(Ticket) error
-	Update(Ticket) error
-	Fetch(Ticket) (Ticket, error)
+	Create(*Ticket) error
+	Update(*Ticket) error
+	Fetch(*Ticket) error
 
-	GenerateTemplate(Ticket) (TicketTemplate, error)
-	TicketExists(Ticket) (bool, database.TicketDetails, error)
+	GenerateTemplate(*Ticket) (TicketTemplate, error)
+	TicketExists(*Ticket) (bool, database.TicketDetails, error)
 }
 
 type Ticketing struct {
@@ -70,6 +70,8 @@ type Ticket struct {
 	RemoteDetails interface{} `json:"remote_details"`
 	Hash          Hash        `json:"hash"`
 	State         string      `json:"state"`
+	RemoteLink    string      `json:"remote_link"`
+	RemoteSystem  string      `json:"remote_system"`
 }
 
 func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
@@ -108,7 +110,9 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 	return ts, nil
 }
 
-func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket Ticket) error {
+func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket *Ticket) error {
+	ticket.RemoteSystem = creds.System
+
 	if err := system.ParseCredentials(creds); err != nil {
 		t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
 		return fmt.Errorf("ticketCreate parseCredentials: %w", err)
@@ -124,7 +128,7 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 	return nil
 }
 
-func (t Ticketing) CreateTicket(ticket Ticket) error {
+func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
 		t.Logger.Errorf("createTicket fetchSystem: %+v", err)

@@ -63,7 +63,7 @@ func (p ProcessFile) GenerateBugInfo(bug *Bug, agentID string) error {
 }
 
 func (p ProcessFile) GenerateTicket(bug *Bug) error {
-	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(ticketing.Ticket{
+	ticket := ticketing.Ticket{
 		Level:         bug.Level,
 		LevelNumber:   fmt.Sprint(bug.LevelNumber),
 		Bug:           bug.Bug,
@@ -72,17 +72,23 @@ func (p ProcessFile) GenerateTicket(bug *Bug) error {
 		Line:          bug.Line,
 		File:          bug.File,
 		TimesReported: bug.TimesReported,
-	}); err != nil {
+	}
+
+	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(&ticket); err != nil {
 		return fmt.Errorf("generate ticket failed: %w", err)
 	}
+	bug.RemoteLink = ticket.RemoteLink
+	bug.TicketSystem = ticket.RemoteSystem
 
 	return nil
 }
 
 func (p ProcessFile) GenerateComms(bug *Bug) error {
 	if err := comms.NewComms(p.Config, p.Logger).SendComms(comms.CommsPackage{
-		AgentID: bug.Agent.ID,
-		Message: "tester message",
+		AgentID:      bug.Agent.ID,
+		Message:      "tester message",
+		Link:         bug.RemoteLink,
+		TicketSystem: bug.TicketSystem,
 	}); err != nil {
 		return fmt.Errorf("file generateComms: %w", err)
 	}

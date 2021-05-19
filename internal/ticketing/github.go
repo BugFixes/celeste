@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -49,11 +50,17 @@ func NewGithub(c config.Config, logger zap.SugaredLogger) *Github {
 func (g *Github) Connect() error {
 	installationID, err := strconv.Atoi(g.Credentials.InstallationID)
 	if err != nil {
-		g.Logger.Errorf("github connect strconv: %+v", err)
-		return fmt.Errorf("github connect strconv: %w", err)
+		g.Logger.Errorf("github connect installid conv: %+v", err)
+		return fmt.Errorf("github connect installid conv: %w", err)
 	}
 
-	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, 114758, int64(installationID), "configs/app.pem")
+	appID, err := strconv.Atoi(os.Getenv("GITHUB_APP_ID"))
+	if err != nil {
+		g.Logger.Errorf("github connect appid conv: %+v", err)
+		return fmt.Errorf("github connect appid conv: %w", err)
+	}
+
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, int64(appID), int64(installationID), "configs/app.pem")
 	if err != nil {
 		g.Logger.Errorf("github connect keyFile: %v", err)
 		return fmt.Errorf("github connect keyFile: %w", err)
@@ -97,7 +104,7 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 	return nil
 }
 
-func (g *Github) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
+func (g *Github) GenerateTemplate(ticket *Ticket) (TicketTemplate, error) {
 	projectFile := ticket.File
 	if strings.Index(projectFile, g.Credentials.Repo) != 0 {
 		projectIndex := strings.Index(ticket.File, g.Credentials.Repo)
@@ -115,7 +122,7 @@ func (g *Github) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 		projectFile,
 		projectFile,
 		ticket.Line,
-		time.Now().Format("YYYY-MM-DD HH:mm:ss"))
+		time.Now().Format("2006-01-02 15:04:05"))
 
 	labels := []string{
 		ticket.Level,
@@ -134,7 +141,7 @@ func (g *Github) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
 	}, nil
 }
 
-func (g *Github) Create(ticket Ticket) error {
+func (g *Github) Create(ticket *Ticket) error {
 	template, _ := g.GenerateTemplate(ticket)
 
 	ticketExists, td, err := g.TicketExists(ticket)
@@ -159,6 +166,8 @@ func (g *Github) Create(ticket Ticket) error {
 		return fmt.Errorf("github create githubCreate: %w", err)
 	}
 	td.RemoteID = fmt.Sprintf("%d", is.GetNumber())
+	ticket.RemoteID = td.RemoteID
+	ticket.RemoteLink = is.GetHTMLURL()
 
 	if err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).StoreTicketDetails(td); err != nil {
 		g.Logger.Errorf("github create store: %v", err)
@@ -186,7 +195,7 @@ func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 	}, nil
 }
 
-func (g *Github) Fetch(ticket Ticket) (Ticket, error) {
+func (g *Github) Fetch(ticket *Ticket) error {
 	td, err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).FindTicket(database.TicketDetails{
 		AgentID: g.Credentials.AgentID,
 		System:  "github",
@@ -194,24 +203,24 @@ func (g *Github) Fetch(ticket Ticket) (Ticket, error) {
 	})
 	if err != nil {
 		g.Logger.Errorf("github fetch find: %+v", err)
-		return Ticket{}, fmt.Errorf("github fetch find: %w", err)
+		return fmt.Errorf("github fetch find: %w", err)
 	}
 
-	return Ticket{
-		Hash:     Hash(td.Hash),
-		RemoteID: td.RemoteID,
-		AgentID:  td.AgentID,
-	}, nil
+	ticket.Hash = Hash(td.Hash)
+	ticket.RemoteID = td.RemoteID
+	ticket.AgentID = td.AgentID
+
+	return nil
 }
 
-func (g *Github) Update(ticket Ticket) error {
-	t, err := g.Fetch(ticket)
+func (g *Github) Update(ticket *Ticket) error {
+	err := g.Fetch(ticket)
 	if err != nil {
 		g.Logger.Errorf("github update fetch: %+v", err)
 		return fmt.Errorf("github update fetch: %w", err)
 	}
 
-	rt, err := g.FetchRemoteTicket(t.RemoteID)
+	rt, err := g.FetchRemoteTicket(ticket.RemoteID)
 	if err != nil {
 		g.Logger.Errorf("github update fetchRemote: %+v", err)
 		return fmt.Errorf("github update fetchRemote: %w", err)
@@ -230,33 +239,35 @@ func (g *Github) Update(ticket Ticket) error {
 	if *is.State == "closed" {
 		state = "open"
 	}
-	if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
+	es, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
 		State: &state,
 		Body:  &body,
 		// Labels: &[]string{
 		//   t.Level,
 		//   multiReport,
 		// },
-	}); err != nil {
+	})
+	if err != nil {
 		g.Logger.Errorf("github update reopen: %+v", err)
 		return fmt.Errorf("github update reopen: %w", err)
 	}
+	ticket.RemoteLink = es.GetHTMLURL()
 
-	if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
-		// Labels: &[]string{
-		//   t.Level,
-		//   multiReport,
-		// },
-		Body: &body,
-	}); err != nil {
-		g.Logger.Errorf("github update labels: %+v", err)
-		return fmt.Errorf("github update labels: %w", err)
-	}
+	// if _, _, err := g.Client.Issues.Edit(g.Context, g.Credentials.Owner, g.Credentials.Repo, is.GetNumber(), &github.IssueRequest{
+	// 	// Labels: &[]string{
+	// 	//   t.Level,
+	// 	//   multiReport,
+	// 	// },
+	// 	Body: &body,
+	// }); err != nil {
+	// 	g.Logger.Errorf("github update labels: %+v", err)
+	// 	return fmt.Errorf("github update labels: %w", err)
+	// }
 
 	return nil
 }
 
-func (g *Github) TicketExists(ticket Ticket) (bool, database.TicketDetails, error) {
+func (g *Github) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
 	td := database.TicketDetails{
 		AgentID: g.Credentials.AgentID,
 		System:  "github",

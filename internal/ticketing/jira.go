@@ -341,18 +341,18 @@ func (j Jira) generateCreateTemplate(ticket Ticket) TicketTemplate {
 	}
 }
 
-func (j *Jira) GenerateTemplate(ticket Ticket) (TicketTemplate, error) {
+func (j *Jira) GenerateTemplate(ticket *Ticket) (TicketTemplate, error) {
 	if ticket.RemoteID != "" {
 		if ticket.State != "To Do" {
-			return j.generateCreateTemplate(ticket), nil
+			return j.generateCreateTemplate(*ticket), nil
 		}
-		return j.generateUpdateTemplate(ticket), nil
+		return j.generateUpdateTemplate(*ticket), nil
 	}
 
-	return j.generateCreateTemplate(ticket), nil
+	return j.generateCreateTemplate(*ticket), nil
 }
 
-func (j *Jira) Create(ticket Ticket) error {
+func (j *Jira) Create(ticket *Ticket) error {
 	exists, td, err := j.TicketExists(ticket)
 	if err != nil {
 		j.Logger.Errorf("jira create ticketExists: %+v", err)
@@ -365,7 +365,7 @@ func (j *Jira) Create(ticket Ticket) error {
 	return j.createNew(ticket, td)
 }
 
-func (j *Jira) createNew(ticket Ticket, td database.TicketDetails) error {
+func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	template, _ := j.GenerateTemplate(ticket)
 
 	client := &http.Client{}
@@ -389,7 +389,12 @@ func (j *Jira) createNew(ticket Ticket, td database.TicketDetails) error {
 		j.Logger.Errorf("jira create do: %+v", err)
 		return fmt.Errorf("jira create do: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			j.Logger.Errorf("jira createNew close response: %+v", err)
+		}
+	}()
+
 	readResponseBody, _ := ioutil.ReadAll(resp.Body)
 
 	ic := jira.Issue{}
@@ -399,6 +404,7 @@ func (j *Jira) createNew(ticket Ticket, td database.TicketDetails) error {
 	}
 
 	td.RemoteID = ic.ID
+	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, ic.Key)
 	if err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).StoreTicketDetails(td); err != nil {
 		j.Logger.Errorf("jira create store: %+v", err)
 		return fmt.Errorf("jira create store: %w", err)
@@ -407,7 +413,7 @@ func (j *Jira) createNew(ticket Ticket, td database.TicketDetails) error {
 	return nil
 }
 
-func (j Jira) TicketExists(ticket Ticket) (bool, database.TicketDetails, error) {
+func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
 	td := database.TicketDetails{
 		AgentID: j.Credentials.AgentID,
 		System:  "jira",
@@ -422,14 +428,15 @@ func (j Jira) TicketExists(ticket Ticket) (bool, database.TicketDetails, error) 
 	return ticketExists, td, nil
 }
 
-func (j Jira) Update(ticket Ticket) error {
-	t, err := j.Fetch(ticket)
+// nolint: gocyclo
+func (j Jira) Update(ticket *Ticket) error {
+	err := j.Fetch(ticket)
 	if err != nil {
 		j.Logger.Errorf("jira update fetch: %+v", err)
 		return fmt.Errorf("jira update fetch: %w", err)
 	}
 
-	rt, err := j.FetchRemoteTicket(t.RemoteID)
+	rt, err := j.FetchRemoteTicket(ticket.RemoteID)
 	if err != nil {
 		if strings.Contains(err.Error(), "Issue does not exist") {
 			td := database.TicketDetails{
@@ -451,6 +458,7 @@ func (j Jira) Update(ticket Ticket) error {
 	}
 
 	ticket.State = rtd.Fields.Status.Name
+	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, rtd.Key)
 	switch ticket.State {
 	case "Done":
 		td := database.TicketDetails{
@@ -484,7 +492,11 @@ func (j Jira) Update(ticket Ticket) error {
 		j.Logger.Errorf("jira update do: %+v", err)
 		return fmt.Errorf("jira update do: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			j.Logger.Errorf("jira update close: %+v", err)
+		}
+	}()
 
 	return nil
 }
@@ -501,7 +513,7 @@ func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 	}, nil
 }
 
-func (j Jira) Fetch(ticket Ticket) (Ticket, error) {
+func (j Jira) Fetch(ticket *Ticket) error {
 	td, err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).FindTicket(database.TicketDetails{
 		AgentID: j.Credentials.AgentID,
 		System:  "jira",
@@ -509,12 +521,11 @@ func (j Jira) Fetch(ticket Ticket) (Ticket, error) {
 	})
 	if err != nil {
 		j.Logger.Errorf("jira fetch find: %+v", err)
-		return Ticket{}, fmt.Errorf("jira fetch find: %w", err)
+		return fmt.Errorf("jira fetch find: %w", err)
 	}
+	ticket.Hash = Hash(td.Hash)
+	ticket.RemoteID = td.RemoteID
+	ticket.AgentID = td.AgentID
 
-	return Ticket{
-		Hash:     Hash(td.Hash),
-		RemoteID: td.RemoteID,
-		AgentID:  td.AgentID,
-	}, nil
+	return nil
 }

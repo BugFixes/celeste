@@ -4,8 +4,8 @@ github.com/andygrunwald/go-jira v1.13.0 h1:vvIImGgX32bHfoiyUwkNo+/YrPnRczNarvhLO
 github.com/andygrunwald/go-jira v1.13.0/go.mod h1:jYi4kFDbRPZTJdJOVJO4mpMMIwdB+rcZwSO58DzPd2I=
 github.com/aws/aws-lambda-go v1.23.0 h1:Vjwow5COkFJp7GePkk9kjAo/DyX36b7wVPKwseQZbRo=
 github.com/aws/aws-lambda-go v1.23.0/go.mod h1:jJmlefzPfGnckuHdXX7/80O3BvUUi12XOkbv4w9SGLU=
-github.com/aws/aws-sdk-go v1.38.41 h1:2Q3XaEPmP2cxUB9D9w8kytQh2CSpbJtMKzMN42HMwEk=
-github.com/aws/aws-sdk-go v1.38.41/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
+github.com/aws/aws-sdk-go v1.38.42 h1:94blpbGDe2q5e0Xoop7131uzI2CH2qitQoptSMrkJP8=
+github.com/aws/aws-sdk-go v1.38.42/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/bradleyfalzon/ghinstallation v1.1.1 h1:pmBXkxgM1WeF8QYvDLT5kuQiHMcmf+X015GI0KM/E3I=
 github.com/bradleyfalzon/ghinstallation v1.1.1/go.mod h1:vyCmHTciHx/uuyN82Zc3rXN3X2KTK8nUTCrTMwAhcug=
 github.com/bugfixes/go-bugfixes v0.1.4 h1:RUz7eXk0q4b6dL1w39+FSjyjr7Rqaury0A91qijzSkI=

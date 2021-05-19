@@ -122,6 +122,16 @@ injectData: # Inject Agent
 		--region us-east-1 \
 		--table-name accounts \
 		--item '{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}' 1> /dev/null
+	aws dynamodb put-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name comms \
+		--item '{"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
+	aws dynamodb put-item \
+  		--endpoint http://localhost.localstack.cloud:4566 \
+  		--region us-east-1 \
+  		--table-name comms \
+  		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

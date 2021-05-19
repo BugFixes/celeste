@@ -36,12 +36,12 @@ type TicketingSystem interface {
 	ParseCredentials(interface{}) error
 	FetchRemoteTicket(interface{}) (Ticket, error)
 
-	Create(Ticket) error
-	Update(Ticket) error
-	Fetch(Ticket) (Ticket, error)
+	Create(*Ticket) error
+	Update(*Ticket) error
+	Fetch(*Ticket) error
 
-	GenerateTemplate(Ticket) (TicketTemplate, error)
-	TicketExists(Ticket) (bool, database.TicketDetails, error)
+	GenerateTemplate(*Ticket) (TicketTemplate, error)
+	TicketExists(*Ticket) (bool, database.TicketDetails, error)
 }
 
 type Ticketing struct {
@@ -70,6 +70,8 @@ type Ticket struct {
 	RemoteDetails interface{} `json:"remote_details"`
 	Hash          Hash        `json:"hash"`
 	State         string      `json:"state"`
+	RemoteLink    string      `json:"remote_link"`
+	RemoteSystem  string      `json:"remote_system"`
 }
 
 func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
@@ -84,6 +86,7 @@ func (t Ticketing) fetchTicketingCredentials(agentID string) (database.Ticketing
 	return system, nil
 }
 
+// nolint: gocyclo
 func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (TicketingSystem, error) {
 	var ts TicketingSystem
 
@@ -92,38 +95,54 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 		ts = NewGithub(t.Config, t.Logger)
 	case "jira":
 		ts = NewJira(t.Config, t.Logger)
+	case "trac":
+	case "youtrack":
+	case "proofhub":
+	case "backlog":
+	case "orapm":
+	case "bugzilla":
+	case "asana":
+		return nil, fmt.Errorf("%s not yet implemented", creds.System)
 	default:
-		return nil, fmt.Errorf("failed to find system")
+		return nil, fmt.Errorf("ticket system %s is unknown", creds.System)
 	}
 
 	return ts, nil
 }
 
-func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket Ticket) error {
+func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket *Ticket) error {
+	ticket.RemoteSystem = creds.System
+
 	if err := system.ParseCredentials(creds); err != nil {
-		return fmt.Errorf("ticket create parse credentials: %w", err)
+		t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
+		return fmt.Errorf("ticketCreate parseCredentials: %w", err)
 	}
 	if err := system.Connect(); err != nil {
-		return fmt.Errorf("ticket create connect: %w", err)
+		t.Logger.Errorf("ticketCreate connect: %+v", err)
+		return fmt.Errorf("ticketCreate connect: %w", err)
 	}
 	if err := system.Create(ticket); err != nil {
-		return fmt.Errorf("ticket create create: %w", err)
+		t.Logger.Errorf("ticketCreate create: %+v", err)
+		return fmt.Errorf("ticketCreate create: %w", err)
 	}
 	return nil
 }
 
-func (t Ticketing) CreateTicket(ticket Ticket) error {
+func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
+		t.Logger.Errorf("createTicket fetchSystem: %+v", err)
 		return fmt.Errorf("createTicket fetchSystem failed: %w", err)
 	}
 
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
+		t.Logger.Errorf("createTicket fetchTicketSystem: %+v", err)
 		return fmt.Errorf("createTicket fetchTicketSystem: %w", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
+		t.Logger.Errorf("createTicket ticketCreate: %+v", err)
 		return fmt.Errorf("createTicket ticketCreate: %w", err)
 	}
 

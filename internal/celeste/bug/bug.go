@@ -32,6 +32,9 @@ type Bug struct {
 	Identifier    string `json:"identifier"`
 	TimesReported int    `json:"times_reported"`
 
+	RemoteLink   string `json:"-"`
+	TicketSystem string `json:"-"`
+
 	Posted time.Time
 }
 

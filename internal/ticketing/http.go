@@ -37,7 +37,7 @@ func (t Ticketing) CreateTicketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := t.CreateTicket(ticket); err != nil {
+	if err := t.CreateTicket(&ticket); err != nil {
 		t.Logger.Errorf("ticket create failed: %v, %+v", err, r)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(struct {

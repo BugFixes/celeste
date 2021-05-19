@@ -45,7 +45,6 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	return c.parseLambdaRequest()
 }
 
-//gocyclo:ignore
 // nolint: gocyclo
 func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 	switch c.Request.Path {

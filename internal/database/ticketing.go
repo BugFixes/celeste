@@ -62,8 +62,8 @@ func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) err
 func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials, error) {
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
-		t.Database.Logger.Errorf("fetch credentials dynamo session: %v", err)
-		return TicketingCredentials{}, fmt.Errorf("fetch credentials dynamo session: %w", err)
+		t.Database.Logger.Errorf("ticketing fetchCredentials session: %v", err)
+		return TicketingCredentials{}, fmt.Errorf("ticketing fetchCredentialssession: %w", err)
 	}
 
 	filt := expression.Name("agent_id").Equal(expression.Value(agentID))

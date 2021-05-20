@@ -58,6 +58,7 @@ func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, e
 	var cs CommsSystem
 	switch creds.System {
 	case "slack":
+		cs = NewSlack(c.Config, c.Logger)
 	case "ms_teams":
 		return nil, fmt.Errorf("%s not yet implemented", creds.System)
 	case "discord":

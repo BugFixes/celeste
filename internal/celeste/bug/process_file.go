@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/comms"
+	"github.com/bugfixes/celeste/internal/logic"
 	"github.com/bugfixes/celeste/internal/ticketing"
 	"go.uber.org/zap"
 
@@ -44,20 +44,19 @@ func (p ProcessFile) Fetch() (Response, error) {
 func (p ProcessFile) GenerateBugInfo(bug *Bug, agentID string) error {
 	bug.Agent.ID = agentID
 	if err := bug.GenerateHash(&p.Logger); err != nil {
-		p.Logger.Errorf("generate bug info failed hash: %+v", err)
-		return fmt.Errorf("generate bug info failed hash: %w", err)
+		p.Logger.Errorf("generateBugInfo generateHash: %+v", err)
+		return fmt.Errorf("generateBugInfo generateHash: %w", err)
 	}
 	if err := bug.GenerateIdentifier(&p.Logger); err != nil {
-		p.Logger.Errorf("generate bug info failed identifier: %+v", err)
-		return fmt.Errorf("generate bug info failed identifier: %w", err)
+		p.Logger.Errorf("generateBugInfo generateIdentifier: %+v", err)
+		return fmt.Errorf("generateBugInfo generateIdentifier: %w", err)
 	}
 	if err := bug.ReportedTimes(p.Config, &p.Logger); err != nil {
-		p.Logger.Errorf("generate bug info failed reportedTimes: %+v", err)
-		return fmt.Errorf("generate bug info failed reportedTimes: %w", err)
+		p.Logger.Errorf("generateBugInfo reportedTimes: %+v", err)
+		return fmt.Errorf("generateBugInfo reportedTimes: %w", err)
 	}
 
 	bug.LevelNumber = ConvertLevelFromString(bug.Level, &p.Logger)
-	bug.Posted = time.Now()
 
 	return nil
 }
@@ -75,7 +74,8 @@ func (p ProcessFile) GenerateTicket(bug *Bug) error {
 	}
 
 	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(&ticket); err != nil {
-		return fmt.Errorf("generate ticket failed: %w", err)
+		p.Logger.Errorf("generateTicket createTicket: %+v", err)
+		return fmt.Errorf("generateTicket createTicket: %w", err)
 	}
 	bug.RemoteLink = ticket.RemoteLink
 	bug.TicketSystem = ticket.RemoteSystem
@@ -98,6 +98,7 @@ func (p ProcessFile) GenerateComms(bug *Bug) error {
 
 func (p ProcessFile) errorReport(w http.ResponseWriter, textError string, wrappedError error) {
 	p.Logger.Errorf("processFile errorReport: %+v", wrappedError)
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 	if err := json.NewEncoder(w).Encode(struct {
 		Error     string
@@ -129,9 +130,16 @@ func (p ProcessFile) FileBugHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.GenerateComms(&bug); err != nil {
-		p.errorReport(w, "failed to generate comms", err)
-		return
+	l := logic.NewLogic(p.Config, &p.Logger)
+	if l.ShouldWeReport(logic.LogicBug{
+		LastReported:  bug.LastReported,
+		FirstReported: bug.FirstReported,
+		TimesReported: bug.TimesReported,
+	}) {
+		if err := p.GenerateComms(&bug); err != nil {
+			p.errorReport(w, "failed to generate comms", err)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)

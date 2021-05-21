@@ -14,6 +14,7 @@ type Logic struct {
 
 type LogicBug struct {
 	LastReported  time.Time
+	FirstReported time.Time
 	TimesReported int
 }
 
@@ -28,40 +29,48 @@ func reportedMoreThanNTimes(times, n int) bool {
 	return times > n
 }
 
-func lastReportedLessThanDay(when time.Time) bool {
-	return 24*time.Hour > time.Since(when)
+func sinceLessThanDay(when time.Time) bool {
+	return time.Since(when) > 24*time.Hour
 }
 
-func lastReportedLessThanWeek(when time.Time) bool {
-	return 7*24*time.Hour > time.Since(when)
+func sinceLessThanWeek(when time.Time) bool {
+	return time.Since(when) > 7*24*time.Hour
 }
 
-func lastReportedLessThanMonth(when time.Time) bool {
+func sinceLessThanMonth(when time.Time) bool {
+	return time.Since(when) > time.Since(time.Now().AddDate(0, -1, 0))
+}
+
+func sinceLessThanHour(when time.Time) bool {
+	return time.Since(when) > 1*time.Hour
+}
+
+func sinceMoreThanMonth(when time.Time) bool {
 	return time.Since(time.Now().AddDate(0, -1, 0)) > time.Since(when)
 }
 
-func lastReportedVeryRecent(when time.Time) bool {
-	return 1*time.Hour > time.Since(when)
-}
-
 func (l *Logic) ShouldWeReport(lb LogicBug) bool {
-	if reportedMoreThanNTimes(10, lb.TimesReported) {
+	if reportedMoreThanNTimes(lb.TimesReported, 10) {
 		return true
 	}
 
-	if lastReportedVeryRecent(lb.LastReported) {
+	if sinceLessThanHour(lb.LastReported) {
 		return true
 	}
 
-	if lastReportedLessThanDay(lb.LastReported) && reportedMoreThanNTimes(5, lb.TimesReported) {
+	if sinceLessThanDay(lb.LastReported) && reportedMoreThanNTimes(lb.TimesReported, 5) {
 		return true
 	}
 
-	if lastReportedLessThanWeek(lb.LastReported) && reportedMoreThanNTimes(5, lb.TimesReported) {
+	if sinceLessThanWeek(lb.LastReported) && reportedMoreThanNTimes(lb.TimesReported, 5) {
 		return true
 	}
 
-	if lastReportedLessThanMonth(lb.LastReported) && reportedMoreThanNTimes(5, lb.TimesReported) {
+	if sinceLessThanMonth(lb.LastReported) && reportedMoreThanNTimes(5, lb.TimesReported) {
+		return true
+	}
+
+	if sinceMoreThanMonth(lb.FirstReported) {
 		return true
 	}
 

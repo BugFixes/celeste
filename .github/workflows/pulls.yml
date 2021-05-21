@@ -1,4 +1,4 @@
-name: Deploybot
+name: Pull Requests
 on:
   push:
     branches:

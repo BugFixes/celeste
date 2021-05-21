@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -22,7 +23,13 @@ type BugRecord struct {
 	Full                interface{} `json:"full"`
 	TimesReported       string      `json:"times_reported"`
 	TimesReportedNumber int         `json:"times_reported_number" dynamodbav:"-"`
+	LastReportedTime    time.Time   `json:"last_reported_time" dynamodbav:"-"`
+	LastReported        string      `json:"last_reported"`
+	FirstReportedTime   time.Time   `json:"first_reported_time" dynamodbav:"-"`
+	FirstReported       string      `json:"first_reported"`
 }
+
+const dateFormat = "2006-04-02 15:04:05"
 
 func NewBugStorage(d Database) *BugStorage {
 	return &BugStorage{
@@ -64,6 +71,10 @@ func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 	if len(bugRecords) == 0 {
 		data.TimesReportedNumber = 1
 		data.TimesReported = "1"
+		data.LastReportedTime = time.Now()
+		data.LastReported = time.Now().Format(dateFormat)
+		data.FirstReportedTime = time.Now()
+		data.FirstReported = time.Now().Format(dateFormat)
 		return data, b.Store(data)
 	}
 
@@ -75,8 +86,8 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 
 	svc, err := b.Database.dynamoSession()
 	if err != nil {
-		b.Database.Logger.Errorf("bug findAndStore dynamo session failed: %+v", err)
-		return brs, fmt.Errorf("bug findAndStore dynamo session failed: %w", err)
+		b.Database.Logger.Errorf("bug findAndStore session: %+v", err)
+		return brs, fmt.Errorf("bug findAndStore session: %w", err)
 	}
 
 	filt := expression.And(
@@ -88,11 +99,13 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 		expression.Name("level"),
 		expression.Name("hash"),
 		expression.Name("full"),
-		expression.Name("times_reported"))
+		expression.Name("times_reported"),
+		expression.Name("last_reported"),
+		expression.Name("first_reported"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		b.Database.Logger.Errorf("bug findAndStore expression builder failed: %+v", err)
-		return brs, fmt.Errorf("bug findAndStore expression builder failed: %w", err)
+		b.Database.Logger.Errorf("bug findAndStore build: %+v", err)
+		return brs, fmt.Errorf("bug findAndStore build: %w", err)
 	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -103,8 +116,8 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 		ProjectionExpression:      expr.Projection(),
 	})
 	if err != nil {
-		b.Database.Logger.Errorf("bug findAndStore scan failed: %+v", err)
-		return brs, fmt.Errorf("bug findAndStore scan failed: %w", err)
+		b.Database.Logger.Errorf("bug findAndStore scan: %+v", err)
+		return brs, fmt.Errorf("bug findAndStore scan: %w", err)
 	}
 
 	if len(result.Items) == 0 {
@@ -114,15 +127,29 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 	for _, i := range result.Items {
 		bri := BugRecord{}
 		if err := dynamodbattribute.UnmarshalMap(i, &bri); err != nil {
-			b.Database.Logger.Errorf("bug findAndStore unmarshall failed: %+v", err)
-			return brs, fmt.Errorf("bug findAndStore unmarshall failed: %w", err)
+			b.Database.Logger.Errorf("bug findAndStore unmarshall: %+v", err)
+			return brs, fmt.Errorf("bug findAndStore unmarshall: %w", err)
 		}
 
 		trn, err := strconv.Atoi(bri.TimesReported)
 		if err != nil {
-			b.Database.Logger.Errorf("bug findAndStore convert number: %+v", err)
-			return brs, fmt.Errorf("bug findAndStore convert number: %w", err)
+			b.Database.Logger.Errorf("bug findAndStore atoi: %+v", err)
+			return brs, fmt.Errorf("bug findAndStore atoi: %w", err)
 		}
+
+		lr, err := time.Parse(dateFormat, bri.LastReported)
+		if err != nil {
+			b.Database.Logger.Errorf("bug findAndStore lastReportedParse: %+v", err)
+			return brs, fmt.Errorf("bug findAndStore lastReportedParse: %w", err)
+		}
+		bri.LastReportedTime = lr
+
+		fr, err := time.Parse(dateFormat, bri.FirstReported)
+		if err != nil {
+			b.Database.Logger.Errorf("bug findAndStore firstReportedParse: %+v", err)
+			return brs, fmt.Errorf("bug findAndStore firstReportedParse: %w", err)
+		}
+		bri.FirstReportedTime = fr
 
 		bri.TimesReportedNumber = trn + 1
 		brs = append(brs, bri)
@@ -137,6 +164,9 @@ func (b BugStorage) Store(data BugRecord) error {
 		b.Database.Logger.Errorf("bug store dynamosession failed: %+v", err)
 		return fmt.Errorf("bug store dynamosession failed: %w", err)
 	}
+
+	data.FirstReported = time.Now().Format(dateFormat)
+	data.LastReported = time.Now().Format(dateFormat)
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
@@ -161,6 +191,8 @@ func (b BugStorage) Update(data BugRecord) error {
 		b.Database.Logger.Errorf("bug update dynamosession failed: %+v", err)
 		return fmt.Errorf("bug update dynamosession failed: %w", err)
 	}
+
+	data.LastReported = time.Now().Format(dateFormat)
 
 	if _, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{

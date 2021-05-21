@@ -25,6 +25,14 @@ func NewLogic(c config.Config, l *zap.SugaredLogger) *Logic {
 	}
 }
 
+func firstReport(when time.Time) bool {
+  if when == time.Now() {
+    return true
+  }
+
+  return false
+}
+
 func reportedMoreThanNTimes(times, n int) bool {
 	return times > n
 }
@@ -42,7 +50,7 @@ func sinceLessThanMonth(when time.Time) bool {
 }
 
 func sinceLessThanHour(when time.Time) bool {
-	return time.Since(when) > 1*time.Hour
+	return 1*time.Hour > time.Since(when)
 }
 
 func sinceMoreThanMonth(when time.Time) bool {
@@ -53,6 +61,10 @@ func (l *Logic) ShouldWeReport(lb LogicBug) bool {
 	if reportedMoreThanNTimes(lb.TimesReported, 10) {
 		return true
 	}
+
+	if firstReport(lb.FirstReported) {
+	  return true
+  }
 
 	if sinceLessThanHour(lb.LastReported) {
 		return true

@@ -72,10 +72,7 @@ func route(c celeste.Celeste) error {
 
 	// Bug
 	r.Route("/bug", func(r chi.Router) {
-		r.Get("/", bug.NewBug(c.Config, *c.Logger).CreateBugHandler)
-		r.Post("/", bug.NewBug(c.Config, *c.Logger).GetBugHandler)
-
-		r.Post("/file", bug.NewFile(c.Config, *c.Logger).FileBugHandler)
+		r.Post("/", bug.NewBug(c.Config, *c.Logger).BugHandler)
 	})
 
 	// Comms

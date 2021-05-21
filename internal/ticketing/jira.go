@@ -428,6 +428,7 @@ func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error)
 	return ticketExists, td, nil
 }
 
+// Update
 // nolint: gocyclo
 func (j Jira) Update(ticket *Ticket) error {
 	err := j.Fetch(ticket)

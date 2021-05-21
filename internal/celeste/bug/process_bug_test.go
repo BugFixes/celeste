@@ -1,17 +1,15 @@
 package bug_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
-	"github.com/bugfixes/celeste/internal/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
-func TestProcessBug(t *testing.T) {
+func TestProcessFile(t *testing.T) {
 	sugar := zap.NewExample().Sugar()
 	defer func() {
 		_ = sugar.Sync()
@@ -24,25 +22,19 @@ func TestProcessBug(t *testing.T) {
 		err     error
 	}{
 		{
-			name: "no bug",
+			name: "nothing to file",
 			request: events.APIGatewayProxyRequest{
 				Headers: map[string]string{
 					"tester": "bob",
 				},
 			},
 			expect: bug.Response{},
-			err:    errors.New("bug: parse: no body: {Resource: Path: HTTPMethod: Headers:map[tester:bob] MultiValueHeaders:map[] QueryStringParameters:map[] MultiValueQueryStringParameters:map[] PathParameters:map[] StageVariables:map[] RequestContext:{AccountID: ResourceID: OperationName: Stage: DomainName: DomainPrefix: RequestID: Protocol: Identity:{CognitoIdentityPoolID: AccountID: CognitoIdentityID: Caller: APIKey: APIKeyID: AccessKey: SourceIP: CognitoAuthenticationType: CognitoAuthenticationProvider: UserArn: UserAgent: User:} ResourcePath: Authorizer:map[] HTTPMethod: RequestTime: RequestTimeEpoch:0 APIID:} Body: IsBase64Encoded:false}"),
 		},
-	}
-
-	c, err := config.BuildConfig()
-	if err != nil {
-		t.Errorf("config error: %w", err)
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := bug.NewBug(c, *sugar).Parse(test.request)
+			resp, err := bug.ProcessBug{}.Parse(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}

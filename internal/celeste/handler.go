@@ -51,10 +51,11 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 	// <editor-fold desc="Bugs">
 	case "/bug":
 		c.Logger.Infow("bug request received")
+
 		response, err := bug.NewBug(c.Config, *c.Logger).Parse(c.Request)
 		if err != nil {
-			c.Logger.Errorf("bug request: %v, failed: %w", c.Request, err)
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("process bug failed: %w", err)
+			c.Logger.Errorf("file request: %v, failed: %v", c.Request, err)
+			return events.APIGatewayProxyResponse{}, fmt.Errorf("process file failed: %w", err)
 		}
 		c.Logger.Infow("bug request processed")
 		return events.APIGatewayProxyResponse{
@@ -62,21 +63,11 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 			Headers:    response.Headers,
 			Body:       response.Body,
 		}, nil
+		// </editor-fold>
 
-	case "/bug/file":
-		c.Logger.Infow("file request received")
-
-		response, err := bug.NewFile(c.Config, *c.Logger).Parse(c.Request)
-		if err != nil {
-			c.Logger.Errorf("file request: %v, failed: %v", c.Request, err)
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("process file failed: %w", err)
-		}
-		c.Logger.Infow("file request processed")
-		return events.APIGatewayProxyResponse{
-			StatusCode: 200,
-			Headers:    response.Headers,
-			Body:       response.Body,
-		}, nil
+		// <editor-fold desc="Logs">
+	case "/log":
+		c.Logger.Infow("")
 	// </editor-fold>
 
 	// <editor-fold desc="Agent">

@@ -70,6 +70,11 @@ func route(c celeste.Celeste) error {
 
 	})
 
+	// Logs
+	r.Route("/log", func(r chi.Router) {
+		r.Post("/", bug.NewLog(c.Config, *c.Logger).LogHandler)
+	})
+
 	// Bug
 	r.Route("/bug", func(r chi.Router) {
 		r.Post("/", bug.NewBug(c.Config, *c.Logger).BugHandler)

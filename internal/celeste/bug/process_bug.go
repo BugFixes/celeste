@@ -90,43 +90,33 @@ func (p ProcessBug) GenerateComms(bug *Bug) error {
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,
 	}); err != nil {
-		return fmt.Errorf("file generateComms: %w", err)
+		return fmt.Errorf("bug generateComms: %w", err)
 	}
 
 	return nil
 }
 
-func (p ProcessBug) errorReport(w http.ResponseWriter, textError string, wrappedError error) {
-	p.Logger.Errorf("processFile errorReport: %+v", wrappedError)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	if err := json.NewEncoder(w).Encode(struct {
-		Error     string
-		FullError string
-	}{
-		Error:     textError,
-		FullError: fmt.Sprintf("%+v", wrappedError),
-	}); err != nil {
-		p.Logger.Errorf("processFile errorReport json: %+v", err)
-	}
-}
-
 func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 	bug := Bug{}
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			errorReport(w, p.Logger, "bugHandler body close", err)
+			return
+		}
+	}()
 
 	if err := json.NewDecoder(r.Body).Decode(&bug); err != nil {
-		p.errorReport(w, "failed to decode bug", err)
+		errorReport(w, p.Logger, "bugHandler decode", err)
 		return
 	}
 
 	if err := p.GenerateBugInfo(&bug, r.Header.Get("X-API-KEY")); err != nil {
-		p.errorReport(w, "failed to generate info", err)
+		errorReport(w, p.Logger, "bugHandler generateBugInfo", err)
 		return
 	}
 
 	if err := p.GenerateTicket(&bug); err != nil {
-		p.errorReport(w, "failed to generate ticket", err)
+		errorReport(w, p.Logger, "bugHandler generateTicket", err)
 		return
 	}
 
@@ -137,7 +127,7 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 		TimesReported: bug.TimesReported,
 	}) {
 		if err := p.GenerateComms(&bug); err != nil {
-			p.errorReport(w, "failed to generate comms", err)
+			errorReport(w, p.Logger, "logHandler generateComms", err)
 			return
 		}
 	}

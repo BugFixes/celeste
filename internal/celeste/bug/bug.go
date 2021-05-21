@@ -11,13 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type BugInput struct {
-	Message string `json:"message,omitempty"`
-	Level   string `json:"level,omitempty"`
-
-	agent.Agent
-}
-
 type Bug struct {
 	agent.Agent
 
@@ -64,6 +57,7 @@ func GetLevelUnknown() int {
 	return 5
 }
 
+// ConvertLevelFromString
 // nolint: gocyclo
 func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	switch s {

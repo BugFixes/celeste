@@ -29,7 +29,7 @@ type BugRecord struct {
 	FirstReported       string      `json:"first_reported"`
 }
 
-const dateFormat = "2006-04-02 15:04:05"
+const DateFormat = "2006-04-02 15:04:05"
 
 func NewBugStorage(d Database) *BugStorage {
 	return &BugStorage{
@@ -72,9 +72,9 @@ func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 		data.TimesReportedNumber = 1
 		data.TimesReported = "1"
 		data.LastReportedTime = time.Now()
-		data.LastReported = time.Now().Format(dateFormat)
+		data.LastReported = time.Now().Format(DateFormat)
 		data.FirstReportedTime = time.Now()
-		data.FirstReported = time.Now().Format(dateFormat)
+		data.FirstReported = time.Now().Format(DateFormat)
 		return data, b.Store(data)
 	}
 
@@ -137,14 +137,14 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 			return brs, fmt.Errorf("bug findAndStore atoi: %w", err)
 		}
 
-		lr, err := time.Parse(dateFormat, bri.LastReported)
+		lr, err := time.Parse(DateFormat, bri.LastReported)
 		if err != nil {
 			b.Database.Logger.Errorf("bug findAndStore lastReportedParse: %+v", err)
 			return brs, fmt.Errorf("bug findAndStore lastReportedParse: %w", err)
 		}
 		bri.LastReportedTime = lr
 
-		fr, err := time.Parse(dateFormat, bri.FirstReported)
+		fr, err := time.Parse(DateFormat, bri.FirstReported)
 		if err != nil {
 			b.Database.Logger.Errorf("bug findAndStore firstReportedParse: %+v", err)
 			return brs, fmt.Errorf("bug findAndStore firstReportedParse: %w", err)
@@ -165,8 +165,8 @@ func (b BugStorage) Store(data BugRecord) error {
 		return fmt.Errorf("bug store dynamosession failed: %w", err)
 	}
 
-	data.FirstReported = time.Now().Format(dateFormat)
-	data.LastReported = time.Now().Format(dateFormat)
+	data.FirstReported = time.Now().Format(DateFormat)
+	data.LastReported = time.Now().Format(DateFormat)
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
@@ -192,7 +192,7 @@ func (b BugStorage) Update(data BugRecord) error {
 		return fmt.Errorf("bug update dynamosession failed: %w", err)
 	}
 
-	data.LastReported = time.Now().Format(dateFormat)
+	data.LastReported = time.Now().Format(DateFormat)
 
 	if _, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{

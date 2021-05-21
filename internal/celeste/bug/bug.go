@@ -35,7 +35,8 @@ type Bug struct {
 	RemoteLink   string `json:"-"`
 	TicketSystem string `json:"-"`
 
-	Posted time.Time
+	FirstReported time.Time
+	LastReported  time.Time
 }
 
 type Response struct {
@@ -55,22 +56,37 @@ func GetLevelError() int {
 	return 3
 }
 
-func GetLevelUnknown() int {
+func GetLevelCrash() int {
 	return 4
 }
 
+func GetLevelUnknown() int {
+	return 5
+}
+
+// nolint: gocyclo
 func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	switch s {
 	case "log":
+	case "debug":
 		return GetLevelLog()
+
 	case "info":
+	case "warn":
 		return GetLevelInfo()
+
 	case "error":
 		return GetLevelError()
+
+	case "crash":
+	case "panic":
+	case "fatal":
+		return GetLevelCrash()
+
 	default:
 		lvl, err := strconv.Atoi(s)
 		if err != nil {
-			logger.Errorf("log level was sent wrong: %v, sent: %v", err, s)
+			logger.Errorf("log level was sent wrong: %+v, sent: %v", err, s)
 			return GetLevelUnknown()
 		}
 		if lvl >= 5 {
@@ -78,6 +94,8 @@ func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 		}
 		return lvl
 	}
+
+	return GetLevelUnknown()
 }
 
 func (b *Bug) ReportedTimes(c config.Config, logger *zap.SugaredLogger) error {
@@ -99,6 +117,8 @@ func (b *Bug) ReportedTimes(c config.Config, logger *zap.SugaredLogger) error {
 		return fmt.Errorf("bug reported times failed find: %w", err)
 	}
 	b.TimesReported = bugInfo.TimesReportedNumber
+	b.LastReported = bugInfo.LastReportedTime
+	b.FirstReported = bugInfo.FirstReportedTime
 
 	return nil
 }

@@ -1,4 +1,4 @@
-name: Deploybot
+name: Pull Requests
 on:
   push:
     branches:
@@ -28,12 +28,3 @@ jobs:
         with:
           version: v1.29
           args: --config ./configs/golangci.yml
-
-  automerge:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ahmadnassri/action-dependabot-auto-merge@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}

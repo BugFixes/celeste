@@ -131,7 +131,6 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 		FirstReported: bug.FirstReported,
 		TimesReported: bug.TimesReported,
 	}) {
-		panic("this is a test panic")
 		if err := p.GenerateComms(&bug); err != nil {
 			errorReport(w, p.Logger, "logHandler generateComms", err)
 			return

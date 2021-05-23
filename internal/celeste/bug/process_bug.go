@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/comms"
@@ -43,6 +44,10 @@ func (p ProcessBug) Fetch() (Response, error) {
 
 func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 	bug.Agent.ID = agentID
+	if bug.Line == "" && bug.LineNumber != 0 {
+		bug.Line = strconv.Itoa(bug.LineNumber)
+	}
+
 	if err := bug.GenerateHash(&p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo generateHash: %+v", err)
 		return fmt.Errorf("generateBugInfo generateHash: %w", err)
@@ -126,6 +131,7 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 		FirstReported: bug.FirstReported,
 		TimesReported: bug.TimesReported,
 	}) {
+		panic("this is a test panic")
 		if err := p.GenerateComms(&bug); err != nil {
 			errorReport(w, p.Logger, "logHandler generateComms", err)
 			return

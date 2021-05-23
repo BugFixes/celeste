@@ -10,6 +10,8 @@ github.com/bradleyfalzon/ghinstallation v1.1.1 h1:pmBXkxgM1WeF8QYvDLT5kuQiHMcmf+
 github.com/bradleyfalzon/ghinstallation v1.1.1/go.mod h1:vyCmHTciHx/uuyN82Zc3rXN3X2KTK8nUTCrTMwAhcug=
 github.com/bugfixes/go-bugfixes v0.1.4 h1:RUz7eXk0q4b6dL1w39+FSjyjr7Rqaury0A91qijzSkI=
 github.com/bugfixes/go-bugfixes v0.1.4/go.mod h1:lVIL/5LXtTCEeuQrVpNKsiC/h6LXeTm47E7WY3NUKXc=
+github.com/bugfixes/go-bugfixes v0.1.5-0.20210523213016-ef5ec21ea3da h1:BGWWhwEzxow+PCpKlwy+h7j3n+nIzJqoPhgLitQhcP4=
+github.com/bugfixes/go-bugfixes v0.1.5-0.20210523213016-ef5ec21ea3da/go.mod h1:lVIL/5LXtTCEeuQrVpNKsiC/h6LXeTm47E7WY3NUKXc=
 github.com/caarlos0/env/v6 v6.6.0 h1:kVhajCpqX5pSfH41gFd8cPXPZahqJrnn9HxJ1vKftW4=
 github.com/caarlos0/env/v6 v6.6.0/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=

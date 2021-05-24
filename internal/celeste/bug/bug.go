@@ -78,8 +78,8 @@ func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	case "fatal":
 		return GetLevelCrash()
 
-  case "unknown":
-    return GetLevelUnknown()
+	case "unknown":
+		return GetLevelUnknown()
 
 	default:
 		lvl, err := strconv.Atoi(s)

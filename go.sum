@@ -8,8 +8,8 @@ github.com/aws/aws-sdk-go v1.38.44 h1:4JI2x15bwtiVP7VRRLBEm5dgbMVaR4HS1SES9BmBp5
 github.com/aws/aws-sdk-go v1.38.44/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/bradleyfalzon/ghinstallation v1.1.1 h1:pmBXkxgM1WeF8QYvDLT5kuQiHMcmf+X015GI0KM/E3I=
 github.com/bradleyfalzon/ghinstallation v1.1.1/go.mod h1:vyCmHTciHx/uuyN82Zc3rXN3X2KTK8nUTCrTMwAhcug=
-github.com/bugfixes/go-bugfixes v0.1.4 h1:RUz7eXk0q4b6dL1w39+FSjyjr7Rqaury0A91qijzSkI=
-github.com/bugfixes/go-bugfixes v0.1.4/go.mod h1:lVIL/5LXtTCEeuQrVpNKsiC/h6LXeTm47E7WY3NUKXc=
+github.com/bugfixes/go-bugfixes v0.1.6 h1:u2zAh8BdkNb0cPEF3T8E8UK5CWEA2ab2kuoGyPNnPSs=
+github.com/bugfixes/go-bugfixes v0.1.6/go.mod h1:lVIL/5LXtTCEeuQrVpNKsiC/h6LXeTm47E7WY3NUKXc=
 github.com/caarlos0/env/v6 v6.6.0 h1:kVhajCpqX5pSfH41gFd8cPXPZahqJrnn9HxJ1vKftW4=
 github.com/caarlos0/env/v6 v6.6.0/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=

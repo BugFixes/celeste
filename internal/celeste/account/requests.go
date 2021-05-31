@@ -39,5 +39,5 @@ func NewHTTPRequest(c config.Config, l zap.SugaredLogger) *Request {
 
 func (r Request) Parse() (Response, error) {
 	// TODO Account Parse
-	return Response{}, fmt.Errorf("todo: account parse")
+	return Response{}, bugLog.Errorf("todo: account parse")
 }

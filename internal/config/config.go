@@ -27,7 +27,7 @@ func BuildConfig() (Config, error) {
 	cfg := Config{}
 	err := env.Parse(&cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("config build: %w", err)
+		return cfg, bugLog.Errorf("config build: %w", err)
 	}
 
 	return cfg, nil

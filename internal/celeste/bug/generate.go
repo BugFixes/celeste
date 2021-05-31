@@ -12,7 +12,7 @@ func (b *Bug) GenerateIdentifier(logger *zap.SugaredLogger) error {
 	ident, err := GenerateIdentifier(logger)
 	if err != nil {
 		logger.Errorf("bug generateIdentifier: %+v", err)
-		return fmt.Errorf("bug generateIdentifier: %w", err)
+		return bugLog.Errorf("bug generateIdentifier: %w", err)
 	}
 	b.Identifier = ident
 
@@ -29,7 +29,7 @@ func (l *Log) GenerateIdentifier(logger *zap.SugaredLogger) error {
 	ident, err := GenerateIdentifier(logger)
 	if err != nil {
 		logger.Errorf("log generateIdentifier: %+v", err)
-		return fmt.Errorf("log generateIdentifier: %w", err)
+		return bugLog.Errorf("log generateIdentifier: %w", err)
 	}
 
 	l.Identifier = ident

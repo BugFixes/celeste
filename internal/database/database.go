@@ -1,15 +1,14 @@
 package database
 
 import (
-	"fmt"
+  "github.com/aws/aws-sdk-go/aws"
+  "github.com/aws/aws-sdk-go/aws/awserr"
+  "github.com/aws/aws-sdk-go/aws/session"
+  "github.com/aws/aws-sdk-go/service/dynamodb"
+  bugLog "github.com/bugfixes/go-bugfixes/logs"
+  "go.uber.org/zap"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"go.uber.org/zap"
-
-	"github.com/bugfixes/celeste/internal/config"
+  "github.com/bugfixes/celeste/internal/config"
 )
 
 type Database struct {
@@ -31,7 +30,7 @@ func (d Database) dynamoSession() (*dynamodb.DynamoDB, error) {
 	})
 	if err != nil {
 		d.Logger.Errorf("session: %w", err)
-		return nil, fmt.Errorf("session: %w", err)
+		return nil, bugLog.Errorf("session: %w", err)
 	}
 
 	return dynamodb.New(sess), nil
@@ -49,30 +48,30 @@ func dynamoError(e error, l *zap.SugaredLogger) error {
 		switch aerr.Code() {
 		case dynamodb.ErrCodeConditionalCheckFailedException:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
 		case dynamodb.ErrCodeProvisionedThroughputExceededException:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
 		case dynamodb.ErrCodeResourceNotFoundException:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeResourceNotFoundException, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeResourceNotFoundException, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeResourceNotFoundException, aerr)
 		case dynamodb.ErrCodeTransactionConflictException:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeTransactionConflictException, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeTransactionConflictException, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeTransactionConflictException, aerr)
 		case dynamodb.ErrCodeRequestLimitExceeded:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeRequestLimitExceeded, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeRequestLimitExceeded, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeRequestLimitExceeded, aerr)
 		case dynamodb.ErrCodeInternalServerError:
 			l.Errorf("bug insert - %s: %w", dynamodb.ErrCodeInternalServerError, aerr)
-			return fmt.Errorf("bug insert - %s: %w", dynamodb.ErrCodeInternalServerError, aerr)
+			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeInternalServerError, aerr)
 		default:
 			l.Errorf("bug insert - unknown err: %w", aerr)
-			return fmt.Errorf("bug insert - unknown err: %w", aerr)
+			return bugLog.Errorf("bug insert - unknown err: %w", aerr)
 		}
 	} else {
 		// Print the error, cast err to awserr.Error to get the Code and
 		// Message from an error.
 		l.Errorf("bug insert: %w", e)
-		return fmt.Errorf("bug inster: %w", e)
+		return bugLog.Errorf("bug inster: %w", e)
 	}
 }

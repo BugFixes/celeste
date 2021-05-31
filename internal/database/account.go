@@ -53,7 +53,7 @@ func (a AccountStorage) Insert(data AccountRecord) error {
 	svc, err := a.Database.dynamoSession()
 	if err != nil {
 		a.Database.Logger.Errorf("insert agent: %w", err)
-		return fmt.Errorf("insert agent: %w", err)
+		return bugLog.Errorf("insert agent: %w", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{

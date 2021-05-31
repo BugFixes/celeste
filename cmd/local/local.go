@@ -1,21 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"time"
+  "fmt"
+  "net/http"
+  "time"
 
-	"github.com/bugfixes/celeste/internal/celeste/account"
-	"github.com/bugfixes/celeste/internal/celeste/bug"
-	"github.com/bugfixes/celeste/internal/comms"
-	"github.com/bugfixes/celeste/internal/ticketing"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"go.uber.org/zap"
+  "github.com/bugfixes/celeste/internal/celeste/account"
+  "github.com/bugfixes/celeste/internal/celeste/bug"
+  "github.com/bugfixes/celeste/internal/comms"
+  "github.com/bugfixes/celeste/internal/ticketing"
+  "github.com/go-chi/chi/v5"
+  "github.com/go-chi/chi/v5/middleware"
+  "go.uber.org/zap"
 
-	"github.com/bugfixes/celeste/internal/celeste"
-	"github.com/bugfixes/celeste/internal/config"
-	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
+  "github.com/bugfixes/celeste/internal/celeste"
+  "github.com/bugfixes/celeste/internal/config"
+  bugLog "github.com/bugfixes/go-bugfixes/logs"
+  bugfixes "github.com/bugfixes/go-bugfixes/middleware"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 		_ = logger.Sync()
 	}()
 	if err != nil {
-		fmt.Printf("zap failed to start: %v", err)
+		bugLog.Warnf("zap failed to start: %v", err)
 		return
 	}
 	sugar := logger.Sugar()
@@ -34,7 +35,7 @@ func main() {
 	// Config
 	cfg, err := config.BuildConfig()
 	if err != nil {
-		fmt.Printf("failed to build config: %v", err)
+		bugLog.Warnf("failed to build config: %v", err)
 		return
 	}
 
@@ -45,7 +46,7 @@ func main() {
 	}
 
 	if err := route(c); err != nil {
-		fmt.Printf("failed to route: %v", err)
+		bugLog.Warnf("failed to route: %v", err)
 		return
 	}
 }
@@ -54,7 +55,7 @@ func route(c celeste.Celeste) error {
 	r := chi.NewRouter()
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.RequestID)
-	r.Use(bugfixes.Middleware)
+	r.Use(bugfixes.BugFixes)
 
 	// Account
 	r.Route("/account", func(r chi.Router) {
@@ -93,10 +94,10 @@ func route(c celeste.Celeste) error {
 		r.Post("/", ticketing.NewTicketing(c.Config, *c.Logger).CreateTicketHandler)
 	})
 
-	fmt.Printf("listening on port: %d\n", c.Config.LocalPort)
+	bugLog.Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)
 	if err != nil {
-		return fmt.Errorf("failed to start port: %w", err)
+		return bugLog.Errorf("failed to start port: %w", err)
 	}
 
 	return nil

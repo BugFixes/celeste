@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 1
       - uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.29
+          version: v1.38
           args: --config ./configs/golangci.yml
 
   update_release_draft:

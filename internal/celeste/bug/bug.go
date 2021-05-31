@@ -16,6 +16,7 @@ type Bug struct {
 
 	File          string `json:"file"`
 	Line          string `json:"line"`
+	LineNumber    int    `json:"line_number"`
 	Bug           string `json:"bug"`
 	Raw           string `json:"raw"`
 	BugLine       string `json:"bug_line"`
@@ -76,6 +77,9 @@ func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	case "panic":
 	case "fatal":
 		return GetLevelCrash()
+
+	case "unknown":
+		return GetLevelUnknown()
 
 	default:
 		lvl, err := strconv.Atoi(s)

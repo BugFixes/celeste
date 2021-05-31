@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -27,7 +26,7 @@ func BuildConfig() (Config, error) {
 	cfg := Config{}
 	err := env.Parse(&cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("config build: %w", err)
+		return cfg, bugLog.Errorf("config build: %w", err)
 	}
 
 	return cfg, nil

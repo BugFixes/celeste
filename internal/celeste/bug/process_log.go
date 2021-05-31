@@ -2,13 +2,13 @@ package bug
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/bugfixes/celeste/internal/celeste/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"go.uber.org/zap"
 )
 
@@ -66,7 +66,7 @@ func (l ProcessLog) GenerateLogInfo(log *Log, agentID string) error {
 	log.Agent.ID = agentID
 	if err := log.GenerateIdentifier(&l.Logger); err != nil {
 		l.Logger.Errorf("processLog generateLogInfo generateIdentifier: %+v", err)
-		return fmt.Errorf("processLog generateLogInfo generateIdentifier: %w", err)
+		return bugLog.Errorf("processLog generateLogInfo generateIdentifier: %w", err)
 	}
 	log.LevelNumber = ConvertLevelFromString(log.Level, &l.Logger)
 
@@ -86,7 +86,7 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		AgentID:    log.Agent.ID,
 	}); err != nil {
 		l.Logger.Errorf("processLog storeLog: %+v", err)
-		return fmt.Errorf("processLog storeLog: %w", err)
+		return bugLog.Errorf("processLog storeLog: %w", err)
 	}
 
 	return nil

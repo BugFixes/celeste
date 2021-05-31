@@ -1,12 +1,12 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type LogStorage struct {
@@ -35,13 +35,13 @@ func (l LogStorage) Store(data LogRecord) error {
 	svc, err := l.Database.dynamoSession()
 	if err != nil {
 		l.Database.Logger.Errorf("logStorage store dynamo: %+v", err)
-		return fmt.Errorf("logStorage store dynamo: %+v", err)
+		return bugLog.Errorf("logStorage store dynamo: %+v", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
 		l.Database.Logger.Errorf("logStorage store marshal: %+v", err)
-		return fmt.Errorf("logStorage store marshal: %w", err)
+		return bugLog.Errorf("logStorage store marshal: %w", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{
@@ -50,7 +50,7 @@ func (l LogStorage) Store(data LogRecord) error {
 	})
 	if err != nil {
 		l.Database.Logger.Errorf("logStorage store putItem: %+v", err)
-		return fmt.Errorf("logStorage store putItem: %w", err)
+		return bugLog.Errorf("logStorage store putItem: %w", err)
 	}
 
 	return nil

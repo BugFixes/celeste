@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"go.uber.org/zap"
 )
 
@@ -35,7 +36,7 @@ func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Ag
 
 	if blankAgent(a, Agent{}) {
 		logger.Errorf("headers are bad: %v", headers)
-		return a, fmt.Errorf("headers are bad")
+		return a, bugLog.Errorf("headers are bad")
 	}
 
 	if a.ID == "" {
@@ -45,11 +46,11 @@ func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Ag
 	valid, err := a.ValidateID()
 	if err != nil {
 		logger.Errorf("validate id failed: %v", err)
-		return a, fmt.Errorf("validated id failed: %w", err)
+		return a, bugLog.Errorf("validated id failed: %w", err)
 	}
 	if !valid {
 		logger.Errorf("agent isn't valid: %v", a)
-		return a, fmt.Errorf("agent isn't valid: %v", a)
+		return a, bugLog.Errorf("agent isn't valid: %v", a)
 	}
 
 	return a, nil

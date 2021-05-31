@@ -1,9 +1,8 @@
 package agent
 
 import (
-	"fmt"
-
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
 
@@ -36,19 +35,19 @@ func NewAgent(name string, account account.Account) *Agent {
 func (a Agent) Create() (*Agent, error) {
 	id, err := createID()
 	if err != nil {
-		return &a, fmt.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %w", err)
 	}
 	a.ID = id
 
 	key, err := createKey()
 	if err != nil {
-		return &a, fmt.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %w", err)
 	}
 	a.Credentials.Key = key
 
 	secret, err := createSecret()
 	if err != nil {
-		return &a, fmt.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %w", err)
 	}
 	a.Credentials.Secret = secret
 
@@ -58,7 +57,7 @@ func (a Agent) Create() (*Agent, error) {
 func createID() (string, error) {
 	id, err := generateUUID()
 	if err != nil {
-		return "", fmt.Errorf("createID: %w", err)
+		return "", bugLog.Errorf("createID: %w", err)
 	}
 
 	return id, nil
@@ -67,7 +66,7 @@ func createID() (string, error) {
 func createKey() (string, error) {
 	key, err := generateUUID()
 	if err != nil {
-		return "", fmt.Errorf("createKey: %w", err)
+		return "", bugLog.Errorf("createKey: %w", err)
 	}
 
 	return key, nil
@@ -76,7 +75,7 @@ func createKey() (string, error) {
 func createSecret() (string, error) {
 	secret, err := generateUUID()
 	if err != nil {
-		return "", fmt.Errorf("generateUUID: %w", err)
+		return "", bugLog.Errorf("generateUUID: %w", err)
 	}
 
 	return secret, nil
@@ -85,7 +84,7 @@ func createSecret() (string, error) {
 func generateUUID() (string, error) {
 	s, err := uuid.NewUUID()
 	if err != nil {
-		return "", fmt.Errorf("generateUUID: %w", err)
+		return "", bugLog.Errorf("generateUUID: %w", err)
 	}
 
 	return s.String(), nil

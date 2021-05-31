@@ -1,10 +1,10 @@
 package agent_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
@@ -27,7 +27,7 @@ func TestParseAgentHeaders(t *testing.T) {
 			name:    "bad headers",
 			request: map[string]string{},
 			expect:  agent.Agent{},
-			err:     fmt.Errorf("headers are bad"),
+			err:     bugLog.Errorf("headers are bad"),
 		},
 	}
 

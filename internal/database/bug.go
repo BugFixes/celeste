@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type BugStorage struct {
@@ -41,13 +42,13 @@ func (b BugStorage) Insert(data BugRecord) error {
 	svc, err := b.Database.dynamoSession()
 	if err != nil {
 		b.Database.Logger.Errorf("insert bug dynamo session failed: %+v", err)
-		return fmt.Errorf("insert bug dynamo session failed: %w", err)
+		return bugLog.Errorf("insert bug dynamo session failed: %w", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
 		b.Database.Logger.Errorf("insert bug marshal failed: %+v", err)
-		return fmt.Errorf("insert bug marshal failed: %w", err)
+		return bugLog.Errorf("insert bug marshal failed: %w", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{

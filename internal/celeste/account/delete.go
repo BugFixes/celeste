@@ -1,8 +1,9 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
+
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 func (r Request) DeleteHandler(w http.ResponseWriter, hr *http.Request) {
@@ -10,5 +11,5 @@ func (r Request) DeleteHandler(w http.ResponseWriter, hr *http.Request) {
 }
 func (r Request) Delete() (Response, error) {
 	// TODO Account Delete
-	return Response{}, fmt.Errorf("todo: account delete")
+	return Response{}, bugLog.Errorf("todo: account delete")
 }

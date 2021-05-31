@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/comms"
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type ProcessBug struct {
@@ -43,17 +45,21 @@ func (p ProcessBug) Fetch() (Response, error) {
 
 func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 	bug.Agent.ID = agentID
+	if bug.Line == "" && bug.LineNumber != 0 {
+		bug.Line = strconv.Itoa(bug.LineNumber)
+	}
+
 	if err := bug.GenerateHash(&p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo generateHash: %+v", err)
-		return fmt.Errorf("generateBugInfo generateHash: %w", err)
+		return bugLog.Errorf("generateBugInfo generateHash: %w", err)
 	}
 	if err := bug.GenerateIdentifier(&p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo generateIdentifier: %+v", err)
-		return fmt.Errorf("generateBugInfo generateIdentifier: %w", err)
+		return bugLog.Errorf("generateBugInfo generateIdentifier: %w", err)
 	}
 	if err := bug.ReportedTimes(p.Config, &p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo reportedTimes: %+v", err)
-		return fmt.Errorf("generateBugInfo reportedTimes: %w", err)
+		return bugLog.Errorf("generateBugInfo reportedTimes: %w", err)
 	}
 
 	bug.LevelNumber = ConvertLevelFromString(bug.Level, &p.Logger)
@@ -75,7 +81,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 
 	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(&ticket); err != nil {
 		p.Logger.Errorf("generateTicket createTicket: %+v", err)
-		return fmt.Errorf("generateTicket createTicket: %w", err)
+		return bugLog.Errorf("generateTicket createTicket: %w", err)
 	}
 	bug.RemoteLink = ticket.RemoteLink
 	bug.TicketSystem = ticket.RemoteSystem
@@ -90,7 +96,7 @@ func (p ProcessBug) GenerateComms(bug *Bug) error {
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,
 	}); err != nil {
-		return fmt.Errorf("bug generateComms: %w", err)
+		return bugLog.Errorf("bug generateComms: %w", err)
 	}
 
 	return nil

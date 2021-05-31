@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
 
@@ -48,15 +49,15 @@ func (r Request) Create() (Response, error) {
 
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, fmt.Errorf("failed to generate id: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate id: %w", err)
 	}
 	secret, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, fmt.Errorf("failed to generate secret: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate secret: %w", err)
 	}
 	key, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, fmt.Errorf("failed to generate key: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate key: %w", err)
 	}
 
 	if err := ac.Insert(database.AccountRecord{
@@ -70,7 +71,7 @@ func (r Request) Create() (Response, error) {
 			Key:    key.String(),
 		},
 	}); err != nil {
-		return Response{}, fmt.Errorf("failed to insert account: %w", err)
+		return Response{}, bugLog.Errorf("failed to insert account: %w", err)
 	}
 
 	type Data struct {

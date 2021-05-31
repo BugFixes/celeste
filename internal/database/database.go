@@ -1,14 +1,14 @@
 package database
 
 import (
-  "github.com/aws/aws-sdk-go/aws"
-  "github.com/aws/aws-sdk-go/aws/awserr"
-  "github.com/aws/aws-sdk-go/aws/session"
-  "github.com/aws/aws-sdk-go/service/dynamodb"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  "go.uber.org/zap"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"go.uber.org/zap"
 
-  "github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/celeste/internal/config"
 )
 
 type Database struct {
@@ -44,6 +44,7 @@ type Storage interface {
 }
 
 func dynamoError(e error, l *zap.SugaredLogger) error {
+	// nolint:errorlint
 	if aerr, ok := e.(awserr.Error); ok {
 		switch aerr.Code() {
 		case dynamodb.ErrCodeConditionalCheckFailedException:

@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/caarlos0/env/v6"
 )
 

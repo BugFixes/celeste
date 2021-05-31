@@ -1,13 +1,13 @@
 package database
 
 import (
-  "errors"
+	"errors"
 
-  "github.com/aws/aws-sdk-go/aws"
-  "github.com/aws/aws-sdk-go/service/dynamodb"
-  "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-  "github.com/aws/aws-sdk-go/service/dynamodb/expression"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type CommsStorage struct {

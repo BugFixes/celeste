@@ -13,6 +13,7 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 )

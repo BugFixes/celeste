@@ -16,12 +16,16 @@ linters-settings:
     min-complexity: 10
   maligned:
     suggest-new: true
+  govet:
+    disable:
+      - printf
 
 linters:
   enable:
     - bodyclose
     - deadcode
     - errcheck
+    - errorlint
     - goconst
     - gocritic
     - gocyclo

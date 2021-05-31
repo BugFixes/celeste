@@ -1,22 +1,22 @@
 package main
 
 import (
-  "fmt"
-  "net/http"
-  "time"
+	"fmt"
+	"net/http"
+	"time"
 
-  "github.com/bugfixes/celeste/internal/celeste/account"
-  "github.com/bugfixes/celeste/internal/celeste/bug"
-  "github.com/bugfixes/celeste/internal/comms"
-  "github.com/bugfixes/celeste/internal/ticketing"
-  "github.com/go-chi/chi/v5"
-  "github.com/go-chi/chi/v5/middleware"
-  "go.uber.org/zap"
+	"github.com/bugfixes/celeste/internal/celeste/account"
+	"github.com/bugfixes/celeste/internal/celeste/bug"
+	"github.com/bugfixes/celeste/internal/comms"
+	"github.com/bugfixes/celeste/internal/ticketing"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
 
-  "github.com/bugfixes/celeste/internal/celeste"
-  "github.com/bugfixes/celeste/internal/config"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  bugfixes "github.com/bugfixes/go-bugfixes/middleware"
+	"github.com/bugfixes/celeste/internal/celeste"
+	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
 )
 
 func main() {

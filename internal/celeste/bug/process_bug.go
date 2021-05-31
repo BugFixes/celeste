@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type ProcessBug struct {

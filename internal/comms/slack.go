@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/slack-go/slack"
 	"go.uber.org/zap"

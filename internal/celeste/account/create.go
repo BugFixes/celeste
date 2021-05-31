@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
 

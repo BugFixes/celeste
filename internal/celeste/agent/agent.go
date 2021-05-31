@@ -1,9 +1,8 @@
 package agent
 
 import (
-	"fmt"
-
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
 

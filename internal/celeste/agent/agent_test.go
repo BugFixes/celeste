@@ -1,10 +1,10 @@
 package agent_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 

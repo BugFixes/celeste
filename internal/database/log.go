@@ -1,12 +1,12 @@
 package database
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type LogStorage struct {

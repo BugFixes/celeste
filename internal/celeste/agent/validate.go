@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"go.uber.org/zap"
 )
 

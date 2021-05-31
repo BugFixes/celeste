@@ -1,8 +1,9 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
+
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 func (r Request) DeleteHandler(w http.ResponseWriter, hr *http.Request) {

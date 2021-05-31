@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/bugfixes/celeste/internal/config"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  "github.com/diamondburned/arikawa/v2/api"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"github.com/diamondburned/arikawa/v2/api"
 	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/diamondburned/arikawa/v2/gateway"
 	"github.com/mitchellh/mapstructure"

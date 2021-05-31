@@ -12,6 +12,7 @@ import (
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/v35/github"

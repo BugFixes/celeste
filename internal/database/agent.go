@@ -1,10 +1,9 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type AgentStorage struct {

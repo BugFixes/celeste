@@ -1,13 +1,13 @@
 package celeste
 
 import (
-  "github.com/aws/aws-lambda-go/events"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  "go.uber.org/zap"
+	"github.com/aws/aws-lambda-go/events"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"go.uber.org/zap"
 
-  "github.com/bugfixes/celeste/internal/celeste/account"
-  "github.com/bugfixes/celeste/internal/celeste/bug"
-  "github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/celeste/internal/celeste/account"
+	"github.com/bugfixes/celeste/internal/celeste/bug"
+	"github.com/bugfixes/celeste/internal/config"
 )
 
 type Celeste struct {

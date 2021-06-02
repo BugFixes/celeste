@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/comms"
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type ProcessBug struct {
@@ -43,17 +45,21 @@ func (p ProcessBug) Fetch() (Response, error) {
 
 func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 	bug.Agent.ID = agentID
+	if bug.Line == "" && bug.LineNumber != 0 {
+		bug.Line = strconv.Itoa(bug.LineNumber)
+	}
+
 	if err := bug.GenerateHash(&p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo generateHash: %+v", err)
-		return fmt.Errorf("generateBugInfo generateHash: %w", err)
+		return bugLog.Errorf("generateBugInfo generateHash: %w", err)
 	}
 	if err := bug.GenerateIdentifier(&p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo generateIdentifier: %+v", err)
-		return fmt.Errorf("generateBugInfo generateIdentifier: %w", err)
+		return bugLog.Errorf("generateBugInfo generateIdentifier: %w", err)
 	}
 	if err := bug.ReportedTimes(p.Config, &p.Logger); err != nil {
 		p.Logger.Errorf("generateBugInfo reportedTimes: %+v", err)
-		return fmt.Errorf("generateBugInfo reportedTimes: %w", err)
+		return bugLog.Errorf("generateBugInfo reportedTimes: %w", err)
 	}
 
 	bug.LevelNumber = ConvertLevelFromString(bug.Level, &p.Logger)
@@ -75,7 +81,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 
 	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(&ticket); err != nil {
 		p.Logger.Errorf("generateTicket createTicket: %+v", err)
-		return fmt.Errorf("generateTicket createTicket: %w", err)
+		return bugLog.Errorf("generateTicket createTicket: %w", err)
 	}
 	bug.RemoteLink = ticket.RemoteLink
 	bug.TicketSystem = ticket.RemoteSystem
@@ -90,43 +96,33 @@ func (p ProcessBug) GenerateComms(bug *Bug) error {
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,
 	}); err != nil {
-		return fmt.Errorf("file generateComms: %w", err)
+		return bugLog.Errorf("bug generateComms: %w", err)
 	}
 
 	return nil
 }
 
-func (p ProcessBug) errorReport(w http.ResponseWriter, textError string, wrappedError error) {
-	p.Logger.Errorf("processFile errorReport: %+v", wrappedError)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	if err := json.NewEncoder(w).Encode(struct {
-		Error     string
-		FullError string
-	}{
-		Error:     textError,
-		FullError: fmt.Sprintf("%+v", wrappedError),
-	}); err != nil {
-		p.Logger.Errorf("processFile errorReport json: %+v", err)
-	}
-}
-
 func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 	bug := Bug{}
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			errorReport(w, p.Logger, "bugHandler body close", err)
+			return
+		}
+	}()
 
 	if err := json.NewDecoder(r.Body).Decode(&bug); err != nil {
-		p.errorReport(w, "failed to decode bug", err)
+		errorReport(w, p.Logger, "bugHandler decode", err)
 		return
 	}
 
 	if err := p.GenerateBugInfo(&bug, r.Header.Get("X-API-KEY")); err != nil {
-		p.errorReport(w, "failed to generate info", err)
+		errorReport(w, p.Logger, "bugHandler generateBugInfo", err)
 		return
 	}
 
 	if err := p.GenerateTicket(&bug); err != nil {
-		p.errorReport(w, "failed to generate ticket", err)
+		errorReport(w, p.Logger, "bugHandler generateTicket", err)
 		return
 	}
 
@@ -137,7 +133,7 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 		TimesReported: bug.TimesReported,
 	}) {
 		if err := p.GenerateComms(&bug); err != nil {
-			p.errorReport(w, "failed to generate comms", err)
+			errorReport(w, p.Logger, "logHandler generateComms", err)
 			return
 		}
 	}

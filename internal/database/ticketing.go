@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
 
@@ -39,13 +40,13 @@ func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) err
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
 		t.Database.Logger.Errorf("store credentials dynamo session: %v", err)
-		return fmt.Errorf("store credentials dynamo session: %w", err)
+		return bugLog.Errorf("store credentials dynamo session: %w", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(credentials)
 	if err != nil {
 		t.Database.Logger.Errorf("store credentials map failed: %v", err)
-		return fmt.Errorf("store credentials map failed: %w", err)
+		return bugLog.Errorf("store credentials map failed: %w", err)
 	}
 
 	if _, err := svc.PutItem(&dynamodb.PutItemInput{

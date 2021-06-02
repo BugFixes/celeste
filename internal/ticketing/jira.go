@@ -13,6 +13,7 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 	"go.uber.org/zap"
 )
@@ -55,7 +56,7 @@ func (j *Jira) Connect() error {
 	client, err := jira.NewClient(c.Client(), j.Credentials.Host)
 	if err != nil {
 		j.Logger.Errorf("jira connect: %+v", err)
-		return fmt.Errorf("jira connect: %w", err)
+		return bugLog.Errorf("jira connect: %w", err)
 	}
 
 	j.Client = client
@@ -79,7 +80,7 @@ func (j *Jira) ParseCredentials(creds interface{}) error {
 	jiraCreds := jc{}
 	if err := mapstructure.Decode(creds, &jiraCreds); err != nil {
 		j.Logger.Errorf("jira parseCredentials decode: %+v", err)
-		return fmt.Errorf("jira parseCredentials decode: %w", err)
+		return bugLog.Errorf("jira parseCredentials decode: %w", err)
 	}
 
 	j.Credentials = JiraCredentials{
@@ -356,7 +357,7 @@ func (j *Jira) Create(ticket *Ticket) error {
 	exists, td, err := j.TicketExists(ticket)
 	if err != nil {
 		j.Logger.Errorf("jira create ticketExists: %+v", err)
-		return fmt.Errorf("jira create ticketExists: %w", err)
+		return bugLog.Errorf("jira create ticketExists: %w", err)
 	}
 	if exists {
 		return j.Update(ticket)
@@ -372,14 +373,14 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	jsond, err := json.Marshal(template.Body)
 	if err != nil {
 		j.Logger.Errorf("jira create marshall: %+v", err)
-		return fmt.Errorf("jira create marshall: %w", err)
+		return bugLog.Errorf("jira create marshall: %w", err)
 	}
 	send := bytes.NewBuffer(jsond)
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/rest/api/3/issue", j.Credentials.Host), send)
 	if err != nil {
 		j.Logger.Errorf("jira create newRequest: %+v", err)
-		return fmt.Errorf("jira create newRequest: %w", err)
+		return bugLog.Errorf("jira create newRequest: %w", err)
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
@@ -387,7 +388,7 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	resp, err := client.Do(req)
 	if err != nil {
 		j.Logger.Errorf("jira create do: %+v", err)
-		return fmt.Errorf("jira create do: %w", err)
+		return bugLog.Errorf("jira create do: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -400,14 +401,14 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	ic := jira.Issue{}
 	if err := json.Unmarshal(readResponseBody, &ic); err != nil {
 		j.Logger.Errorf("jira create unmarshall: %+v", err)
-		return fmt.Errorf("jira create unmarshall: %w", err)
+		return bugLog.Errorf("jira create unmarshall: %w", err)
 	}
 
 	td.RemoteID = ic.ID
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, ic.Key)
 	if err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).StoreTicketDetails(td); err != nil {
 		j.Logger.Errorf("jira create store: %+v", err)
-		return fmt.Errorf("jira create store: %w", err)
+		return bugLog.Errorf("jira create store: %w", err)
 	}
 
 	return nil
@@ -422,18 +423,19 @@ func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error)
 	ticketExists, err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).TicketExists(td)
 	if err != nil {
 		j.Logger.Errorf("jira ticketExists: %+v", err)
-		return false, td, fmt.Errorf("jira ticketExists: %w", err)
+		return false, td, bugLog.Errorf("jira ticketExists: %w", err)
 	}
 
 	return ticketExists, td, nil
 }
 
+// Update
 // nolint: gocyclo
 func (j Jira) Update(ticket *Ticket) error {
 	err := j.Fetch(ticket)
 	if err != nil {
 		j.Logger.Errorf("jira update fetch: %+v", err)
-		return fmt.Errorf("jira update fetch: %w", err)
+		return bugLog.Errorf("jira update fetch: %w", err)
 	}
 
 	rt, err := j.FetchRemoteTicket(ticket.RemoteID)
@@ -448,13 +450,13 @@ func (j Jira) Update(ticket *Ticket) error {
 		}
 
 		j.Logger.Errorf("jira update fetchRemoteTicket: %+v", err)
-		return fmt.Errorf("jira update fetchRemoteTicket: %w", err)
+		return bugLog.Errorf("jira update fetchRemoteTicket: %w", err)
 	}
 
 	rtd := jira.Issue{}
 	if err := mapstructure.Decode(rt.RemoteDetails, &rtd); err != nil {
 		j.Logger.Errorf("jira update decode: %+v", err)
-		return fmt.Errorf("jira update decode: %w", err)
+		return bugLog.Errorf("jira update decode: %w", err)
 	}
 
 	ticket.State = rtd.Fields.Status.Name

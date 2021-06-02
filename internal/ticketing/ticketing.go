@@ -6,6 +6,7 @@ import (
 
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"go.uber.org/zap"
 )
 
@@ -80,7 +81,7 @@ func (t Ticketing) fetchTicketingCredentials(agentID string) (database.Ticketing
 		return database.TicketingCredentials{
 			AgentID: agentID,
 			System:  "mock",
-		}, fmt.Errorf("ticketing failed to fetch system: %w", err)
+		}, bugLog.Errorf("ticketing failed to fetch system: %w", err)
 	}
 
 	return system, nil
@@ -102,9 +103,9 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 	case "orapm":
 	case "bugzilla":
 	case "asana":
-		return nil, fmt.Errorf("%s not yet implemented", creds.System)
+		return nil, bugLog.Errorf("%s not yet implemented", creds.System)
 	default:
-		return nil, fmt.Errorf("ticket system %s is unknown", creds.System)
+		return nil, bugLog.Errorf("ticket system %s is unknown", creds.System)
 	}
 
 	return ts, nil
@@ -115,15 +116,15 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 
 	if err := system.ParseCredentials(creds); err != nil {
 		t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
-		return fmt.Errorf("ticketCreate parseCredentials: %w", err)
+		return bugLog.Errorf("ticketCreate parseCredentials: %w", err)
 	}
 	if err := system.Connect(); err != nil {
 		t.Logger.Errorf("ticketCreate connect: %+v", err)
-		return fmt.Errorf("ticketCreate connect: %w", err)
+		return bugLog.Errorf("ticketCreate connect: %w", err)
 	}
 	if err := system.Create(ticket); err != nil {
 		t.Logger.Errorf("ticketCreate create: %+v", err)
-		return fmt.Errorf("ticketCreate create: %w", err)
+		return bugLog.Errorf("ticketCreate create: %w", err)
 	}
 	return nil
 }
@@ -132,18 +133,18 @@ func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
 		t.Logger.Errorf("createTicket fetchSystem: %+v", err)
-		return fmt.Errorf("createTicket fetchSystem failed: %w", err)
+		return bugLog.Errorf("createTicket fetchSystem failed: %w", err)
 	}
 
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
 		t.Logger.Errorf("createTicket fetchTicketSystem: %+v", err)
-		return fmt.Errorf("createTicket fetchTicketSystem: %w", err)
+		return bugLog.Errorf("createTicket fetchTicketSystem: %w", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
 		t.Logger.Errorf("createTicket ticketCreate: %+v", err)
-		return fmt.Errorf("createTicket ticketCreate: %w", err)
+		return bugLog.Errorf("createTicket ticketCreate: %w", err)
 	}
 
 	return nil

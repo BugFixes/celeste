@@ -1,10 +1,9 @@
 package account
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"go.uber.org/zap"
 )
 
@@ -39,5 +38,5 @@ func NewHTTPRequest(c config.Config, l zap.SugaredLogger) *Request {
 
 func (r Request) Parse() (Response, error) {
 	// TODO Account Parse
-	return Response{}, fmt.Errorf("todo: account parse")
+	return Response{}, bugLog.Errorf("todo: account parse")
 }

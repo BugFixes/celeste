@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/slack-go/slack"
 	"go.uber.org/zap"
@@ -38,7 +39,7 @@ func (s *Slack) Connect() error {
 	authToken := s.Credentials.Token
 	if authToken == "" {
 		s.Logger.Errorf("slack connect: %+v", errors.New("no bot token"))
-		return fmt.Errorf("slack connect: %w", errors.New("no bot token"))
+		return bugLog.Errorf("slack connect: %w", errors.New("no bot token"))
 	}
 	s.Client = slack.New(authToken)
 
@@ -58,7 +59,7 @@ func (s *Slack) ParseCredentials(creds interface{}) error {
 	slackCreds := sc{}
 	if err := mapstructure.Decode(creds, &slackCreds); err != nil {
 		s.Logger.Errorf("slack parseCredentials decode: %+v", err)
-		return fmt.Errorf("slack parseCredentials decode: %w", err)
+		return bugLog.Errorf("slack parseCredentials decode: %w", err)
 	}
 
 	s.Credentials = SlackCredentials{
@@ -86,7 +87,7 @@ func (s *Slack) Send(commsPackage CommsPackage) error {
 		title,
 		message); err != nil {
 		s.Logger.Errorf("slack send postMessage: %+v", err)
-		return fmt.Errorf("slack send postMessage: %w", err)
+		return bugLog.Errorf("slack send postMessage: %w", err)
 	}
 
 	return nil

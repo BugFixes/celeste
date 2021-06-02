@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -16,6 +15,7 @@ type Config struct {
 	TicketingTable string `env:"DB_TICKETING_TABLE" envDefault:"ticketing"`
 	TicketsTable   string `env:"DB_TICKETS_TABLE" envDefault:"tickets"`
 	CommsTable     string `env:"DB_COMMS_TABLE" envDefault:"comms"`
+	LogsTable      string `env:"DB_LOGS_TABLE" envDefault:"logs"`
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 
@@ -26,7 +26,7 @@ func BuildConfig() (Config, error) {
 	cfg := Config{}
 	err := env.Parse(&cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("config build: %w", err)
+		return cfg, bugLog.Errorf("config build: %w", err)
 	}
 
 	return cfg, nil

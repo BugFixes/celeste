@@ -1,10 +1,20 @@
 name: auto-merge
 on:
+  push:
+    branches:
+      - '!main'
+      - '*'
   workflow_run:
     types:
       - completed
     workflows:
       - 'Pull Requests'
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
 
 jobs:
   auto-merge:

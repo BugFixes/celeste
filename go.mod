@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.24.0
 	github.com/aws/aws-sdk-go v1.38.53
 	github.com/bradleyfalzon/ghinstallation v1.1.1
-	github.com/bugfixes/go-bugfixes v0.1.8
+	github.com/bugfixes/go-bugfixes v0.2.1
 	github.com/caarlos0/env/v6 v6.6.2
 	github.com/diamondburned/arikawa/v2 v2.0.6
 	github.com/fatih/structs v1.1.0 // indirect

@@ -20,6 +20,7 @@ type LogRecord struct {
 	Line       string    `json:"line"`
 	File       string    `json:"file"`
 	Stack      string    `json:"stack"`
+	LogFmt     string    `json:"log_fmt"`
 	Entry      string    `json:"entry"`
 	LoggedTime time.Time `json:"logged_time" dynamodbav:"-"`
 	Logged     string    `json:"logged"`

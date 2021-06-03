@@ -2,7 +2,8 @@ package bug
 
 import (
 	"encoding/json"
-	"net/http"
+  "fmt"
+  "net/http"
 	"time"
 
 	"github.com/bugfixes/celeste/internal/celeste/agent"
@@ -26,7 +27,8 @@ type Log struct {
 	File        string `json:"file"`
 	Log         string `json:"log"`
 	Identifier  string `json:"identifier"`
-	Stack       string `json:"stack"`
+	Stack       []byte `json:"stack"`
+	LogFmt      string `json:"log_fmt"`
 }
 
 func NewLog(c config.Config, l zap.SugaredLogger) ProcessLog {
@@ -81,7 +83,8 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		Line:       log.Line,
 		File:       log.File,
 		Logged:     time.Now().Format(database.DateFormat),
-		Stack:      log.Stack,
+		Stack:      fmt.Sprintf("%x", log.Stack),
+		LogFmt:     log.LogFmt,
 		Entry:      log.Log,
 		AgentID:    log.Agent.ID,
 	}); err != nil {

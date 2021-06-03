@@ -94,7 +94,7 @@ func route(c celeste.Celeste) error {
 		r.Post("/", ticketing.NewTicketing(c.Config, *c.Logger).CreateTicketHandler)
 	})
 
-	bugLog.Infof("listening on port: %d\n", c.Config.LocalPort)
+	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)
 	if err != nil {
 		return bugLog.Errorf("failed to start port: %w", err)

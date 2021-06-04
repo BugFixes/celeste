@@ -1,11 +1,9 @@
 package agent
 
 import (
-	"fmt"
 	"strings"
 
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"go.uber.org/zap"
 )
 
 func blankAgent(a, b Agent) bool {
@@ -19,7 +17,7 @@ func blankAgent(a, b Agent) bool {
 	return true
 }
 
-func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Agent, error) {
+func ParseAgentHeaders(headers map[string]string) (Agent, error) {
 	a := Agent{}
 
 	for h, v := range headers {
@@ -35,47 +33,40 @@ func ParseAgentHeaders(headers map[string]string, logger *zap.SugaredLogger) (Ag
 	}
 
 	if blankAgent(a, Agent{}) {
-		logger.Errorf("headers are bad: %v", headers)
 		return a, bugLog.Errorf("headers are bad")
 	}
 
 	if a.ID == "" {
-		return a.missingID(headers, logger)
+		return a.missingID(headers)
 	}
 
 	valid, err := a.ValidateID()
 	if err != nil {
-		logger.Errorf("validate id failed: %v", err)
 		return a, bugLog.Errorf("validated id failed: %w", err)
 	}
 	if !valid {
-		logger.Errorf("agent isn't valid: %v", a)
 		return a, bugLog.Errorf("agent isn't valid: %v", a)
 	}
 
 	return a, nil
 }
 
-func (a Agent) missingID(headers map[string]string, logger *zap.SugaredLogger) (Agent, error) {
+func (a Agent) missingID(headers map[string]string) (Agent, error) {
 	if a.Credentials.Secret == "" && a.Credentials.Key == "" {
-		logger.Errorf("secret and key are blank: %v", headers)
-		return a, fmt.Errorf("secret and key are blank: %v", headers)
+		return a, bugLog.Errorf("secret and key are blank: %v", headers)
 	}
 
 	if a.Credentials.Secret == "" {
-		logger.Errorf("secret is blank: %v", headers)
-		return a, fmt.Errorf("secret is blank: %v", headers)
+		return a, bugLog.Errorf("secret is blank: %v", headers)
 	}
 
 	if a.Credentials.Key == "" {
-		logger.Errorf("key is blank: %v", headers)
-		return a, fmt.Errorf("key is blank: %v", headers)
+		return a, bugLog.Errorf("key is blank: %v", headers)
 	}
 
 	a, err := a.LookupDetails()
 	if err != nil {
-		logger.Errorf("lookup id failed: %v", err)
-		return a, fmt.Errorf("lookup id failed: %w", err)
+		return a, bugLog.Errorf("lookup id failed: %w", err)
 	}
 	return a, nil
 }

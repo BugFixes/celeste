@@ -35,13 +35,11 @@ func NewLogStorage(d Database) *LogStorage {
 func (l LogStorage) Store(data LogRecord) error {
 	svc, err := l.Database.dynamoSession()
 	if err != nil {
-		l.Database.Logger.Errorf("logStorage store dynamo: %+v", err)
 		return bugLog.Errorf("logStorage store dynamo: %+v", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
-		l.Database.Logger.Errorf("logStorage store marshal: %+v", err)
 		return bugLog.Errorf("logStorage store marshal: %w", err)
 	}
 
@@ -50,7 +48,6 @@ func (l LogStorage) Store(data LogRecord) error {
 		TableName: aws.String(l.Database.Config.LogsTable),
 	})
 	if err != nil {
-		l.Database.Logger.Errorf("logStorage store putItem: %+v", err)
 		return bugLog.Errorf("logStorage store putItem: %w", err)
 	}
 

@@ -51,7 +51,6 @@ func NewAccountStorage(d Database) *AccountStorage {
 func (a AccountStorage) Insert(data AccountRecord) error {
 	svc, err := a.Database.dynamoSession()
 	if err != nil {
-		a.Database.Logger.Errorf("insert agent: %w", err)
 		return bugLog.Errorf("insert agent: %w", err)
 	}
 
@@ -80,7 +79,7 @@ func (a AccountStorage) Insert(data AccountRecord) error {
 		TableName: aws.String(a.Database.Config.AccountsTable),
 	})
 	if err != nil {
-		return dynamoError(err, a.Database.Logger)
+		return dynamoError(err)
 	}
 	return nil
 }

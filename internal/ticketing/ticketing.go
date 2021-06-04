@@ -7,7 +7,6 @@ import (
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"go.uber.org/zap"
 )
 
 type Credentials struct {
@@ -47,13 +46,11 @@ type TicketingSystem interface {
 
 type Ticketing struct {
 	Config config.Config
-	Logger zap.SugaredLogger
 }
 
-func NewTicketing(c config.Config, logger zap.SugaredLogger) *Ticketing {
+func NewTicketing(c config.Config) *Ticketing {
 	return &Ticketing{
 		Config: c,
-		Logger: logger,
 	}
 }
 
@@ -76,7 +73,7 @@ type Ticket struct {
 }
 
 func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
-	system, err := database.NewTicketingStorage(*database.New(t.Config, &t.Logger)).FetchCredentials(agentID)
+	system, err := database.NewTicketingStorage(*database.New(t.Config)).FetchCredentials(agentID)
 	if err != nil {
 		return database.TicketingCredentials{
 			AgentID: agentID,
@@ -93,9 +90,9 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 
 	switch creds.System {
 	case "github":
-		ts = NewGithub(t.Config, t.Logger)
+		ts = NewGithub(t.Config)
 	case "jira":
-		ts = NewJira(t.Config, t.Logger)
+		ts = NewJira(t.Config)
 	case "trac":
 	case "youtrack":
 	case "proofhub":
@@ -115,15 +112,12 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 	ticket.RemoteSystem = creds.System
 
 	if err := system.ParseCredentials(creds); err != nil {
-		t.Logger.Errorf("ticketCreate parseCredentials: %+v", err)
 		return bugLog.Errorf("ticketCreate parseCredentials: %w", err)
 	}
 	if err := system.Connect(); err != nil {
-		t.Logger.Errorf("ticketCreate connect: %+v", err)
 		return bugLog.Errorf("ticketCreate connect: %w", err)
 	}
 	if err := system.Create(ticket); err != nil {
-		t.Logger.Errorf("ticketCreate create: %+v", err)
 		return bugLog.Errorf("ticketCreate create: %w", err)
 	}
 	return nil
@@ -132,18 +126,15 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds database.Ticketing
 func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
 	if err != nil {
-		t.Logger.Errorf("createTicket fetchSystem: %+v", err)
 		return bugLog.Errorf("createTicket fetchSystem failed: %w", err)
 	}
 
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
-		t.Logger.Errorf("createTicket fetchTicketSystem: %+v", err)
 		return bugLog.Errorf("createTicket fetchTicketSystem: %w", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
-		t.Logger.Errorf("createTicket ticketCreate: %+v", err)
 		return bugLog.Errorf("createTicket ticketCreate: %w", err)
 	}
 

@@ -31,7 +31,6 @@ func NewAgentStorage(d Database) *AgentStorage {
 func (a AgentStorage) Insert(data AgentRecord) error {
 	svc, err := a.Database.dynamoSession()
 	if err != nil {
-		a.Database.Logger.Errorf("insert agent: %w", err)
 		return bugLog.Errorf("insert agent: %w", err)
 	}
 
@@ -63,7 +62,7 @@ func (a AgentStorage) Insert(data AgentRecord) error {
 		},
 	})
 	if err != nil {
-		return dynamoError(err, a.Database.Logger)
+		return dynamoError(err)
 	}
 	return nil
 }

@@ -6,15 +6,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestProcessFile(t *testing.T) {
-	sugar := zap.NewExample().Sugar()
-	defer func() {
-		_ = sugar.Sync()
-	}()
-
 	tests := []struct {
 		name    string
 		request events.APIGatewayProxyRequest

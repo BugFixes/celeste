@@ -44,7 +44,7 @@ func (r Request) CreateHandler(w http.ResponseWriter, hr *http.Request) {
 	}
 }
 func (r Request) Create() (Response, error) {
-	db := database.New(r.Config, &r.Logger)
+	db := database.New(r.Config)
 	ac := database.NewAccountStorage(*db)
 
 	id, err := uuid.NewUUID()

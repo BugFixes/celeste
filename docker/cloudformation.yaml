@@ -9,6 +9,33 @@ Parameters:
   Environment:
     Type: String
     Default: local
+
+  RDSName:
+    Type: String
+    Default: bugfixes
+  RDSInstanceClass:
+    Type: String
+    Default: db.m3.medium
+  RDSAllocatedStorage:
+    Type: String
+    Default: "50"
+  RDSUsername:
+    Type: String
+    Default: database_username
+    NoEcho: true
+  RDSPassword:
+    Type: String
+    Default: database_password
+    NoEcho: true
+  RDSHostname:
+    Type: String
+    Default: localhost
+    NoEcho: true
+  RDSPort:
+    Type: Number
+    Default: "5432"
+    NoEcho: true
+
   DatabaseBugs:
     Type: String
     Default: bugs
@@ -30,6 +57,7 @@ Parameters:
   DatabaseLogs:
     Type: String
     Default: logs
+
   LogQueueName:
     Type: String
     Default: logs
@@ -42,6 +70,7 @@ Parameters:
   TicketQueueName:
     Type: String
     Default: tickets
+
   BuildBucket:
     Type: String
     Default: bugfixes-celeste-builds
@@ -466,6 +495,47 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
       TableName: !Ref DatabaseLogs
+
+  RDS:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Join
+        - '-'
+        - - !Ref ServiceName
+          - !Ref RDSName
+          - !Ref Environment
+      DBName: !Ref RDSName
+      DBInstanceClass: !Ref RDSInstanceClass
+      AllocatedStorage: !Ref RDSAllocatedStorage
+      Engine: postgres
+      MasterUsername: !Ref RDSUsername
+      MasterUserPassword: !Ref RDSPassword
+  RDSPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RDSPassword
+      SecretString: !Ref RDSPassword
+  RDSUsernameSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RDSUsername
+      SecretString: !Ref RDSUsername
+  RDSPortSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RDSPort
+      SecretString: !Ref RDSPort
+  RDSHostnameSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RDSHostname
+      SecretString: !Ref RDSHostname
+  RDSDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RDSDatabase
+      SecretString: !Ref RDSName
+
 
   Bucket:
     Type: AWS::S3::Bucket

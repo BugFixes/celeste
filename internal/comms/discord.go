@@ -12,7 +12,6 @@ import (
 	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/diamondburned/arikawa/v2/gateway"
 	"github.com/mitchellh/mapstructure"
-	"go.uber.org/zap"
 )
 
 type Discord struct {
@@ -21,7 +20,6 @@ type Discord struct {
 	Context     context.Context
 	Credentials DiscordCredentials
 	Config      config.Config
-	Logger      zap.SugaredLogger
 }
 
 type DiscordCredentials struct {
@@ -29,18 +27,16 @@ type DiscordCredentials struct {
 	Credentials
 }
 
-func NewDiscord(c config.Config, logger zap.SugaredLogger) *Discord {
+func NewDiscord(c config.Config) *Discord {
 	return &Discord{
 		Context: context.Background(),
 		Config:  c,
-		Logger:  logger,
 	}
 }
 
 func (d *Discord) Connect() error {
 	authToken := os.Getenv("DISCORD_BOT_TOKEN")
 	if authToken == "" {
-		d.Logger.Errorf("discord connect: %+v", errors.New("no bot token"))
 		return bugLog.Errorf("discord connect: %w", errors.New("no bot token"))
 	}
 
@@ -60,7 +56,6 @@ func (d *Discord) ParseCredentials(creds interface{}) error {
 
 	discordCreds := cc{}
 	if err := mapstructure.Decode(creds, &discordCreds); err != nil {
-		d.Logger.Errorf("discord parseCredentials decode: %+v", err)
 		return bugLog.Errorf("discord parseCredentials decode: %w", err)
 	}
 
@@ -83,24 +78,20 @@ func (d *Discord) Send(commsPackage CommsPackage) error {
 
 	g, err := gateway.NewGateway(d.BotAuth)
 	if err != nil {
-		d.Logger.Errorf("discord send newGateway: %*v", err)
 		return bugLog.Errorf("discord send newGateway: %w", err)
 	}
 	g.AddIntents(gateway.IntentGuildMessages)
 	if err := g.OpenContext(d.Context); err != nil {
-		d.Logger.Errorf("discord send openContext: %+v", err)
 		return bugLog.Errorf("discord send openContext: %w", err)
 	}
 
 	c := api.NewClient(fmt.Sprintf("Bot %s", d.BotAuth)).WithContext(d.Context)
 	snow, err := discord.ParseSnowflake(d.Credentials.Channel)
 	if err != nil {
-		d.Logger.Errorf("discord send parseSnowFlake: %+v", err)
 		return bugLog.Errorf("discord send parseSnowFlake: %w", err)
 	}
 	m, err := c.SendMessage(discord.ChannelID(snow), title, &embed)
 	if err != nil {
-		d.Logger.Errorf("discord send sendMessage: %+v", err)
 		return bugLog.Errorf("discord send sendMessage: %w", err)
 	}
 

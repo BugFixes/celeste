@@ -13,7 +13,7 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.3
 	github.com/google/go-github/v29 v29.0.3 // indirect
-	github.com/google/go-github/v35 v35.2.0
+	github.com/google/go-github/v35 v35.3.0
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/kr/text v0.2.0 // indirect

@@ -5,15 +5,15 @@ go 1.16
 require (
 	github.com/andygrunwald/go-jira v1.13.0
 	github.com/aws/aws-lambda-go v1.24.0
-	github.com/aws/aws-sdk-go v1.38.53
+	github.com/aws/aws-sdk-go v1.38.59
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.2.1
 	github.com/caarlos0/env/v6 v6.6.2
-	github.com/diamondburned/arikawa/v2 v2.0.6
+	github.com/diamondburned/arikawa/v2 v2.1.0
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.3
 	github.com/google/go-github/v29 v29.0.3 // indirect
-	github.com/google/go-github/v35 v35.2.0
+	github.com/google/go-github/v35 v35.3.0
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/jackc/pgx/v4 v4.11.0 // indirect

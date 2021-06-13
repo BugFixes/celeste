@@ -1,12 +1,12 @@
 package permissions
 
 import (
-  "context"
-  "fmt"
+	"context"
+	"fmt"
 
-  "github.com/bugfixes/celeste/internal/config"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  "github.com/jackc/pgx/v4"
+	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"github.com/jackc/pgx/v4"
 )
 
 type Permissions struct {
@@ -37,69 +37,69 @@ func NewPermissions(c config.Config) *Permissions {
 }
 
 func (p *Permissions) Store(perm Perm) error {
-  if perm.AccountID != 0 {
-    return p.storeGroup(perm)
-  }
+	if perm.AccountID != 0 {
+		return p.storeGroup(perm)
+	}
 
-  return p.storeUser(perm)
+	return p.storeUser(perm)
 }
 
 func (p *Permissions) storeGroup(perm Perm) error {
-  conn, err := pgx.Connect(
-    p.Context,
-    fmt.Sprintf(
-      "postgres://%s:%s@%s:%s/%s",
-      p.Config.RDS.Username,
-      p.Config.RDS.Password,
-      p.Config.RDS.Hostname,
-      p.Config.RDS.Port,
-      p.Config.RDS.Database))
-  if err != nil {
-    return bugLog.Errorf("store: %w", err)
-  }
-  defer func() {
-    if err := conn.Close(p.Context); err != nil {
-      bugLog.Debugf("close storeGroup: %w", err)
-    }
-  }()
-  if _, err := conn.Exec(p.Context,
-    "INSERT INTO permission (`key`, `action`, permission_group) VALUES($1, $2, $3)",
-    perm.Key,
-    perm.Action,
-    perm.Group); err != nil {
-    return bugLog.Errorf("exec: %w", err)
-  }
+	conn, err := pgx.Connect(
+		p.Context,
+		fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s",
+			p.Config.RDS.Username,
+			p.Config.RDS.Password,
+			p.Config.RDS.Hostname,
+			p.Config.RDS.Port,
+			p.Config.RDS.Database))
+	if err != nil {
+		return bugLog.Errorf("store: %w", err)
+	}
+	defer func() {
+		if err := conn.Close(p.Context); err != nil {
+			bugLog.Debugf("close storeGroup: %w", err)
+		}
+	}()
+	if _, err := conn.Exec(p.Context,
+		"INSERT INTO permission (`key`, `action`, permission_group) VALUES($1, $2, $3)",
+		perm.Key,
+		perm.Action,
+		perm.Group); err != nil {
+		return bugLog.Errorf("exec: %w", err)
+	}
 
-  return nil
+	return nil
 }
 
 func (p *Permissions) storeUser(perm Perm) error {
-  conn, err := pgx.Connect(
-    p.Context,
-    fmt.Sprintf(
-      "postgres://%s:%s@%s:%s/%s",
-      p.Config.RDS.Username,
-      p.Config.RDS.Password,
-      p.Config.RDS.Hostname,
-      p.Config.RDS.Port,
-      p.Config.RDS.Database))
-  if err != nil {
-    return bugLog.Errorf("store: %w", err)
-  }
-  defer func() {
-    if err := conn.Close(p.Context); err != nil {
-      bugLog.Debugf("close storeUser: %w", err)
-    }
-  }()
-  if _, err := conn.Exec(p.Context,
-    "INSERT INTO account_permission (`key`, `action`, account_id) VALUES($1, $2, $3)",
-    perm.Key,
-    perm.Action,
-    perm.AccountID); err != nil {
-    return bugLog.Errorf("exec: %w", err)
-  }
+	conn, err := pgx.Connect(
+		p.Context,
+		fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s",
+			p.Config.RDS.Username,
+			p.Config.RDS.Password,
+			p.Config.RDS.Hostname,
+			p.Config.RDS.Port,
+			p.Config.RDS.Database))
+	if err != nil {
+		return bugLog.Errorf("store: %w", err)
+	}
+	defer func() {
+		if err := conn.Close(p.Context); err != nil {
+			bugLog.Debugf("close storeUser: %w", err)
+		}
+	}()
+	if _, err := conn.Exec(p.Context,
+		"INSERT INTO account_permission (`key`, `action`, account_id) VALUES($1, $2, $3)",
+		perm.Key,
+		perm.Action,
+		perm.AccountID); err != nil {
+		return bugLog.Errorf("exec: %w", err)
+	}
 
-  return nil
+	return nil
 }
 
 func (p *Permissions) CanDo(perm Perm) (bool, error) {

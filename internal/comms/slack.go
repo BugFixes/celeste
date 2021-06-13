@@ -9,7 +9,6 @@ import (
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/slack-go/slack"
-	"go.uber.org/zap"
 )
 
 type Slack struct {
@@ -18,7 +17,6 @@ type Slack struct {
 	Context     context.Context
 	Credentials SlackCredentials
 	Config      config.Config
-	Logger      zap.SugaredLogger
 }
 
 type SlackCredentials struct {
@@ -27,18 +25,16 @@ type SlackCredentials struct {
 	Credentials
 }
 
-func NewSlack(c config.Config, logger zap.SugaredLogger) *Slack {
+func NewSlack(c config.Config) *Slack {
 	return &Slack{
 		Context: context.Background(),
 		Config:  c,
-		Logger:  logger,
 	}
 }
 
 func (s *Slack) Connect() error {
 	authToken := s.Credentials.Token
 	if authToken == "" {
-		s.Logger.Errorf("slack connect: %+v", errors.New("no bot token"))
 		return bugLog.Errorf("slack connect: %w", errors.New("no bot token"))
 	}
 	s.Client = slack.New(authToken)
@@ -58,7 +54,6 @@ func (s *Slack) ParseCredentials(creds interface{}) error {
 
 	slackCreds := sc{}
 	if err := mapstructure.Decode(creds, &slackCreds); err != nil {
-		s.Logger.Errorf("slack parseCredentials decode: %+v", err)
 		return bugLog.Errorf("slack parseCredentials decode: %w", err)
 	}
 
@@ -86,7 +81,6 @@ func (s *Slack) Send(commsPackage CommsPackage) error {
 		s.Credentials.Channel,
 		title,
 		message); err != nil {
-		s.Logger.Errorf("slack send postMessage: %+v", err)
 		return bugLog.Errorf("slack send postMessage: %w", err)
 	}
 

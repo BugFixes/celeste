@@ -16,6 +16,7 @@ require (
 	github.com/google/go-github/v35 v35.3.0
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.2.0
+	github.com/jackc/pgx/v4 v4.11.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect

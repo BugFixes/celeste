@@ -4,12 +4,10 @@ import (
 	"time"
 
 	"github.com/bugfixes/celeste/internal/config"
-	"go.uber.org/zap"
 )
 
 type Logic struct {
 	Config config.Config
-	Logger *zap.SugaredLogger
 }
 
 type LogicBug struct {
@@ -18,10 +16,9 @@ type LogicBug struct {
 	TimesReported int
 }
 
-func NewLogic(c config.Config, l *zap.SugaredLogger) *Logic {
+func NewLogic(c config.Config) *Logic {
 	return &Logic{
 		Config: c,
-		Logger: l,
 	}
 }
 

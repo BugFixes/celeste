@@ -3,7 +3,6 @@ package celeste
 import (
 	"github.com/aws/aws-lambda-go/events"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"go.uber.org/zap"
 
 	"github.com/bugfixes/celeste/internal/celeste/account"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
@@ -12,21 +11,11 @@ import (
 
 type Celeste struct {
 	Config  config.Config
-	Logger  *zap.SugaredLogger
 	Request events.APIGatewayProxyRequest
 }
 
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Logger
-	logger, err := zap.NewProduction()
-	defer func() {
-		_ = logger.Sync()
-	}()
-	if err != nil {
-		return events.APIGatewayProxyResponse{}, bugLog.Errorf("zap failed to start: %w", err)
-	}
-	sugar := logger.Sugar()
-	sugar.Infow("Starting Celeste")
+	bugLog.Local().Info("Starting Celeste")
 
 	// Config
 	cfg, err := config.BuildConfig()
@@ -37,7 +26,6 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// Routes
 	c := Celeste{
 		Config:  cfg,
-		Logger:  sugar,
 		Request: request,
 	}
 
@@ -49,14 +37,13 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 	switch c.Request.Path {
 	// <editor-fold desc="Bugs">
 	case "/bug":
-		c.Logger.Infow("bug request received")
+		bugLog.Local().Info("bug request received")
 
-		response, err := bug.NewBug(c.Config, *c.Logger).Parse(c.Request)
+		response, err := bug.NewBug(c.Config).Parse(c.Request)
 		if err != nil {
-			c.Logger.Errorf("file request: %v, failed: %v", c.Request, err)
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("process file failed: %w", err)
 		}
-		c.Logger.Infow("bug request processed")
+		bugLog.Local().Info("bug request processed")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    response.Headers,
@@ -66,31 +53,30 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 
 		// <editor-fold desc="Logs">
 	case "/log":
-		c.Logger.Infow("")
+		bugLog.Local().Info("")
 	// </editor-fold>
 
 	// <editor-fold desc="Agent">
 	case "/agent":
-		c.Logger.Infow("agent request received")
+		bugLog.Local().Info("agent request received")
 		return events.APIGatewayProxyResponse{}, bugLog.Errorf("todo: agent")
 		// </editor-fold>
 
 		// <editor-fold desc="Comms">
 	case "/comms":
-		c.Logger.Infow("comms request received")
+		bugLog.Local().Info("comms request received")
 		return events.APIGatewayProxyResponse{}, bugLog.Errorf("todo: comms")
 	// </editor-fold>
 
 	// <editor-fold desc="Account">
 	case "/account":
-		c.Logger.Infow("create account request received")
+		bugLog.Local().Info("create account request received")
 
-		response, err := account.NewLambdaRequest(c.Config, *c.Logger, c.Request).Parse()
+		response, err := account.NewLambdaRequest(c.Config, c.Request).Parse()
 		if err != nil {
-			c.Logger.Errorf("create account request: %v", err)
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("create account request failed: %w", err)
 		}
-		c.Logger.Infow("create account request processed")
+		bugLog.Local().Info("create account request processed")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 201,
 			Headers:    response.Headers,
@@ -98,13 +84,12 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 		}, nil
 
 	case "/account/login":
-		c.Logger.Infow("account login received")
-		response, err := account.NewLambdaRequest(c.Config, *c.Logger, c.Request).Login()
+		bugLog.Local().Info("account login received")
+		response, err := account.NewLambdaRequest(c.Config, c.Request).Login()
 		if err != nil {
-			c.Logger.Errorf("account login request: %v", err)
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("login account request failed: %w", err)
 		}
-		c.Logger.Infow("login account processed")
+		bugLog.Local().Info("login account processed")
 		return events.APIGatewayProxyResponse{
 			StatusCode: 200,
 			Headers:    response.Headers,
@@ -113,6 +98,6 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 		// </editor-fold>
 	}
 
-	c.Logger.Errorf("unknown request received: %v", c.Request)
+	bugLog.Local().Infof("unknown request received: %v", c.Request)
 	return events.APIGatewayProxyResponse{}, bugLog.Errorf("unknown request received: %v", c.Request)
 }

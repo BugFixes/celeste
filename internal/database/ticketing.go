@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -39,13 +37,11 @@ type TicketDetails struct {
 func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) error {
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
-		t.Database.Logger.Errorf("store credentials dynamo session: %v", err)
 		return bugLog.Errorf("store credentials dynamo session: %w", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(credentials)
 	if err != nil {
-		t.Database.Logger.Errorf("store credentials map failed: %v", err)
 		return bugLog.Errorf("store credentials map failed: %w", err)
 	}
 
@@ -53,8 +49,7 @@ func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) err
 		Item:      av,
 		TableName: aws.String(t.Database.Config.TicketingTable),
 	}); err != nil {
-		t.Database.Logger.Errorf("store credentials store failed: %v", err)
-		return fmt.Errorf("store credentials store failed: %w", err)
+		return bugLog.Errorf("store credentials store failed: %w", err)
 	}
 
 	return nil
@@ -63,8 +58,7 @@ func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) err
 func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials, error) {
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
-		t.Database.Logger.Errorf("ticketing fetchCredentials session: %v", err)
-		return TicketingCredentials{}, fmt.Errorf("ticketing fetchCredentialssession: %w", err)
+		return TicketingCredentials{}, bugLog.Errorf("ticketing fetchCredentialssession: %w", err)
 	}
 
 	filt := expression.Name("agent_id").Equal(expression.Value(agentID))
@@ -75,8 +69,7 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 		expression.Name("agent_id"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		t.Database.Logger.Errorf("fetch credentials failed to build expresion: %v", err)
-		return TicketingCredentials{}, fmt.Errorf("fetch credentials failed to build expresion: %w", err)
+		return TicketingCredentials{}, bugLog.Errorf("fetch credentials failed to build expresion: %w", err)
 	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -87,18 +80,17 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 		ProjectionExpression:      expr.Projection(),
 	})
 	if err != nil {
-		return TicketingCredentials{}, fmt.Errorf("ticketing failed to scan: %w", err)
+		return TicketingCredentials{}, bugLog.Errorf("ticketing failed to scan: %w", err)
 	}
 
 	tcs := []TicketingCredentials{}
 	if len(result.Items) == 0 {
-		return TicketingCredentials{}, fmt.Errorf("ticketing failed to find any")
+		return TicketingCredentials{}, bugLog.Errorf("ticketing failed to find any")
 	}
 	for _, i := range result.Items {
 		tc := TicketingCredentials{}
 		if err := dynamodbattribute.UnmarshalMap(i, &tc); err != nil {
-			t.Database.Logger.Errorf("failed to unmarshal details: %v", err)
-			return TicketingCredentials{}, fmt.Errorf("failed to unmarshal details: %w", err)
+			return TicketingCredentials{}, bugLog.Errorf("failed to unmarshal details: %w", err)
 		}
 		tcs = append(tcs, tc)
 	}
@@ -109,29 +101,25 @@ func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials
 func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 	id, err := uuid.NewUUID()
 	if err != nil {
-		t.Database.Logger.Errorf("store ticket uuid failed: %v", err)
-		return fmt.Errorf("store ticket uuid failed: %w", err)
+		return bugLog.Errorf("store ticket uuid failed: %w", err)
 	}
 	details.ID = id.String()
 
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
-		t.Database.Logger.Errorf("store ticket dynamo session: %v", err)
-		return fmt.Errorf("store ticket dynamo session: %w", err)
+		return bugLog.Errorf("store ticket dynamo session: %w", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(details)
 	if err != nil {
-		t.Database.Logger.Errorf("store ticket marshal: %v", err)
-		return fmt.Errorf("store ticket marshal: %w", err)
+		return bugLog.Errorf("store ticket marshal: %w", err)
 	}
 
 	if _, err := svc.PutItem(&dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(t.Database.Config.TicketsTable),
 	}); err != nil {
-		t.Database.Logger.Errorf("store ticket save: %v", err)
-		return fmt.Errorf("store ticket save: %w", err)
+		return bugLog.Errorf("store ticket save: %w", err)
 	}
 
 	return nil
@@ -140,8 +128,7 @@ func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, error) {
 	svc, err := t.Database.dynamoSession()
 	if err != nil {
-		t.Database.Logger.Errorf("ticketingStorage findTicket dynamosession: %+v", err)
-		return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket dynamosession: %w", err)
+		return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket dynamosession: %w", err)
 	}
 
 	filt := expression.And(
@@ -155,8 +142,7 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 		expression.Name("hash"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		t.Database.Logger.Errorf("ticketStorage findTicket expression builder: %+v", err)
-		return TicketDetails{}, fmt.Errorf("ticketStorage findTicket expression buider: %w", err)
+		return TicketDetails{}, bugLog.Errorf("ticketStorage findTicket expression buider: %w", err)
 	}
 	result, err := svc.Scan(&dynamodb.ScanInput{
 		TableName:                 aws.String(t.Database.Config.TicketsTable),
@@ -166,8 +152,7 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 		FilterExpression:          expr.Filter(),
 	})
 	if err != nil {
-		t.Database.Logger.Errorf("ticketingStorage findTicket scan: %+v", err)
-		return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket scan: %w", err)
+		return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket scan: %w", err)
 	}
 
 	tds := []TicketDetails{}
@@ -177,8 +162,7 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 	for _, i := range result.Items {
 		td := TicketDetails{}
 		if err := dynamodbattribute.UnmarshalMap(i, &td); err != nil {
-			t.Database.Logger.Errorf("ticketingStorage findTicket unmarshal: %+v", err)
-			return TicketDetails{}, fmt.Errorf("ticketingStorage findTicket unmarshal: %w", err)
+			return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket unmarshal: %w", err)
 		}
 		tds = append(tds, td)
 	}
@@ -189,8 +173,7 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
 	ticket, err := t.FindTicket(details)
 	if err != nil {
-		t.Database.Logger.Errorf("ticketingStorage ticketExists findTicket: %+v", err)
-		return false, fmt.Errorf("ticketingStorage ticketExists findTicket: %w", err)
+		return false, bugLog.Errorf("ticketingStorage ticketExists findTicket: %w", err)
 	}
 
 	if ticket.ID == "" {

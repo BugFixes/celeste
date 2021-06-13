@@ -5,48 +5,35 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bugfixes/celeste/internal/celeste"
 	"github.com/bugfixes/celeste/internal/celeste/account"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
 	"github.com/bugfixes/celeste/internal/comms"
-	"github.com/bugfixes/celeste/internal/ticketing"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"go.uber.org/zap"
-
-	"github.com/bugfixes/celeste/internal/celeste"
 	"github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/celeste/internal/ticketing"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	// Logger
-	logger, err := zap.NewDevelopment()
-	defer func() {
-		_ = logger.Sync()
-	}()
-	if err != nil {
-		bugLog.Warnf("zap failed to start: %v", err)
-		return
-	}
-	sugar := logger.Sugar()
-	sugar.Infow("Starting Celeste")
+	bugLog.Local().Info("Starting Celeste")
 
 	// Config
 	cfg, err := config.BuildConfig()
 	if err != nil {
-		bugLog.Warnf("failed to build config: %v", err)
+		_ = bugLog.Errorf("buildConfig: %v", err)
 		return
 	}
 
 	// Celeste
 	c := celeste.Celeste{
 		Config: cfg,
-		Logger: sugar,
 	}
 
 	if err := route(c); err != nil {
-		bugLog.Warnf("failed to route: %v", err)
+		_ = bugLog.Errorf("route: %v", err)
 		return
 	}
 }
@@ -59,10 +46,10 @@ func route(c celeste.Celeste) error {
 
 	// Account
 	r.Route("/account", func(r chi.Router) {
-		r.Post("/", account.NewHTTPRequest(c.Config, *c.Logger).CreateHandler)
-		r.Delete("/", account.NewHTTPRequest(c.Config, *c.Logger).DeleteHandler)
+		r.Post("/", account.NewHTTPRequest(c.Config).CreateHandler)
+		r.Delete("/", account.NewHTTPRequest(c.Config).DeleteHandler)
 
-		r.Post("/login", account.NewHTTPRequest(c.Config, *c.Logger).LoginHandler)
+		r.Post("/login", account.NewHTTPRequest(c.Config).LoginHandler)
 	})
 
 	// Agent
@@ -72,32 +59,32 @@ func route(c celeste.Celeste) error {
 
 	// Logs
 	r.Route("/log", func(r chi.Router) {
-		r.Post("/", bug.NewLog(c.Config, *c.Logger).LogHandler)
+		r.Post("/", bug.NewLog(c.Config).LogHandler)
 	})
 
 	// Bug
 	r.Route("/bug", func(r chi.Router) {
-		r.Post("/", bug.NewBug(c.Config, *c.Logger).BugHandler)
+		r.Post("/", bug.NewBug(c.Config).BugHandler)
 	})
 
 	// Comms
 	r.Route("/comms", func(r chi.Router) {
-		r.Post("/", comms.NewCommunication(c.Config, *c.Logger).CreateCommsHandler)
-		r.Put("/", comms.NewCommunication(c.Config, *c.Logger).AttachCommsHandler)
-		r.Patch("/", comms.NewCommunication(c.Config, *c.Logger).DetachCommsHandler)
-		r.Delete("/", comms.NewCommunication(c.Config, *c.Logger).DeleteCommsHandler)
-		r.Get("/", comms.NewCommunication(c.Config, *c.Logger).ListCommsHandler)
+		r.Post("/", comms.NewCommunication(c.Config).CreateCommsHandler)
+		r.Put("/", comms.NewCommunication(c.Config).AttachCommsHandler)
+		r.Patch("/", comms.NewCommunication(c.Config).DetachCommsHandler)
+		r.Delete("/", comms.NewCommunication(c.Config).DeleteCommsHandler)
+		r.Get("/", comms.NewCommunication(c.Config).ListCommsHandler)
 	})
 
 	// Ticket
 	r.Route("/ticket", func(r chi.Router) {
-		r.Post("/", ticketing.NewTicketing(c.Config, *c.Logger).CreateTicketHandler)
+		r.Post("/", ticketing.NewTicketing(c.Config).CreateTicketHandler)
 	})
 
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)
 	if err != nil {
-		return bugLog.Errorf("failed to start port: %w", err)
+		return bugLog.Errorf("port: %w", err)
 	}
 
 	return nil

@@ -3,18 +3,11 @@ package bug_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-
 	"github.com/bugfixes/celeste/internal/celeste/bug"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertLevelFromString(t *testing.T) {
-	sugar := zap.NewExample().Sugar()
-	defer func() {
-		_ = sugar.Sync()
-	}()
-
 	tests := []struct {
 		name    string
 		request string
@@ -69,7 +62,7 @@ func TestConvertLevelFromString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp := bug.ConvertLevelFromString(test.request, sugar)
+			resp := bug.ConvertLevelFromString(test.request)
 
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)

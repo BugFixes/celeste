@@ -4,12 +4,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"go.uber.org/zap"
 )
 
 type Request struct {
 	Config  config.Config
-	Logger  zap.SugaredLogger
 	Request events.APIGatewayProxyRequest
 	Account AccountCreate
 }
@@ -21,18 +19,16 @@ type AccountCreate struct {
 	CountryCode int `json:"countryCode"`
 }
 
-func NewLambdaRequest(c config.Config, l zap.SugaredLogger, r events.APIGatewayProxyRequest) *Request {
+func NewLambdaRequest(c config.Config, r events.APIGatewayProxyRequest) *Request {
 	return &Request{
 		Config:  c,
-		Logger:  l,
 		Request: r,
 	}
 }
 
-func NewHTTPRequest(c config.Config, l zap.SugaredLogger) *Request {
+func NewHTTPRequest(c config.Config) *Request {
 	return &Request{
 		Config: c,
-		Logger: l,
 	}
 }
 

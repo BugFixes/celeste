@@ -29,7 +29,6 @@ func NewCommsStorage(d Database) *CommsStorage {
 func (c CommsStorage) FetchCredentials(agentID string) (CommsCredentials, error) {
 	svc, err := c.Database.dynamoSession()
 	if err != nil {
-		c.Database.Logger.Errorf("comms fetchCredentials session: %+v", err)
 		return CommsCredentials{}, bugLog.Errorf("comms fetchCredentials session: %w", err)
 	}
 
@@ -40,7 +39,6 @@ func (c CommsStorage) FetchCredentials(agentID string) (CommsCredentials, error)
 		expression.Name("comms_details"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		c.Database.Logger.Errorf("comms fetchCredentials expression: %+v", err)
 		return CommsCredentials{}, bugLog.Errorf("comms fetchCredentails expression: %w", err)
 	}
 
@@ -52,19 +50,16 @@ func (c CommsStorage) FetchCredentials(agentID string) (CommsCredentials, error)
 		ProjectionExpression:      expr.Projection(),
 	})
 	if err != nil {
-		c.Database.Logger.Errorf("comms fetchCredentials scan: %+v", err)
 		return CommsCredentials{}, bugLog.Errorf("comms fetchCredentails scan: %w", err)
 	}
 
 	ccs := []CommsCredentials{}
 	if len(result.Items) == 0 {
-		c.Database.Logger.Errorf("comms fetchCredentials items: %+v", errors.New("no items found"))
 		return CommsCredentials{}, bugLog.Errorf("comms fetchCredentails items: %w", errors.New("no items found"))
 	}
 	for _, i := range result.Items {
 		cc := CommsCredentials{}
 		if err := dynamodbattribute.UnmarshalMap(i, &cc); err != nil {
-			c.Database.Logger.Errorf("comms fetchCredentials unmarshal: %+v", err)
 			return CommsCredentials{}, bugLog.Errorf("comms fetchCredentials unmarshal: %w", err)
 		}
 		ccs = append(ccs, cc)

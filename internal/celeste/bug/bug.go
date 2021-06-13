@@ -1,14 +1,13 @@
 package bug
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/bugfixes/celeste/internal/celeste/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
-	"go.uber.org/zap"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type Bug struct {
@@ -60,7 +59,7 @@ func GetLevelUnknown() int {
 
 // ConvertLevelFromString
 // nolint: gocyclo
-func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
+func ConvertLevelFromString(s string) int {
 	switch s {
 	case "log":
 	case "debug":
@@ -84,7 +83,7 @@ func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	default:
 		lvl, err := strconv.Atoi(s)
 		if err != nil {
-			logger.Errorf("log level was sent wrong: %+v, sent: %v", err, s)
+			bugLog.Infof("log level was sent wrong: %+v, sent: %v", err, s)
 			return GetLevelUnknown()
 		}
 		if lvl >= 5 {
@@ -96,8 +95,8 @@ func ConvertLevelFromString(s string, logger *zap.SugaredLogger) int {
 	return GetLevelUnknown()
 }
 
-func (b *Bug) ReportedTimes(c config.Config, logger *zap.SugaredLogger) error {
-	bugInfo, err := database.NewBugStorage(*database.New(c, logger)).FindAndStore(database.BugRecord{
+func (b *Bug) ReportedTimes(c config.Config) error {
+	bugInfo, err := database.NewBugStorage(*database.New(c)).FindAndStore(database.BugRecord{
 		ID:      b.Identifier,
 		AgentID: b.Agent.ID,
 		Hash:    b.Hash,
@@ -111,8 +110,7 @@ func (b *Bug) ReportedTimes(c config.Config, logger *zap.SugaredLogger) error {
 		Level: b.Level,
 	})
 	if err != nil {
-		logger.Errorf("bug reported times failed find: %+v", err)
-		return fmt.Errorf("bug reported times failed find: %w", err)
+		return bugLog.Errorf("bug reported times failed find: %w", err)
 	}
 	b.TimesReported = bugInfo.TimesReportedNumber
 	b.LastReported = bugInfo.LastReportedTime

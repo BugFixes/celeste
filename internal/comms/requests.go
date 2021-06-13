@@ -4,18 +4,15 @@ import (
 	"net/http"
 
 	"github.com/bugfixes/celeste/internal/config"
-	"go.uber.org/zap"
 )
 
 type Communication struct {
 	Config config.Config
-	Logger zap.SugaredLogger
 }
 
-func NewCommunication(config config.Config, logger zap.SugaredLogger) *Communication {
+func NewCommunication(config config.Config) *Communication {
 	return &Communication{
 		Config: config,
-		Logger: logger,
 	}
 }
 

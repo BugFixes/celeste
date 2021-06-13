@@ -8,25 +8,21 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/bugfixes/celeste/internal/comms"
+	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/logic"
 	"github.com/bugfixes/celeste/internal/ticketing"
-	"go.uber.org/zap"
-
-	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type ProcessBug struct {
 	Config config.Config
-	Logger zap.SugaredLogger
 
 	CommsChannel string
 }
 
-func NewBug(c config.Config, l zap.SugaredLogger) ProcessBug {
+func NewBug(c config.Config) ProcessBug {
 	return ProcessBug{
 		Config: c,
-		Logger: l,
 	}
 }
 
@@ -49,20 +45,17 @@ func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 		bug.Line = strconv.Itoa(bug.LineNumber)
 	}
 
-	if err := bug.GenerateHash(&p.Logger); err != nil {
-		p.Logger.Errorf("generateBugInfo generateHash: %+v", err)
+	if err := bug.GenerateHash(); err != nil {
 		return bugLog.Errorf("generateBugInfo generateHash: %w", err)
 	}
-	if err := bug.GenerateIdentifier(&p.Logger); err != nil {
-		p.Logger.Errorf("generateBugInfo generateIdentifier: %+v", err)
+	if err := bug.GenerateIdentifier(); err != nil {
 		return bugLog.Errorf("generateBugInfo generateIdentifier: %w", err)
 	}
-	if err := bug.ReportedTimes(p.Config, &p.Logger); err != nil {
-		p.Logger.Errorf("generateBugInfo reportedTimes: %+v", err)
+	if err := bug.ReportedTimes(p.Config); err != nil {
 		return bugLog.Errorf("generateBugInfo reportedTimes: %w", err)
 	}
 
-	bug.LevelNumber = ConvertLevelFromString(bug.Level, &p.Logger)
+	bug.LevelNumber = ConvertLevelFromString(bug.Level)
 
 	return nil
 }
@@ -79,8 +72,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 		TimesReported: bug.TimesReported,
 	}
 
-	if err := ticketing.NewTicketing(p.Config, p.Logger).CreateTicket(&ticket); err != nil {
-		p.Logger.Errorf("generateTicket createTicket: %+v", err)
+	if err := ticketing.NewTicketing(p.Config).CreateTicket(&ticket); err != nil {
 		return bugLog.Errorf("generateTicket createTicket: %w", err)
 	}
 	bug.RemoteLink = ticket.RemoteLink
@@ -90,7 +82,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 }
 
 func (p ProcessBug) GenerateComms(bug *Bug) error {
-	if err := comms.NewComms(p.Config, p.Logger).SendComms(comms.CommsPackage{
+	if err := comms.NewComms(p.Config).SendComms(comms.CommsPackage{
 		AgentID:      bug.Agent.ID,
 		Message:      "tester message",
 		Link:         bug.RemoteLink,
@@ -106,34 +98,34 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 	bug := Bug{}
 	defer func() {
 		if err := r.Body.Close(); err != nil {
-			errorReport(w, p.Logger, "bugHandler body close", err)
+			errorReport(w, "bugHandler body close", err)
 			return
 		}
 	}()
 
 	if err := json.NewDecoder(r.Body).Decode(&bug); err != nil {
-		errorReport(w, p.Logger, "bugHandler decode", err)
+		errorReport(w, "bugHandler decode", err)
 		return
 	}
 
 	if err := p.GenerateBugInfo(&bug, r.Header.Get("X-API-KEY")); err != nil {
-		errorReport(w, p.Logger, "bugHandler generateBugInfo", err)
+		errorReport(w, "bugHandler generateBugInfo", err)
 		return
 	}
 
 	if err := p.GenerateTicket(&bug); err != nil {
-		errorReport(w, p.Logger, "bugHandler generateTicket", err)
+		errorReport(w, "bugHandler generateTicket", err)
 		return
 	}
 
-	l := logic.NewLogic(p.Config, &p.Logger)
+	l := logic.NewLogic(p.Config)
 	if l.ShouldWeReport(logic.LogicBug{
 		LastReported:  bug.LastReported,
 		FirstReported: bug.FirstReported,
 		TimesReported: bug.TimesReported,
 	}) {
 		if err := p.GenerateComms(&bug); err != nil {
-			errorReport(w, p.Logger, "logHandler generateComms", err)
+			errorReport(w, "logHandler generateComms", err)
 			return
 		}
 	}

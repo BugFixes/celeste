@@ -15,14 +15,12 @@ import (
 	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
-	"go.uber.org/zap"
 )
 
 type Jira struct {
 	Client      *jira.Client
 	Context     context.Context
 	Config      config.Config
-	Logger      zap.SugaredLogger
 	Credentials JiraCredentials
 }
 
@@ -39,11 +37,10 @@ type JiraProject struct {
 	Key  string `json:"key,omitempty"`
 }
 
-func NewJira(c config.Config, logger zap.SugaredLogger) *Jira {
+func NewJira(c config.Config) *Jira {
 	return &Jira{
 		Context: context.Background(),
 		Config:  c,
-		Logger:  logger,
 	}
 }
 
@@ -55,7 +52,6 @@ func (j *Jira) Connect() error {
 
 	client, err := jira.NewClient(c.Client(), j.Credentials.Host)
 	if err != nil {
-		j.Logger.Errorf("jira connect: %+v", err)
 		return bugLog.Errorf("jira connect: %w", err)
 	}
 
@@ -79,7 +75,6 @@ func (j *Jira) ParseCredentials(creds interface{}) error {
 
 	jiraCreds := jc{}
 	if err := mapstructure.Decode(creds, &jiraCreds); err != nil {
-		j.Logger.Errorf("jira parseCredentials decode: %+v", err)
 		return bugLog.Errorf("jira parseCredentials decode: %w", err)
 	}
 
@@ -356,7 +351,6 @@ func (j *Jira) GenerateTemplate(ticket *Ticket) (TicketTemplate, error) {
 func (j *Jira) Create(ticket *Ticket) error {
 	exists, td, err := j.TicketExists(ticket)
 	if err != nil {
-		j.Logger.Errorf("jira create ticketExists: %+v", err)
 		return bugLog.Errorf("jira create ticketExists: %w", err)
 	}
 	if exists {
@@ -372,14 +366,12 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	client := &http.Client{}
 	jsond, err := json.Marshal(template.Body)
 	if err != nil {
-		j.Logger.Errorf("jira create marshall: %+v", err)
 		return bugLog.Errorf("jira create marshall: %w", err)
 	}
 	send := bytes.NewBuffer(jsond)
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/rest/api/3/issue", j.Credentials.Host), send)
 	if err != nil {
-		j.Logger.Errorf("jira create newRequest: %+v", err)
 		return bugLog.Errorf("jira create newRequest: %w", err)
 	}
 	req.Header.Add("Accept", "application/json")
@@ -387,12 +379,11 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 	req.SetBasicAuth(j.Credentials.Username, j.Credentials.Token)
 	resp, err := client.Do(req)
 	if err != nil {
-		j.Logger.Errorf("jira create do: %+v", err)
 		return bugLog.Errorf("jira create do: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			j.Logger.Errorf("jira createNew close response: %+v", err)
+			bugLog.Debugf("jira createNew close response: %+v", err)
 		}
 	}()
 
@@ -400,14 +391,12 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 
 	ic := jira.Issue{}
 	if err := json.Unmarshal(readResponseBody, &ic); err != nil {
-		j.Logger.Errorf("jira create unmarshall: %+v", err)
 		return bugLog.Errorf("jira create unmarshall: %w", err)
 	}
 
 	td.RemoteID = ic.ID
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, ic.Key)
-	if err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).StoreTicketDetails(td); err != nil {
-		j.Logger.Errorf("jira create store: %+v", err)
+	if err := database.NewTicketingStorage(*database.New(j.Config)).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("jira create store: %w", err)
 	}
 
@@ -420,9 +409,8 @@ func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error)
 		System:  "jira",
 		Hash:    GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).TicketExists(td)
+	ticketExists, err := database.NewTicketingStorage(*database.New(j.Config)).TicketExists(td)
 	if err != nil {
-		j.Logger.Errorf("jira ticketExists: %+v", err)
 		return false, td, bugLog.Errorf("jira ticketExists: %w", err)
 	}
 
@@ -434,7 +422,6 @@ func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error)
 func (j Jira) Update(ticket *Ticket) error {
 	err := j.Fetch(ticket)
 	if err != nil {
-		j.Logger.Errorf("jira update fetch: %+v", err)
 		return bugLog.Errorf("jira update fetch: %w", err)
 	}
 
@@ -449,13 +436,11 @@ func (j Jira) Update(ticket *Ticket) error {
 			return j.createNew(ticket, td)
 		}
 
-		j.Logger.Errorf("jira update fetchRemoteTicket: %+v", err)
 		return bugLog.Errorf("jira update fetchRemoteTicket: %w", err)
 	}
 
 	rtd := jira.Issue{}
 	if err := mapstructure.Decode(rt.RemoteDetails, &rtd); err != nil {
-		j.Logger.Errorf("jira update decode: %+v", err)
 		return bugLog.Errorf("jira update decode: %w", err)
 	}
 
@@ -477,26 +462,23 @@ func (j Jira) Update(ticket *Ticket) error {
 	client := &http.Client{}
 	jsond, err := json.Marshal(template.Body)
 	if err != nil {
-		j.Logger.Errorf("jira update marshall: %+v", err)
-		return fmt.Errorf("jira update marshall: %w", err)
+		return bugLog.Errorf("jira update marshall: %w", err)
 	}
 	send := bytes.NewBuffer(jsond)
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/rest/api/3/issue/%s", j.Credentials.Host, rtd.ID), send)
 	if err != nil {
-		j.Logger.Errorf("jira update newRequest: %+v", err)
-		return fmt.Errorf("jira update newRequest: %w", err)
+		return bugLog.Errorf("jira update newRequest: %w", err)
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(j.Credentials.Username, j.Credentials.Token)
 	resp, err := client.Do(req)
 	if err != nil {
-		j.Logger.Errorf("jira update do: %+v", err)
-		return fmt.Errorf("jira update do: %w", err)
+		return bugLog.Errorf("jira update do: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			j.Logger.Errorf("jira update close: %+v", err)
+			bugLog.Debugf("jira update close: %+v", err)
 		}
 	}()
 
@@ -506,8 +488,7 @@ func (j Jira) Update(ticket *Ticket) error {
 func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 	is, _, err := j.Client.Issue.GetWithContext(j.Context, data.(string), &jira.GetQueryOptions{})
 	if err != nil {
-		j.Logger.Errorf("jira fetchRemoteTicket get: %+v", err)
-		return Ticket{}, fmt.Errorf("jira fetchRemoteTicket get: %w", err)
+		return Ticket{}, bugLog.Errorf("jira fetchRemoteTicket get: %w", err)
 	}
 
 	return Ticket{
@@ -516,14 +497,13 @@ func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 }
 
 func (j Jira) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(j.Config, &j.Logger)).FindTicket(database.TicketDetails{
+	td, err := database.NewTicketingStorage(*database.New(j.Config)).FindTicket(database.TicketDetails{
 		AgentID: j.Credentials.AgentID,
 		System:  "jira",
 		Hash:    GenerateHash(ticket.Raw),
 	})
 	if err != nil {
-		j.Logger.Errorf("jira fetch find: %+v", err)
-		return fmt.Errorf("jira fetch find: %w", err)
+		return bugLog.Errorf("jira fetch find: %w", err)
 	}
 	ticket.Hash = Hash(td.Hash)
 	ticket.RemoteID = td.RemoteID

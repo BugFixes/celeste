@@ -17,7 +17,6 @@ import (
 	"github.com/bradleyfalzon/ghinstallation"
 	"github.com/google/go-github/v35/github"
 	"github.com/mitchellh/mapstructure"
-	"go.uber.org/zap"
 )
 
 type Github struct {
@@ -25,7 +24,6 @@ type Github struct {
 	Context     context.Context
 	Credentials GithubCredentials
 	Config      config.Config
-	Logger      zap.SugaredLogger
 }
 
 type GithubRepo struct {
@@ -40,30 +38,26 @@ type GithubCredentials struct {
 	GithubRepo
 }
 
-func NewGithub(c config.Config, logger zap.SugaredLogger) *Github {
+func NewGithub(c config.Config) *Github {
 	return &Github{
 		Context: context.Background(),
 		Config:  c,
-		Logger:  logger,
 	}
 }
 
 func (g *Github) Connect() error {
 	installationID, err := strconv.Atoi(g.Credentials.InstallationID)
 	if err != nil {
-		g.Logger.Errorf("github connect installid conv: %+v", err)
 		return bugLog.Errorf("github connect installid conv: %w", err)
 	}
 
 	appID, err := strconv.Atoi(os.Getenv("GITHUB_APP_ID"))
 	if err != nil {
-		g.Logger.Errorf("github connect appid conv: %+v", err)
 		return bugLog.Errorf("github connect appid conv: %w", err)
 	}
 
 	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, int64(appID), int64(installationID), "configs/app.pem")
 	if err != nil {
-		g.Logger.Errorf("github connect keyFile: %v", err)
 		return bugLog.Errorf("github connect keyFile: %w", err)
 	}
 	g.Client = github.NewClient(&http.Client{
@@ -87,7 +81,6 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 
 	githubCreds := gc{}
 	if err := mapstructure.Decode(creds, &githubCreds); err != nil {
-		g.Logger.Errorf("github parseCredentials decode: %v", err)
 		return bugLog.Errorf("github parseCredenhtials decode: %w", err)
 	}
 	g.Credentials = GithubCredentials{
@@ -147,7 +140,6 @@ func (g *Github) Create(ticket *Ticket) error {
 
 	ticketExists, td, err := g.TicketExists(ticket)
 	if err != nil {
-		g.Logger.Errorf("github create TicketExists: %+v", err)
 		return bugLog.Errorf("github create ticketExists: %w", err)
 	}
 
@@ -163,15 +155,13 @@ func (g *Github) Create(ticket *Ticket) error {
 		Labels: &template.Labels,
 	})
 	if err != nil {
-		g.Logger.Errorf("github create githubCreate: %v", err)
 		return bugLog.Errorf("github create githubCreate: %w", err)
 	}
 	td.RemoteID = fmt.Sprintf("%d", is.GetNumber())
 	ticket.RemoteID = td.RemoteID
 	ticket.RemoteLink = is.GetHTMLURL()
 
-	if err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).StoreTicketDetails(td); err != nil {
-		g.Logger.Errorf("github create store: %v", err)
+	if err := database.NewTicketingStorage(*database.New(g.Config)).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("github create store: %w", err)
 	}
 
@@ -181,13 +171,11 @@ func (g *Github) Create(ticket *Ticket) error {
 func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 	id, err := strconv.Atoi(fmt.Sprintf("%v", remoteData))
 	if err != nil {
-		g.Logger.Errorf("github fetchRemoteTicket id convert: %+v", err)
 		return Ticket{}, bugLog.Errorf("github fetchRemoteTicket strconv: %w", err)
 	}
 
 	is, _, err := g.Client.Issues.Get(g.Context, g.Credentials.Owner, g.Credentials.Repo, id)
 	if err != nil {
-		g.Logger.Errorf("github fetchRemoteTicket get: %+v", err)
 		return Ticket{}, bugLog.Errorf("github fetchRemoteTicket get: %w", err)
 	}
 
@@ -197,14 +185,13 @@ func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 }
 
 func (g *Github) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).FindTicket(database.TicketDetails{
+	td, err := database.NewTicketingStorage(*database.New(g.Config)).FindTicket(database.TicketDetails{
 		AgentID: g.Credentials.AgentID,
 		System:  "github",
 		Hash:    GenerateHash(ticket.Raw),
 	})
 	if err != nil {
-		g.Logger.Errorf("github fetch find: %+v", err)
-		return fmt.Errorf("github fetch find: %w", err)
+		return bugLog.Errorf("github fetch find: %w", err)
 	}
 
 	ticket.Hash = Hash(td.Hash)
@@ -217,20 +204,17 @@ func (g *Github) Fetch(ticket *Ticket) error {
 func (g *Github) Update(ticket *Ticket) error {
 	err := g.Fetch(ticket)
 	if err != nil {
-		g.Logger.Errorf("github update fetch: %+v", err)
-		return fmt.Errorf("github update fetch: %w", err)
+		return bugLog.Errorf("github update fetch: %w", err)
 	}
 
 	rt, err := g.FetchRemoteTicket(ticket.RemoteID)
 	if err != nil {
-		g.Logger.Errorf("github update fetchRemote: %+v", err)
-		return fmt.Errorf("github update fetchRemote: %w", err)
+		return bugLog.Errorf("github update fetchRemote: %w", err)
 	}
 
 	is := github.Issue{}
 	if err := mapstructure.Decode(rt.RemoteDetails, &is); err != nil {
-		g.Logger.Errorf("update decode: %+v", err)
-		return fmt.Errorf("update decode: %w", err)
+		return bugLog.Errorf("update decode: %w", err)
 	}
 
 	template, _ := g.GenerateTemplate(ticket)
@@ -249,8 +233,7 @@ func (g *Github) Update(ticket *Ticket) error {
 		// },
 	})
 	if err != nil {
-		g.Logger.Errorf("github update reopen: %+v", err)
-		return fmt.Errorf("github update reopen: %w", err)
+		return bugLog.Errorf("github update reopen: %w", err)
 	}
 	ticket.RemoteLink = es.GetHTMLURL()
 
@@ -261,8 +244,7 @@ func (g *Github) Update(ticket *Ticket) error {
 	// 	// },
 	// 	Body: &body,
 	// }); err != nil {
-	// 	g.Logger.Errorf("github update labels: %+v", err)
-	// 	return fmt.Errorf("github update labels: %w", err)
+	// 	return buglog.Errorf("github update labels: %w", err)
 	// }
 
 	return nil
@@ -274,10 +256,9 @@ func (g *Github) TicketExists(ticket *Ticket) (bool, database.TicketDetails, err
 		System:  "github",
 		Hash:    GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(g.Config, &g.Logger)).TicketExists(td)
+	ticketExists, err := database.NewTicketingStorage(*database.New(g.Config)).TicketExists(td)
 	if err != nil {
-		g.Logger.Errorf("github ticketExists: %+v", err)
-		return false, td, fmt.Errorf("github ticketExists: %w", err)
+		return false, td, bugLog.Errorf("github ticketExists: %w", err)
 	}
 
 	return ticketExists, td, nil

@@ -2,20 +2,18 @@ package bug
 
 import (
 	"encoding/json"
-  "fmt"
-  "net/http"
+	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/bugfixes/celeste/internal/celeste/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"go.uber.org/zap"
 )
 
 type ProcessLog struct {
 	Config config.Config
-	Logger zap.SugaredLogger
 }
 
 type Log struct {
@@ -31,10 +29,9 @@ type Log struct {
 	LogFmt      string `json:"log_fmt"`
 }
 
-func NewLog(c config.Config, l zap.SugaredLogger) ProcessLog {
+func NewLog(c config.Config) ProcessLog {
 	return ProcessLog{
 		Config: c,
-		Logger: l,
 	}
 }
 
@@ -42,22 +39,22 @@ func (l ProcessLog) LogHandler(w http.ResponseWriter, r *http.Request) {
 	log := Log{}
 	defer func() {
 		if err := r.Body.Close(); err != nil {
-			errorReport(w, l.Logger, "logHandler body close", err)
+			errorReport(w, "logHandler body close", err)
 		}
 	}()
 
 	if err := json.NewDecoder(r.Body).Decode(&log); err != nil {
-		errorReport(w, l.Logger, "logHandler decode", err)
+		errorReport(w, "logHandler decode", err)
 		return
 	}
 
 	if err := l.GenerateLogInfo(&log, r.Header.Get("X-API-KEY")); err != nil {
-		errorReport(w, l.Logger, "logHandler generateLogInfo", err)
+		errorReport(w, "logHandler generateLogInfo", err)
 		return
 	}
 
 	if err := l.StoreLog(&log); err != nil {
-		errorReport(w, l.Logger, "logHandler generateLog", err)
+		errorReport(w, "logHandler generateLog", err)
 		return
 	}
 
@@ -66,17 +63,16 @@ func (l ProcessLog) LogHandler(w http.ResponseWriter, r *http.Request) {
 
 func (l ProcessLog) GenerateLogInfo(log *Log, agentID string) error {
 	log.Agent.ID = agentID
-	if err := log.GenerateIdentifier(&l.Logger); err != nil {
-		l.Logger.Errorf("processLog generateLogInfo generateIdentifier: %+v", err)
+	if err := log.GenerateIdentifier(); err != nil {
 		return bugLog.Errorf("processLog generateLogInfo generateIdentifier: %w", err)
 	}
-	log.LevelNumber = ConvertLevelFromString(log.Level, &l.Logger)
+	log.LevelNumber = ConvertLevelFromString(log.Level)
 
 	return nil
 }
 
 func (l ProcessLog) StoreLog(log *Log) error {
-	if err := database.NewLogStorage(*database.New(l.Config, &l.Logger)).Store(database.LogRecord{
+	if err := database.NewLogStorage(*database.New(l.Config)).Store(database.LogRecord{
 		ID:         log.Identifier,
 		Level:      log.Level,
 		LoggedTime: time.Now(),
@@ -88,7 +84,6 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		Entry:      log.Log,
 		AgentID:    log.Agent.ID,
 	}); err != nil {
-		l.Logger.Errorf("processLog storeLog: %+v", err)
 		return bugLog.Errorf("processLog storeLog: %w", err)
 	}
 

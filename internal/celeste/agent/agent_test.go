@@ -4,19 +4,12 @@ import (
 	"testing"
 
 	"github.com/bugfixes/celeste/internal/celeste/account"
+	"github.com/bugfixes/celeste/internal/celeste/agent"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-
-	"github.com/bugfixes/celeste/internal/celeste/agent"
 )
 
 func TestParseAgentHeaders(t *testing.T) {
-	sugar := zap.NewExample().Sugar()
-	defer func() {
-		_ = sugar.Sync()
-	}()
-
 	tests := []struct {
 		name    string
 		request map[string]string
@@ -33,7 +26,7 @@ func TestParseAgentHeaders(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := agent.ParseAgentHeaders(test.request, sugar)
+			resp, err := agent.ParseAgentHeaders(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %v", err)
 			}

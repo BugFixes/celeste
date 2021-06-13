@@ -5,15 +5,9 @@ import (
 
 	"github.com/bugfixes/celeste/internal/celeste/bug"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestBug_GenerateHash(t *testing.T) {
-	sugar := zap.NewExample().Sugar()
-	defer func() {
-		_ = sugar.Sync()
-	}()
-
 	tests := []struct {
 		name    string
 		request bug.Bug
@@ -34,7 +28,7 @@ func TestBug_GenerateHash(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.request.GenerateHash(sugar)
+			err := test.request.GenerateHash()
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}
@@ -49,11 +43,6 @@ func TestBug_GenerateHash(t *testing.T) {
 }
 
 func TestBug_GenerateIdentifier(t *testing.T) {
-	sugar := zap.NewExample().Sugar()
-	defer func() {
-		_ = sugar.Sync()
-	}()
-
 	tests := []struct {
 		name    string
 		request bug.Bug
@@ -71,7 +60,7 @@ func TestBug_GenerateIdentifier(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.request.GenerateIdentifier(sugar)
+			err := test.request.GenerateIdentifier()
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}

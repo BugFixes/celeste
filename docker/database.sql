@@ -10,14 +10,14 @@ INSERT INTO permission_group (
          ('developer');
 CREATE TABLE IF NOT EXISTS permission (
     id SERIAL,
-    `key` VARCHAR(100),
-    `action` VARCHAR(100),
+    key VARCHAR(100),
+    action VARCHAR(100),
     permission_group INT NOT NULL,
     CONSTRAINT fk_permission_group_id FOREIGN KEY(permission_group) REFERENCES permission_group(id)
 );
 INSERT INTO permission (
-    `key`,
-    `action`,
+    key,
+    action,
     permission_group
 ) VALUES ('developer', '*', 1),
          ('developer', 'create', 2),
@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS account (
 CREATE TABLE IF NOT EXISTS account_permission (
     id SERIAL,
     account_id INT NOT NULL,
-    `key` VARCHAR(100),
-    `action` VARCHAR(100),
+    key VARCHAR(100),
+    action VARCHAR(100),
     PRIMARY KEY(id),
     CONSTRAINT fk_account_id FOREIGN KEY(account_id) REFERENCES account(id)
 );

@@ -78,6 +78,11 @@ Parameters:
     Type: String
     Default: celeste-local.zip
 
+  GithubKey:
+    Type: String
+  GithubSecret:
+    Type: String
+
 Resources:
   ServiceARN:
     Type: AWS::IAM::Role
@@ -535,6 +540,17 @@ Resources:
     Properties:
       Name: RDSDatabase
       SecretString: !Ref RDSName
+
+  ProvidersGithubKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_key
+      SecretString: !Ref GithubKey
+  ProvidersGithubSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_secret
+      SecretString: !Ref GithubSecret
 
 
   Bucket:

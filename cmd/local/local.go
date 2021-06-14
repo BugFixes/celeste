@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bugfixes/celeste/internal/celeste"
+  "github.com/bugfixes/celeste/internal/auth"
+  "github.com/bugfixes/celeste/internal/celeste"
 	"github.com/bugfixes/celeste/internal/celeste/account"
 	"github.com/bugfixes/celeste/internal/celeste/bug"
 	"github.com/bugfixes/celeste/internal/comms"
@@ -51,6 +52,13 @@ func route(c celeste.Celeste) error {
 
 		r.Post("/login", account.NewHTTPRequest(c.Config).LoginHandler)
 	})
+
+	// Auth
+	r.Route("/auth", func(r chi.Router) {
+	  r.Get("/{provider}/callback", auth.NewAuth(c.Config).CallbackHandler)
+	  r.Get("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
+	  r.Get("/{provider}", auth.NewAuth(c.Config).AuthHandler)
+  })
 
 	// Agent
 	r.Route("/agent", func(r chi.Router) {

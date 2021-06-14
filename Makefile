@@ -84,6 +84,9 @@ stack-create: # Create the stack
   		--stack-name ${SERVICE_NAME}-$(STACK_TIME) \
   		--endpoint https://localhost.localstack.cloud:4566 \
   		--region us-east-1 \
+  		--parameters \
+  		  ParameterKey=GithubKey,ParameterValue=${GITHUB_CLIENT_ID} \
+  		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECERT} \
   		1> /dev/null
 
 .PHONY: stack-delete

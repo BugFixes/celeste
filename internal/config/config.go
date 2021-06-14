@@ -1,11 +1,11 @@
 package config
 
 import (
-  "fmt"
-  "os"
-  "strings"
+	"fmt"
+	"os"
+	"strings"
 
-  "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
@@ -48,7 +48,7 @@ type Config struct {
 	LocalPort int `env:"LOCAL_PORT" envDefault:"3000"`
 
 	AuthCredentials []ServiceCredential
-	CallbackHost string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
+	CallbackHost    string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
 }
 
 func BuildConfig() (Config, error) {
@@ -63,10 +63,10 @@ func BuildConfig() (Config, error) {
 	}
 
 	if providers := os.Getenv("PROVIDERS_LIST"); providers != "" {
-    if cfg.AuthCredentials, err = getAuthCredentials(cfg, providers); err != nil {
-      return cfg, bugLog.Errorf("getAuthCredentials: %w", err)
-    }
-  }
+		if cfg.AuthCredentials, err = getAuthCredentials(cfg, providers); err != nil {
+			return cfg, bugLog.Errorf("getAuthCredentials: %w", err)
+		}
+	}
 
 	return cfg, nil
 }
@@ -118,48 +118,48 @@ func getSecret(client *secretsmanager.SecretsManager, secret string) (string, er
 }
 
 func getAuthCredentials(cfg Config, providers string) ([]ServiceCredential, error) {
-  serviceCreds := []ServiceCredential{}
+	serviceCreds := []ServiceCredential{}
 
-  sess, err := session.NewSession(&aws.Config{
-    Region:   aws.String(cfg.DBRegion),
-    Endpoint: aws.String(cfg.AWSEndpoint),
-  })
-  if err != nil {
-    return serviceCreds, bugLog.Errorf("session: %w", err)
-  }
-  client := secretsmanager.New(sess)
+	sess, err := session.NewSession(&aws.Config{
+		Region:   aws.String(cfg.DBRegion),
+		Endpoint: aws.String(cfg.AWSEndpoint),
+	})
+	if err != nil {
+		return serviceCreds, bugLog.Errorf("session: %w", err)
+	}
+	client := secretsmanager.New(sess)
 
-  services := strings.Split(providers, ",")
-  for _, service := range services {
-    key, err := getAuthSecret(client, service, "key")
-    if err != nil {
-      continue
-    }
-    sec, err := getAuthSecret(client, service, "secret")
-    if err != nil {
-      continue
-    }
-    cred := ServiceCredential{
-      Service: service,
-      AuthCredential: AuthCredential{
-        Key: key,
-        Secret: sec,
-      },
-    }
+	services := strings.Split(providers, ",")
+	for _, service := range services {
+		key, err := getAuthSecret(client, service, "key")
+		if err != nil {
+			continue
+		}
+		sec, err := getAuthSecret(client, service, "secret")
+		if err != nil {
+			continue
+		}
+		cred := ServiceCredential{
+			Service: service,
+			AuthCredential: AuthCredential{
+				Key:    key,
+				Secret: sec,
+			},
+		}
 
-    serviceCreds = append(serviceCreds, cred)
-  }
+		serviceCreds = append(serviceCreds, cred)
+	}
 
-  return serviceCreds, nil
+	return serviceCreds, nil
 }
 
 func getAuthSecret(client *secretsmanager.SecretsManager, service, secret string) (string, error) {
-  sec, err := client.GetSecretValue(&secretsmanager.GetSecretValueInput{
-    SecretId: aws.String(fmt.Sprintf("%s_%s", service, secret)),
-  })
-  if err != nil {
-    return "", bugLog.Errorf("getAuthSecret: %s_%s, %w", service, secret, err)
-  }
+	sec, err := client.GetSecretValue(&secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(fmt.Sprintf("%s_%s", service, secret)),
+	})
+	if err != nil {
+		return "", bugLog.Errorf("getAuthSecret: %s_%s, %w", service, secret, err)
+	}
 
-  return *sec.SecretString, nil
+	return *sec.SecretString, nil
 }

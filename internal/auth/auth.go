@@ -1,22 +1,20 @@
 package auth
 
 import (
-	"compress/gzip"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
+  "encoding/json"
+  "errors"
+  "fmt"
+  "net/http"
+  "os"
 
-	"github.com/bugfixes/celeste/internal/config"
-	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/sessions"
-	"github.com/markbates/goth"
-	"github.com/markbates/goth/gothic"
-	gothGithub "github.com/markbates/goth/providers/github"
+  "github.com/bugfixes/celeste/internal/config"
+  bugLog "github.com/bugfixes/go-bugfixes/logs"
+  "github.com/gorilla/mux"
+  "github.com/gorilla/sessions"
+  "github.com/markbates/goth"
+  "github.com/markbates/goth/gothic"
+  gothGithub "github.com/markbates/goth/providers/github"
+  gothGoogle "github.com/markbates/goth/providers/google"
 )
 
 type Auth struct {
@@ -29,18 +27,20 @@ func NewAuth(c config.Config) Auth {
 	}
 }
 
-var Store sessions.Store
-
-// var defaultStore sessions.Store
-
-const SessionName = "_bugfixes_session"
-
 func init() {
-	key := []byte(os.Getenv("SESSION_SECRET"))
-	cookieStore := sessions.NewCookieStore(key)
-	cookieStore.Options.HttpOnly = true
-	Store = cookieStore
-	// defaultStore = Store
+  secureFlag := false
+  if sec := os.Getenv("IN_PRODUCTION"); sec != "" {
+    if sec == "true" {
+      secureFlag = true
+    }
+  }
+
+  store := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
+  store.MaxAge(86400 * 30)
+  store.Options.Path = "/"
+  store.Options.HttpOnly = true
+  store.Options.Secure = secureFlag
+  gothic.Store = store
 }
 
 func errorReport(w http.ResponseWriter, textError string, wrappedError error) {
@@ -60,7 +60,8 @@ func errorReport(w http.ResponseWriter, textError string, wrappedError error) {
 
 // nolint:gocyclo
 func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
-	provider := chi.URLParam(req, "provider")
+  vars := mux.Vars(req)
+  provider := vars["provider"]
 	bugLog.Local().Infof("Provider: %v", provider)
 
 	cred := config.AuthCredential{}
@@ -80,44 +81,26 @@ func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	switch provider {
 	case "github":
-		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, fmt.Sprintf("%s/auth/%s/callback", a.Config.CallbackHost, provider)))
+		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, cred.Callback))
+  case "google":
+    goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
 	case "azure":
 	default:
 		return
 	}
 
-	gprov, err := goth.GetProvider(provider)
+	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
-		errorReport(res, "goth get provider", err)
-		return
-	}
+	  errorReport(res, "gothic failed", err)
+	  return
+  }
 
-	val, err := getSessionData(provider, req)
-	if err != nil {
-		errorReport(res, "get from session", err)
-		return
-	}
-	sess, err := gprov.UnmarshalSession(val)
-	if err != nil {
-		errorReport(res, "unmarshal", err)
-		return
-	}
-	user, err := gprov.FetchUser(sess)
-	if err == nil {
-		bugLog.Local().Infof("user: %+v", user)
-	}
-
-	hmm, err := sess.Authorize(gprov, req.Form)
-	if err != nil {
-		errorReport(res, "auth", err)
-		return
-	}
-
-	bugLog.Local().Logf("hmm: %v", hmm)
+	bugLog.Local().Logf("user: %v", user)
 }
 
 func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
-	provider := chi.URLParam(req, "provider")
+  vars := mux.Vars(req)
+  provider := vars["provider"]
 	bugLog.Local().Infof("Provider: %v", provider)
 
 	cred := config.AuthCredential{}
@@ -137,50 +120,22 @@ func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
 
 	switch provider {
 	case "github":
-		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, fmt.Sprintf("%s/auth/%s/callback", a.Config.CallbackHost, provider)))
+		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, cred.Callback))
+  case "google":
+    goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
 	case "azure":
 	default:
 		return
 	}
 
-	gprov, err := goth.GetProvider(provider)
-	if err != nil {
-		errorReport(res, "goth get provider", err)
-		return
-	}
-
-	sess, err := gprov.BeginAuth(gothic.SetState(req))
-	if err != nil {
-		errorReport(res, "begin auth", err)
-		return
-	}
-	url, err := sess.GetAuthURL()
-	if err != nil {
-		errorReport(res, "auth url", err)
-		return
-	}
-	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+	gothic.BeginAuthHandler(res, req)
 }
 
 func (a Auth) LogoutHandler(res http.ResponseWriter, req *http.Request) {
-
-}
-
-func getSessionData(key string, r *http.Request) (string, error) {
-	session, _ := Store.Get(r, SessionName)
-	value := session.Values[key]
-	if value == nil {
-		return "", bugLog.Error("no matching session")
-	}
-
-	rdata := strings.NewReader(value.(string))
-	rr, err := gzip.NewReader(rdata)
-	if err != nil {
-		return "", bugLog.Errorf("gzip: %w", err)
-	}
-	s, err := ioutil.ReadAll(rr)
-	if err != nil {
-		return "", bugLog.Errorf("readall: %w", err)
-	}
-	return string(s), nil
+  if err := gothic.Logout(res, req); err != nil {
+    errorReport(res, "logout", err)
+    return
+  }
+  res.Header().Set("Location", "/")
+  res.WriteHeader(http.StatusTemporaryRedirect)
 }

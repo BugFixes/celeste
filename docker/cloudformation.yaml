@@ -82,6 +82,10 @@ Parameters:
     Type: String
   GithubSecret:
     Type: String
+  GoogleKey:
+    Type: String
+  GoogleSecret:
+    Type: String
 
 Resources:
   ServiceARN:
@@ -551,6 +555,16 @@ Resources:
     Properties:
       Name: github_secret
       SecretString: !Ref GithubSecret
+  ProvidersGoogleKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: google_key
+      SecretString: !Ref GoogleKey
+  ProvidersGoogleSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: google_secret
+      SecretString: !Ref GoogleSecret
 
 
   Bucket:

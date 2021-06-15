@@ -28,6 +28,7 @@ type ServiceCredential struct {
 type AuthCredential struct {
 	Key    string
 	Secret string
+	Callback string
 }
 
 type Config struct {
@@ -144,6 +145,7 @@ func getAuthCredentials(cfg Config, providers string) ([]ServiceCredential, erro
 			AuthCredential: AuthCredential{
 				Key:    key,
 				Secret: sec,
+				Callback: fmt.Sprintf("%s/auth/%s/callback", cfg.CallbackHost, service),
 			},
 		}
 

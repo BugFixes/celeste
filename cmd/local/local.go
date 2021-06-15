@@ -1,21 +1,21 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"time"
+  "fmt"
+  "net/http"
+  "time"
 
-	"github.com/bugfixes/celeste/internal/auth"
-	"github.com/bugfixes/celeste/internal/celeste"
-	"github.com/bugfixes/celeste/internal/celeste/account"
-	"github.com/bugfixes/celeste/internal/celeste/bug"
-	"github.com/bugfixes/celeste/internal/comms"
-	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/ticketing"
-	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+  "github.com/bugfixes/celeste/internal/auth"
+  "github.com/bugfixes/celeste/internal/celeste"
+  "github.com/bugfixes/celeste/internal/celeste/account"
+  "github.com/bugfixes/celeste/internal/celeste/bug"
+  "github.com/bugfixes/celeste/internal/comms"
+  "github.com/bugfixes/celeste/internal/config"
+  "github.com/bugfixes/celeste/internal/ticketing"
+  bugLog "github.com/bugfixes/go-bugfixes/logs"
+  bugfixes "github.com/bugfixes/go-bugfixes/middleware"
+  "github.com/go-chi/chi/v5/middleware"
+  "github.com/gorilla/mux"
 )
 
 func main() {
@@ -40,54 +40,45 @@ func main() {
 }
 
 func route(c celeste.Celeste) error {
-	r := chi.NewRouter()
-	r.Use(middleware.Timeout(60 * time.Second))
-	r.Use(middleware.RequestID)
-	r.Use(bugfixes.BugFixes)
+  r := mux.NewRouter()
+  r.Use(middleware.Timeout(60 * time.Second))
+  r.Use(middleware.RequestID)
+  r.Use(bugfixes.BugFixes)
 
-	// Account
-	r.Route("/account", func(r chi.Router) {
-		r.Post("/", account.NewHTTPRequest(c.Config).CreateHandler)
-		r.Delete("/", account.NewHTTPRequest(c.Config).DeleteHandler)
+  // Auth
+  s := r.PathPrefix("/auth").Subrouter()
+  s.HandleFunc("/{provider}", auth.NewAuth(c.Config).AuthHandler)
+  s.HandleFunc("/{provider}/callback", auth.NewAuth(c.Config).CallbackHandler)
+  s.HandleFunc("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
 
-		r.Post("/login", account.NewHTTPRequest(c.Config).LoginHandler)
-	})
+  // Account
+  s = r.PathPrefix("account").Subrouter()
+  s.HandleFunc("/", account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
+  s.HandleFunc("/", account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
+  s.HandleFunc("/login", account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
 
-	// Auth
-	r.Route("/auth", func(r chi.Router) {
-		r.Get("/{provider}/callback", auth.NewAuth(c.Config).CallbackHandler)
-		r.Get("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
-		r.Get("/{provider}", auth.NewAuth(c.Config).AuthHandler)
-	})
+  // Agent
+  s = r.PathPrefix("/agent").Subrouter()
 
-	// Agent
-	r.Route("/agent", func(r chi.Router) {
+  // Logs
+  s = r.PathPrefix("/log").Subrouter()
+  s.HandleFunc("/", bug.NewLog(c.Config).LogHandler).Methods("POST")
 
-	})
+  // Bug
+  s = r.PathPrefix("/bug").Subrouter()
+  s.HandleFunc("/", bug.NewBug(c.Config).BugHandler).Methods("POST")
 
-	// Logs
-	r.Route("/log", func(r chi.Router) {
-		r.Post("/", bug.NewLog(c.Config).LogHandler)
-	})
+  // Comms
+  s = r.PathPrefix("/comms").Subrouter()
+  s.HandleFunc("/", comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
+  s.HandleFunc("/", comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
+  s.HandleFunc("/", comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
+  s.HandleFunc("/", comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
+  s.HandleFunc("/", comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
 
-	// Bug
-	r.Route("/bug", func(r chi.Router) {
-		r.Post("/", bug.NewBug(c.Config).BugHandler)
-	})
-
-	// Comms
-	r.Route("/comms", func(r chi.Router) {
-		r.Post("/", comms.NewCommunication(c.Config).CreateCommsHandler)
-		r.Put("/", comms.NewCommunication(c.Config).AttachCommsHandler)
-		r.Patch("/", comms.NewCommunication(c.Config).DetachCommsHandler)
-		r.Delete("/", comms.NewCommunication(c.Config).DeleteCommsHandler)
-		r.Get("/", comms.NewCommunication(c.Config).ListCommsHandler)
-	})
-
-	// Ticket
-	r.Route("/ticket", func(r chi.Router) {
-		r.Post("/", ticketing.NewTicketing(c.Config).CreateTicketHandler)
-	})
+  // Ticket
+  s = r.PathPrefix("/ticket").Subrouter()
+  s.HandleFunc("/", ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
 
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)

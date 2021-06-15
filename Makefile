@@ -87,6 +87,8 @@ stack-create: # Create the stack
   		--parameters \
   		  ParameterKey=GithubKey,ParameterValue=${GITHUB_CLIENT_ID} \
   		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECERT} \
+  		  ParameterKey=GoogleKey,ParameterValue=${GOOGLE_CLIENT_ID} \
+  		  ParameterKey=GoogleSecret,ParameterValue=${GOOGLE_CLIENT_SECRET} \
   		1> /dev/null
 
 .PHONY: stack-delete
@@ -131,10 +133,12 @@ injectData: # Inject Agent
 		--table-name comms \
 		--item '{"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
 	aws dynamodb put-item \
-  		--endpoint http://localhost.localstack.cloud:4566 \
-  		--region us-east-1 \
-  		--table-name comms \
-  		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
+    		--endpoint http://localhost.localstack.cloud:4566 \
+    		--region us-east-1 \
+    		--table-name comms \
+    		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
+	cat ./docker/database.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
+
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

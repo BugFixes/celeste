@@ -16,7 +16,8 @@ require (
 	github.com/google/go-github/v35 v35.3.0
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.2.0
-	github.com/gorilla/sessions v1.2.1 // indirect
+	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/sessions v1.2.1
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/markbates/goth v1.67.1
@@ -26,10 +27,9 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/trivago/tgo v1.0.7 // indirect
-	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

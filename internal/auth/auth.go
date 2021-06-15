@@ -1,20 +1,20 @@
 package auth
 
 import (
-  "encoding/json"
-  "errors"
-  "fmt"
-  "net/http"
-  "os"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
 
-  "github.com/bugfixes/celeste/internal/config"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  "github.com/gorilla/mux"
-  "github.com/gorilla/sessions"
-  "github.com/markbates/goth"
-  "github.com/markbates/goth/gothic"
-  gothGithub "github.com/markbates/goth/providers/github"
-  gothGoogle "github.com/markbates/goth/providers/google"
+	"github.com/bugfixes/celeste/internal/config"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
+	gothGithub "github.com/markbates/goth/providers/github"
+	gothGoogle "github.com/markbates/goth/providers/google"
 )
 
 type Auth struct {
@@ -28,19 +28,19 @@ func NewAuth(c config.Config) Auth {
 }
 
 func init() {
-  secureFlag := false
-  if sec := os.Getenv("IN_PRODUCTION"); sec != "" {
-    if sec == "true" {
-      secureFlag = true
-    }
-  }
+	secureFlag := false
+	if sec := os.Getenv("IN_PRODUCTION"); sec != "" {
+		if sec == "true" {
+			secureFlag = true
+		}
+	}
 
-  store := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
-  store.MaxAge(86400 * 30)
-  store.Options.Path = "/"
-  store.Options.HttpOnly = true
-  store.Options.Secure = secureFlag
-  gothic.Store = store
+	store := sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))
+	store.MaxAge(86400 * 30)
+	store.Options.Path = "/"
+	store.Options.HttpOnly = true
+	store.Options.Secure = secureFlag
+	gothic.Store = store
 }
 
 func errorReport(w http.ResponseWriter, textError string, wrappedError error) {
@@ -60,8 +60,8 @@ func errorReport(w http.ResponseWriter, textError string, wrappedError error) {
 
 // nolint:gocyclo
 func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
-  vars := mux.Vars(req)
-  provider := vars["provider"]
+	vars := mux.Vars(req)
+	provider := vars["provider"]
 	bugLog.Local().Infof("Provider: %v", provider)
 
 	cred := config.AuthCredential{}
@@ -82,8 +82,8 @@ func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
 	switch provider {
 	case "github":
 		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, cred.Callback))
-  case "google":
-    goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
+	case "google":
+		goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
 	case "azure":
 	default:
 		return
@@ -91,16 +91,16 @@ func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	user, err := gothic.CompleteUserAuth(res, req)
 	if err != nil {
-	  errorReport(res, "gothic failed", err)
-	  return
-  }
+		errorReport(res, "gothic failed", err)
+		return
+	}
 
 	bugLog.Local().Logf("user: %v", user)
 }
 
 func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
-  vars := mux.Vars(req)
-  provider := vars["provider"]
+	vars := mux.Vars(req)
+	provider := vars["provider"]
 	bugLog.Local().Infof("Provider: %v", provider)
 
 	cred := config.AuthCredential{}
@@ -121,8 +121,8 @@ func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
 	switch provider {
 	case "github":
 		goth.UseProviders(gothGithub.New(cred.Key, cred.Secret, cred.Callback))
-  case "google":
-    goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
+	case "google":
+		goth.UseProviders(gothGoogle.New(cred.Key, cred.Secret, cred.Callback))
 	case "azure":
 	default:
 		return
@@ -132,10 +132,10 @@ func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func (a Auth) LogoutHandler(res http.ResponseWriter, req *http.Request) {
-  if err := gothic.Logout(res, req); err != nil {
-    errorReport(res, "logout", err)
-    return
-  }
-  res.Header().Set("Location", "/")
-  res.WriteHeader(http.StatusTemporaryRedirect)
+	if err := gothic.Logout(res, req); err != nil {
+		errorReport(res, "logout", err)
+		return
+	}
+	res.Header().Set("Location", "/")
+	res.WriteHeader(http.StatusTemporaryRedirect)
 }

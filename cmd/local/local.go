@@ -1,21 +1,21 @@
 package main
 
 import (
-  "fmt"
-  "net/http"
-  "time"
+	"fmt"
+	"net/http"
+	"time"
 
-  "github.com/bugfixes/celeste/internal/auth"
-  "github.com/bugfixes/celeste/internal/celeste"
-  "github.com/bugfixes/celeste/internal/celeste/account"
-  "github.com/bugfixes/celeste/internal/celeste/bug"
-  "github.com/bugfixes/celeste/internal/comms"
-  "github.com/bugfixes/celeste/internal/config"
-  "github.com/bugfixes/celeste/internal/ticketing"
-  bugLog "github.com/bugfixes/go-bugfixes/logs"
-  bugfixes "github.com/bugfixes/go-bugfixes/middleware"
-  "github.com/go-chi/chi/v5/middleware"
-  "github.com/gorilla/mux"
+	"github.com/bugfixes/celeste/internal/auth"
+	"github.com/bugfixes/celeste/internal/celeste"
+	"github.com/bugfixes/celeste/internal/celeste/account"
+	"github.com/bugfixes/celeste/internal/celeste/bug"
+	"github.com/bugfixes/celeste/internal/comms"
+	"github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/celeste/internal/ticketing"
+	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -40,45 +40,46 @@ func main() {
 }
 
 func route(c celeste.Celeste) error {
-  r := mux.NewRouter()
-  r.Use(middleware.Timeout(60 * time.Second))
-  r.Use(middleware.RequestID)
-  r.Use(bugfixes.BugFixes)
+	r := mux.NewRouter()
+	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.RequestID)
+	r.Use(bugfixes.BugFixes)
 
-  // Auth
-  s := r.PathPrefix("/auth").Subrouter()
-  s.HandleFunc("/{provider}", auth.NewAuth(c.Config).AuthHandler)
-  s.HandleFunc("/{provider}/callback", auth.NewAuth(c.Config).CallbackHandler)
-  s.HandleFunc("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
+	// Auth
+	s := r.PathPrefix("/auth").Subrouter()
+	s.HandleFunc("/{provider}", auth.NewAuth(c.Config).AuthHandler)
+	s.HandleFunc("/{provider}/callback", auth.NewAuth(c.Config).CallbackHandler)
+	s.HandleFunc("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
 
-  // Account
-  s = r.PathPrefix("account").Subrouter()
-  s.HandleFunc("/", account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
-  s.HandleFunc("/", account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
-  s.HandleFunc("/login", account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
+	// Account
+	s = r.PathPrefix("account").Subrouter()
+	s.HandleFunc("/", account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
+	s.HandleFunc("/", account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
+	s.HandleFunc("/login", account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
 
-  // Agent
-  s = r.PathPrefix("/agent").Subrouter()
+	// Agent
+	// TODO: Add agent
+	// s = r.PathPrefix("/agent").Subrouter()
 
-  // Logs
-  s = r.PathPrefix("/log").Subrouter()
-  s.HandleFunc("/", bug.NewLog(c.Config).LogHandler).Methods("POST")
+	// Logs
+	s = r.PathPrefix("/log").Subrouter()
+	s.HandleFunc("/", bug.NewLog(c.Config).LogHandler).Methods("POST")
 
-  // Bug
-  s = r.PathPrefix("/bug").Subrouter()
-  s.HandleFunc("/", bug.NewBug(c.Config).BugHandler).Methods("POST")
+	// Bug
+	s = r.PathPrefix("/bug").Subrouter()
+	s.HandleFunc("/", bug.NewBug(c.Config).BugHandler).Methods("POST")
 
-  // Comms
-  s = r.PathPrefix("/comms").Subrouter()
-  s.HandleFunc("/", comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
-  s.HandleFunc("/", comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
-  s.HandleFunc("/", comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
-  s.HandleFunc("/", comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
-  s.HandleFunc("/", comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
+	// Comms
+	s = r.PathPrefix("/comms").Subrouter()
+	s.HandleFunc("/", comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
+	s.HandleFunc("/", comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
+	s.HandleFunc("/", comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
+	s.HandleFunc("/", comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
+	s.HandleFunc("/", comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
 
-  // Ticket
-  s = r.PathPrefix("/ticket").Subrouter()
-  s.HandleFunc("/", ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
+	// Ticket
+	s = r.PathPrefix("/ticket").Subrouter()
+	s.HandleFunc("/", ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
 
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)

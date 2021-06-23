@@ -44,7 +44,7 @@ func (p *Permissions) Store(perm Perm) error {
 	return p.storeUser(perm)
 }
 
-func (p *Permissions) storeGroup(perm Perm) error {
+func (p *Permissions) getConnection() (*pgx.Conn, error) {
 	conn, err := pgx.Connect(
 		p.Context,
 		fmt.Sprintf(
@@ -55,13 +55,23 @@ func (p *Permissions) storeGroup(perm Perm) error {
 			p.Config.RDS.Port,
 			p.Config.RDS.Database))
 	if err != nil {
-		return bugLog.Errorf("store: %w", err)
+		return nil, bugLog.Errorf("getConnection: %w", err)
 	}
 	defer func() {
 		if err := conn.Close(p.Context); err != nil {
-			bugLog.Debugf("close storeGroup: %w", err)
+			bugLog.Debugf("close getConnection: %w", err)
 		}
 	}()
+
+	return conn, nil
+}
+
+func (p *Permissions) storeGroup(perm Perm) error {
+	conn, err := p.getConnection()
+	if err != nil {
+		return bugLog.Errorf("storeGroup Connection: %w", err)
+	}
+
 	if _, err := conn.Exec(p.Context,
 		"INSERT INTO permission (`key`, `action`, permission_group) VALUES($1, $2, $3)",
 		perm.Key,
@@ -74,23 +84,10 @@ func (p *Permissions) storeGroup(perm Perm) error {
 }
 
 func (p *Permissions) storeUser(perm Perm) error {
-	conn, err := pgx.Connect(
-		p.Context,
-		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s",
-			p.Config.RDS.Username,
-			p.Config.RDS.Password,
-			p.Config.RDS.Hostname,
-			p.Config.RDS.Port,
-			p.Config.RDS.Database))
+	conn, err := p.getConnection()
 	if err != nil {
-		return bugLog.Errorf("store: %w", err)
+		return bugLog.Errorf("storeUser Connection: %w", err)
 	}
-	defer func() {
-		if err := conn.Close(p.Context); err != nil {
-			bugLog.Debugf("close storeUser: %w", err)
-		}
-	}()
 	if _, err := conn.Exec(p.Context,
 		"INSERT INTO account_permission (`key`, `action`, account_id) VALUES($1, $2, $3)",
 		perm.Key,
@@ -103,23 +100,10 @@ func (p *Permissions) storeUser(perm Perm) error {
 }
 
 func (p *Permissions) CanDo(perm Perm) (bool, error) {
-	conn, err := pgx.Connect(
-		p.Context,
-		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s",
-			p.Config.RDS.Username,
-			p.Config.RDS.Password,
-			p.Config.RDS.Hostname,
-			p.Config.RDS.Port,
-			p.Config.RDS.Database))
+	conn, err := p.getConnection()
 	if err != nil {
-		return false, bugLog.Errorf("store: %w", err)
+		return false, bugLog.Errorf("canDo Connection: %w", err)
 	}
-	defer func() {
-		if err := conn.Close(p.Context); err != nil {
-			bugLog.Debugf("close store: %w", err)
-		}
-	}()
 
 	var canDo = false
 	if perm.Action == "*" {
@@ -147,23 +131,10 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 }
 
 func (p *Permissions) canDoSpecial(perm Perm) (bool, error) {
-	conn, err := pgx.Connect(
-		p.Context,
-		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s",
-			p.Config.RDS.Username,
-			p.Config.RDS.Password,
-			p.Config.RDS.Hostname,
-			p.Config.RDS.Port,
-			p.Config.RDS.Database))
+	conn, err := p.getConnection()
 	if err != nil {
-		return false, bugLog.Errorf("store: %w", err)
+		return false, bugLog.Errorf("canDoSpecial Connection: %w", err)
 	}
-	defer func() {
-		if err := conn.Close(p.Context); err != nil {
-			bugLog.Debugf("close store: %w", err)
-		}
-	}()
 
 	var canDo = false
 	if err := conn.QueryRow(p.Context,

@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	account2 "github.com/bugfixes/celeste/internal/account"
 	"github.com/bugfixes/celeste/internal/auth"
-	"github.com/bugfixes/celeste/internal/celeste"
-	"github.com/bugfixes/celeste/internal/celeste/account"
-	"github.com/bugfixes/celeste/internal/celeste/bug"
+	bug2 "github.com/bugfixes/celeste/internal/bug"
 	"github.com/bugfixes/celeste/internal/comms"
 	"github.com/bugfixes/celeste/internal/config"
+	"github.com/bugfixes/celeste/internal/frontend"
+	"github.com/bugfixes/celeste/internal/handler"
 	"github.com/bugfixes/celeste/internal/ticketing"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
@@ -29,7 +30,7 @@ func main() {
 	}
 
 	// Celeste
-	c := celeste.Celeste{
+	c := handler.Celeste{
 		Config: cfg,
 	}
 
@@ -39,7 +40,7 @@ func main() {
 	}
 }
 
-func route(c celeste.Celeste) error {
+func route(c handler.Celeste) error {
 	r := mux.NewRouter()
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.RequestID)
@@ -53,9 +54,9 @@ func route(c celeste.Celeste) error {
 
 	// Account
 	s = r.PathPrefix("account").Subrouter()
-	s.HandleFunc("/", account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
-	s.HandleFunc("/", account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
-	s.HandleFunc("/login", account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
+	s.HandleFunc("/", account2.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
+	s.HandleFunc("/", account2.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
+	s.HandleFunc("/login", account2.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
 
 	// Agent
 	// TODO: Add agent
@@ -63,11 +64,11 @@ func route(c celeste.Celeste) error {
 
 	// Logs
 	s = r.PathPrefix("/log").Subrouter()
-	s.HandleFunc("/", bug.NewLog(c.Config).LogHandler).Methods("POST")
+	s.HandleFunc("/", bug2.NewLog(c.Config).LogHandler).Methods("POST")
 
 	// Bug
 	s = r.PathPrefix("/bug").Subrouter()
-	s.HandleFunc("/", bug.NewBug(c.Config).BugHandler).Methods("POST")
+	s.HandleFunc("/", bug2.NewBug(c.Config).BugHandler).Methods("POST")
 
 	// Comms
 	s = r.PathPrefix("/comms").Subrouter()
@@ -80,6 +81,11 @@ func route(c celeste.Celeste) error {
 	// Ticket
 	s = r.PathPrefix("/ticket").Subrouter()
 	s.HandleFunc("/", ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
+
+	// Frontend
+	s = r.PathPrefix("/fe").Subrouter()
+	s.HandleFunc("/r", frontend.NewFrontend(c.Config).RegisterHandler).Methods("POST")
+	s.HandleFunc("/d", frontend.NewFrontend(c.Config).DetailsHandler).Methods("GET")
 
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)

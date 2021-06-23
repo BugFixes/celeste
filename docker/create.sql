@@ -40,3 +40,9 @@ CREATE TABLE IF NOT EXISTS account_permission (
     PRIMARY KEY(id),
     CONSTRAINT fk_account_id FOREIGN KEY(account_id) REFERENCES account(id)
 );
+
+CREATE TABLE IF NOT EXISTS frontend_versions (
+    id SERIAL,
+    version VARCHAR(100),
+    PRIMARY KEY (id)
+);

@@ -1,15 +1,22 @@
 package account
 
-import (
-	"github.com/bugfixes/celeste/internal/config"
-)
-
-type Account struct {
-	Config config.Config
+type CommsChannel struct {
+	Name      string `json:"name"`
+	Preferred bool   `json:"preferred"`
 }
 
-func NewAccount(c config.Config) *Account {
-	return &Account{
-		Config: c,
-	}
+type Account struct {
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	CommsChannels []CommsChannel `json:"comms_channels"`
+	Parent        *Account       `json:"parent"`
+}
+
+type Response struct {
+	Body    interface{}
+	Headers map[string]string
+}
+
+func GetAccountDetails(id string) (Account, error) {
+	return Account{}, nil
 }

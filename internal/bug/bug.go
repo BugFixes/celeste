@@ -4,14 +4,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bugfixes/celeste/internal/celeste/agent"
+	agent2 "github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
 type Bug struct {
-	agent.Agent
+	agent2.Agent
 
 	File          string `json:"file"`
 	Line          string `json:"line"`

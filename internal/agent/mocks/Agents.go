@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	agent "github.com/bugfixes/celeste/internal/celeste/agent"
+	agent2 "github.com/bugfixes/celeste/internal/agent"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,15 +13,15 @@ type Agents struct {
 }
 
 // Create provides a mock function with given fields:
-func (_m *Agents) Create() (*agent.Agent, error) {
+func (_m *Agents) Create() (*agent2.Agent, error) {
 	ret := _m.Called()
 
-	var r0 *agent.Agent
-	if rf, ok := ret.Get(0).(func() *agent.Agent); ok {
+	var r0 *agent2.Agent
+	if rf, ok := ret.Get(0).(func() *agent2.Agent); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*agent.Agent)
+			r0 = ret.Get(0).(*agent2.Agent)
 		}
 	}
 
@@ -36,11 +36,11 @@ func (_m *Agents) Create() (*agent.Agent, error) {
 }
 
 // Delete provides a mock function with given fields: a
-func (_m *Agents) Delete(a agent.Agent) error {
+func (_m *Agents) Delete(a agent2.Agent) error {
 	ret := _m.Called(a)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(agent.Agent) error); ok {
+	if rf, ok := ret.Get(0).(func(agent2.Agent) error); ok {
 		r0 = rf(a)
 	} else {
 		r0 = ret.Error(0)

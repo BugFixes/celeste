@@ -3,3 +3,5 @@ test/coverage.txt
 bin/celeste
 bin/celeste-local.zip
 configs/app.pem
+info.txxt
+info.txt

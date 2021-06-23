@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -43,6 +44,7 @@ type Config struct {
 	CommsTable     string `env:"DB_COMMS_TABLE" envDefault:"comms"`
 	LogsTable      string `env:"DB_LOGS_TABLE" envDefault:"logs"`
 	RDS
+	JWTSecret string
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 
@@ -59,7 +61,12 @@ func BuildConfig() (Config, error) {
 		return cfg, bugLog.Errorf("parse: %w", err)
 	}
 
-	if cfg.RDS, err = buildDatabase(cfg); err != nil {
+	secretClient, err := secretClient(cfg)
+	if err != nil {
+		return cfg, bugLog.Errorf("secretClient: %w", err)
+	}
+
+	if cfg.RDS, err = buildDatabase(secretClient); err != nil {
 		return cfg, bugLog.Errorf("buildDatabase: %w", err)
 	}
 
@@ -69,20 +76,29 @@ func BuildConfig() (Config, error) {
 		}
 	}
 
+	if cfg.JWTSecret, err = getSecret(secretClient, "jwt_secret"); err != nil {
+		return cfg, bugLog.Errorf("jwt_secret: %w", err)
+	}
+
 	return cfg, nil
 }
 
-func buildDatabase(cfg Config) (RDS, error) {
-	r := RDS{}
-
+func secretClient(cfg Config) (*secretsmanager.SecretsManager, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region:   aws.String(cfg.DBRegion),
 		Endpoint: aws.String(cfg.AWSEndpoint),
 	})
 	if err != nil {
-		return r, bugLog.Errorf("session: %w", err)
+		return nil, bugLog.Errorf("session: %w", err)
 	}
-	client := secretsmanager.New(sess)
+	return secretsmanager.New(sess), nil
+}
+
+func buildDatabase(client *secretsmanager.SecretsManager) (RDS, error) {
+	r := RDS{}
+
+	// nolint:staticcheck
+	err := errors.New("")
 
 	if r.Password, err = getSecret(client, "RDSPassword"); err != nil {
 		return r, bugLog.Errorf("password: %w", err)
@@ -104,7 +120,7 @@ func buildDatabase(cfg Config) (RDS, error) {
 		return r, bugLog.Errorf("database: %w", err)
 	}
 
-	return r, nil
+	return r, err
 }
 
 func getSecret(client *secretsmanager.SecretsManager, secret string) (string, error) {

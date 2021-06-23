@@ -9,6 +9,7 @@ import (
 
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
+	"github.com/cristalhq/jwt/v3"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
@@ -19,6 +20,19 @@ import (
 
 type Auth struct {
 	Config config.Config
+}
+
+type ProviderDetails struct {
+	Name      string `json:"name"`
+	AccountID string `json:"account_id"`
+}
+
+type AccountAuth struct {
+	jwt.RegisteredClaims
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	ProviderDetails
 }
 
 func NewAuth(c config.Config) Auth {
@@ -39,7 +53,9 @@ func init() {
 	store.MaxAge(86400 * 30)
 	store.Options.Path = "/"
 	store.Options.HttpOnly = true
+	// store.Options.Domain = "localhost:3000"
 	store.Options.Secure = secureFlag
+	store.Options.SameSite = http.SameSiteNoneMode
 	gothic.Store = store
 }
 
@@ -96,6 +112,24 @@ func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	bugLog.Local().Logf("user: %v", user)
+	if user.Email == "" {
+		bugLog.Local().Info("needs to get email")
+	}
+
+	jwtString, err := a.authUser(user)
+	if err != nil {
+		bugLog.Local().Logf("authUser: %w", err)
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(res).Encode(struct {
+		Token string
+	}{
+		Token: jwtString,
+	}); err != nil {
+		errorReport(res, "jwt send", err)
+	}
 }
 
 func (a Auth) AuthHandler(res http.ResponseWriter, req *http.Request) {
@@ -138,4 +172,32 @@ func (a Auth) LogoutHandler(res http.ResponseWriter, req *http.Request) {
 	}
 	res.Header().Set("Location", "/")
 	res.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func (a Auth) authUser(user goth.User) (string, error) {
+	key := []byte(a.Config.JWTSecret)
+	signer, err := jwt.NewSignerHS(jwt.HS256, key)
+	if err != nil {
+		return "", bugLog.Errorf("signer: %w", err)
+	}
+
+	claims := &AccountAuth{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Audience: []string{"account_create"},
+		},
+		Username: user.NickName,
+		Email:    user.Email,
+		Name:     user.Name,
+		ProviderDetails: ProviderDetails{
+			Name:      user.Provider,
+			AccountID: user.UserID,
+		},
+	}
+	builder := jwt.NewBuilder(signer)
+	token, err := builder.Build(claims)
+	if err != nil {
+		return "", bugLog.Errorf("build jwt: %w", err)
+	}
+
+	return token.String(), nil
 }

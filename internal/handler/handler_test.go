@@ -1,10 +1,10 @@
-package celeste_test
+package handler_test
 
 import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/bugfixes/celeste/internal/celeste"
+	"github.com/bugfixes/celeste/internal/handler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,7 +28,7 @@ func TestAccount(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := celeste.Handler(test.request)
+			resp, err := handler.Handler(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("Account err type: %v, %+v", err, test.err)
 			}

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	account2 "github.com/bugfixes/celeste/internal/account"
+	"github.com/bugfixes/celeste/internal/account"
 	"github.com/bugfixes/celeste/internal/auth"
-	bug2 "github.com/bugfixes/celeste/internal/bug"
+	"github.com/bugfixes/celeste/internal/bug"
 	"github.com/bugfixes/celeste/internal/comms"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/frontend"
@@ -53,34 +53,29 @@ func route(c handler.Celeste) error {
 	s.HandleFunc("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
 
 	// Account
-	s = r.PathPrefix("account").Subrouter()
-	s.HandleFunc("/", account2.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
-	s.HandleFunc("/", account2.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
-	s.HandleFunc("/login", account2.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
+	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
+	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
+	r.PathPrefix("/account/login").HandlerFunc(account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
 
 	// Agent
 	// TODO: Add agent
 	// s = r.PathPrefix("/agent").Subrouter()
 
 	// Logs
-	s = r.PathPrefix("/log").Subrouter()
-	s.HandleFunc("/", bug2.NewLog(c.Config).LogHandler).Methods("POST")
+	r.PathPrefix("/log").HandlerFunc(bug.NewLog(c.Config).LogHandler).Methods("POST")
 
 	// Bug
-	s = r.PathPrefix("/bug").Subrouter()
-	s.HandleFunc("/", bug2.NewBug(c.Config).BugHandler).Methods("POST")
+	r.PathPrefix("/bug").HandlerFunc(bug.NewBug(c.Config).BugHandler).Methods("POST")
 
 	// Comms
-	s = r.PathPrefix("/comms").Subrouter()
-	s.HandleFunc("/", comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
-	s.HandleFunc("/", comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
-	s.HandleFunc("/", comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
-	s.HandleFunc("/", comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
-	s.HandleFunc("/", comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
 
 	// Ticket
-	s = r.PathPrefix("/ticket").Subrouter()
-	s.HandleFunc("/", ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
+	r.PathPrefix("/ticket").HandlerFunc(ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
 
 	// Frontend
 	s = r.PathPrefix("/fe").Subrouter()

@@ -4,8 +4,7 @@ package mocks
 
 import (
 	events "github.com/aws/aws-lambda-go/events"
-	bug "github.com/bugfixes/celeste/internal/celeste/bug"
-
+	bug2 "github.com/bugfixes/celeste/internal/bug"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,14 +14,14 @@ type Process struct {
 }
 
 // Fetch provides a mock function with given fields:
-func (_m *Process) Fetch() (bug.Response, error) {
+func (_m *Process) Fetch() (bug2.Response, error) {
 	ret := _m.Called()
 
-	var r0 bug.Response
-	if rf, ok := ret.Get(0).(func() bug.Response); ok {
+	var r0 bug2.Response
+	if rf, ok := ret.Get(0).(func() bug2.Response); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bug.Response)
+		r0 = ret.Get(0).(bug2.Response)
 	}
 
 	var r1 error
@@ -36,14 +35,14 @@ func (_m *Process) Fetch() (bug.Response, error) {
 }
 
 // Parse provides a mock function with given fields: request
-func (_m *Process) Parse(request events.APIGatewayProxyRequest) (bug.Response, error) {
+func (_m *Process) Parse(request events.APIGatewayProxyRequest) (bug2.Response, error) {
 	ret := _m.Called(request)
 
-	var r0 bug.Response
-	if rf, ok := ret.Get(0).(func(events.APIGatewayProxyRequest) bug.Response); ok {
+	var r0 bug2.Response
+	if rf, ok := ret.Get(0).(func(events.APIGatewayProxyRequest) bug2.Response); ok {
 		r0 = rf(request)
 	} else {
-		r0 = ret.Get(0).(bug.Response)
+		r0 = ret.Get(0).(bug2.Response)
 	}
 
 	var r1 error
@@ -57,14 +56,14 @@ func (_m *Process) Parse(request events.APIGatewayProxyRequest) (bug.Response, e
 }
 
 // Report provides a mock function with given fields:
-func (_m *Process) Report() (bug.Response, error) {
+func (_m *Process) Report() (bug2.Response, error) {
 	ret := _m.Called()
 
-	var r0 bug.Response
-	if rf, ok := ret.Get(0).(func() bug.Response); ok {
+	var r0 bug2.Response
+	if rf, ok := ret.Get(0).(func() bug2.Response); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(bug.Response)
+		r0 = ret.Get(0).(bug2.Response)
 	}
 
 	var r1 error

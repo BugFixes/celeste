@@ -84,7 +84,13 @@ stack-create: # Create the stack
   		--stack-name ${SERVICE_NAME}-$(STACK_TIME) \
   		--endpoint https://localhost.localstack.cloud:4566 \
   		--region us-east-1 \
-  		1> /dev/null
+  		--parameters \
+  		  ParameterKey=GithubKey,ParameterValue=${GITHUB_CLIENT_ID} \
+  		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECERT} \
+  		  ParameterKey=GoogleKey,ParameterValue=${GOOGLE_CLIENT_ID} \
+  		  ParameterKey=GoogleSecret,ParameterValue=${GOOGLE_CLIENT_SECRET} \
+  		  ParameterKey=JWTSecret,ParameterValue=${JWT_SECRET} \
+  		1> ./info.txt
 
 .PHONY: stack-delete
 stack-delete: # Delete the stack
@@ -93,8 +99,48 @@ stack-delete: # Delete the stack
 		--endpoint http://localhost.localstack.cloud:4566 \
 		--region us-east-1
 
+.PHONY: wipeData
+wipeData: # Wipe Data
+	export $(egrep -v '^#' .env | xargs)
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name ticketing \
+		--key '{"id":{"S":"github_token"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name ticketing \
+		--key '{"id":{"S":"jira_token"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name agents \
+		--key '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name agents \
+		--key '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name accounts \
+		--key '{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name comms \
+		--key '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"}}' 1> /dev/null
+	aws dynamodb delete-item \
+		--endpoint http://localhost.localstack.cloud:4566 \
+		--region us-east-1 \
+		--table-name comms \
+		--key '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"}}' 1> /dev/null
+	cat ./docker/drop.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
+
 .PHONY: injectData
-injectData: # Inject Agent
+injectData: # Wipe Data
 	export $(egrep -v '^#' .env | xargs)
 
 	aws dynamodb put-item \
@@ -128,10 +174,12 @@ injectData: # Inject Agent
 		--table-name comms \
 		--item '{"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
 	aws dynamodb put-item \
-  		--endpoint http://localhost.localstack.cloud:4566 \
-  		--region us-east-1 \
-  		--table-name comms \
-  		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
+    		--endpoint http://localhost.localstack.cloud:4566 \
+    		--region us-east-1 \
+    		--table-name comms \
+    		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
+	cat ./docker/create.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
+
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

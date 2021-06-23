@@ -1,6 +1,11 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
@@ -16,6 +21,17 @@ type RDS struct {
 	Database string
 }
 
+type ServiceCredential struct {
+	Service string
+	AuthCredential
+}
+
+type AuthCredential struct {
+	Key      string
+	Secret   string
+	Callback string
+}
+
 type Config struct {
 	AWSEndpoint string `env:"AWS_ENDPOINT" envDefault:"https://localhost.localstack.cloud:4566"`
 
@@ -28,10 +44,14 @@ type Config struct {
 	CommsTable     string `env:"DB_COMMS_TABLE" envDefault:"comms"`
 	LogsTable      string `env:"DB_LOGS_TABLE" envDefault:"logs"`
 	RDS
+	JWTSecret string
 
 	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
 
 	LocalPort int `env:"LOCAL_PORT" envDefault:"3000"`
+
+	AuthCredentials []ServiceCredential
+	CallbackHost    string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
 }
 
 func BuildConfig() (Config, error) {
@@ -41,26 +61,44 @@ func BuildConfig() (Config, error) {
 		return cfg, bugLog.Errorf("parse: %w", err)
 	}
 
-	rds, err := buildDatabase(cfg)
+	secretClient, err := secretClient(cfg)
 	if err != nil {
+		return cfg, bugLog.Errorf("secretClient: %w", err)
+	}
+
+	if cfg.RDS, err = buildDatabase(secretClient); err != nil {
 		return cfg, bugLog.Errorf("buildDatabase: %w", err)
 	}
-	cfg.RDS = rds
+
+	if providers := os.Getenv("PROVIDERS_LIST"); providers != "" {
+		if cfg.AuthCredentials, err = getAuthCredentials(cfg, providers); err != nil {
+			return cfg, bugLog.Errorf("getAuthCredentials: %w", err)
+		}
+	}
+
+	if cfg.JWTSecret, err = getSecret(secretClient, "jwt_secret"); err != nil {
+		return cfg, bugLog.Errorf("jwt_secret: %w", err)
+	}
 
 	return cfg, nil
 }
 
-func buildDatabase(cfg Config) (RDS, error) {
-	r := RDS{}
-
+func secretClient(cfg Config) (*secretsmanager.SecretsManager, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region:   aws.String(cfg.DBRegion),
 		Endpoint: aws.String(cfg.AWSEndpoint),
 	})
 	if err != nil {
-		return r, bugLog.Errorf("session: %w", err)
+		return nil, bugLog.Errorf("session: %w", err)
 	}
-	client := secretsmanager.New(sess)
+	return secretsmanager.New(sess), nil
+}
+
+func buildDatabase(client *secretsmanager.SecretsManager) (RDS, error) {
+	r := RDS{}
+
+	// nolint:staticcheck
+	err := errors.New("")
 
 	if r.Password, err = getSecret(client, "RDSPassword"); err != nil {
 		return r, bugLog.Errorf("password: %w", err)
@@ -82,7 +120,7 @@ func buildDatabase(cfg Config) (RDS, error) {
 		return r, bugLog.Errorf("database: %w", err)
 	}
 
-	return r, nil
+	return r, err
 }
 
 func getSecret(client *secretsmanager.SecretsManager, secret string) (string, error) {
@@ -91,6 +129,54 @@ func getSecret(client *secretsmanager.SecretsManager, secret string) (string, er
 	})
 	if err != nil {
 		return "", bugLog.Errorf("getSecret: %w", err)
+	}
+
+	return *sec.SecretString, nil
+}
+
+func getAuthCredentials(cfg Config, providers string) ([]ServiceCredential, error) {
+	serviceCreds := []ServiceCredential{}
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:   aws.String(cfg.DBRegion),
+		Endpoint: aws.String(cfg.AWSEndpoint),
+	})
+	if err != nil {
+		return serviceCreds, bugLog.Errorf("session: %w", err)
+	}
+	client := secretsmanager.New(sess)
+
+	services := strings.Split(providers, ",")
+	for _, service := range services {
+		key, err := getAuthSecret(client, service, "key")
+		if err != nil {
+			continue
+		}
+		sec, err := getAuthSecret(client, service, "secret")
+		if err != nil {
+			continue
+		}
+		cred := ServiceCredential{
+			Service: service,
+			AuthCredential: AuthCredential{
+				Key:      key,
+				Secret:   sec,
+				Callback: fmt.Sprintf("%s/auth/%s/callback", cfg.CallbackHost, service),
+			},
+		}
+
+		serviceCreds = append(serviceCreds, cred)
+	}
+
+	return serviceCreds, nil
+}
+
+func getAuthSecret(client *secretsmanager.SecretsManager, service, secret string) (string, error) {
+	sec, err := client.GetSecretValue(&secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(fmt.Sprintf("%s_%s", service, secret)),
+	})
+	if err != nil {
+		return "", bugLog.Errorf("getAuthSecret: %s_%s, %w", service, secret, err)
 	}
 
 	return *sec.SecretString, nil

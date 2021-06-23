@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/bugfixes/celeste/internal/celeste/bug"
+	bug2 "github.com/bugfixes/celeste/internal/bug"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +12,7 @@ func TestProcessFile(t *testing.T) {
 	tests := []struct {
 		name    string
 		request events.APIGatewayProxyRequest
-		expect  bug.Response
+		expect  bug2.Response
 		err     error
 	}{
 		{
@@ -22,13 +22,13 @@ func TestProcessFile(t *testing.T) {
 					"tester": "bob",
 				},
 			},
-			expect: bug.Response{},
+			expect: bug2.Response{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := bug.ProcessBug{}.Parse(test.request)
+			resp, err := bug2.ProcessBug{}.Parse(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
 				t.Errorf("lookup err: %w", err)
 			}

@@ -78,6 +78,18 @@ Parameters:
     Type: String
     Default: celeste-local.zip
 
+  GithubKey:
+    Type: String
+  GithubSecret:
+    Type: String
+  GoogleKey:
+    Type: String
+  GoogleSecret:
+    Type: String
+
+  JWTSecret:
+    Type: String
+
 Resources:
   ServiceARN:
     Type: AWS::IAM::Role
@@ -535,6 +547,72 @@ Resources:
     Properties:
       Name: RDSDatabase
       SecretString: !Ref RDSName
+
+  ProvidersGithubKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_key
+      SecretString: !Ref GithubKey
+  ProvidersGithubSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_secret
+      SecretString: !Ref GithubSecret
+  ProvidersGoogleKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: google_key
+      SecretString: !Ref GoogleKey
+  ProvidersGoogleSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: google_secret
+      SecretString: !Ref GoogleSecret
+
+  JWT:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: jwt_secret
+      SecretString: !Ref JWTSecret
+
+  DockerRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: celeste
+      RepositoryPolicyText:
+        Version: 2012-10-17make
+        Statement:
+          - Sid: AllowPushPull
+            Effect: Allow
+            Principle:
+              AWS: !Join
+                - ':'
+                - - 'arn'
+                  - 'aws'
+                  - 'iam'
+                  - !Ref AWS::AccountId
+                  - 'users/Keloran'
+            Action:
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:BatchGetImage'
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:PutImage'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: CelesteCluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
 
 
   Bucket:

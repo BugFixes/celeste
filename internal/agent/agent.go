@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"github.com/bugfixes/celeste/internal/celeste/account"
+	account2 "github.com/bugfixes/celeste/internal/account"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
 )
@@ -16,7 +16,7 @@ type Agent struct {
 	Name string `json:"name"`
 
 	Credentials
-	account.Account
+	account2.Account
 }
 
 //go:generate mockery --name=Agents
@@ -25,7 +25,7 @@ type Agents interface {
 	Delete(a Agent) error
 }
 
-func NewAgent(name string, account account.Account) *Agent {
+func NewAgent(name string, account account2.Account) *Agent {
 	return &Agent{
 		Name:    name,
 		Account: account,

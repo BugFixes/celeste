@@ -82,8 +82,8 @@ func route(c handler.Celeste) error {
 	s.HandleFunc("/r", frontend.NewFrontend(c.Config).RegisterHandler).Methods("POST")
 	s.HandleFunc("/d", frontend.NewFrontend(c.Config).DetailsHandler).Methods("GET")
 
-	bugLog.Local().Infof("listening on port: %d\n", c.Config.LocalPort)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.LocalPort), r)
+	bugLog.Local().Infof("listening on port: %d\n", c.Config.Local.Port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.Local.Port), r)
 	if err != nil {
 		return bugLog.Errorf("port: %w", err)
 	}

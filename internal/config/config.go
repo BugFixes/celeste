@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,12 +31,7 @@ type AuthCredential struct {
 	Callback string
 }
 
-type Config struct {
-	KeepLocal bool `env:"LOCAL_ONLY" envDefault:"false"`
-
-	AWSEndpoint string `env:"AWS_ENDPOINT" envDefault:"https://localhost.localstack.cloud:4566"`
-
-	DBRegion       string `env:"DB_REGION" envDefault:"us-east-1"`
+type DynamoDB struct {
 	BugsTable      string `env:"DB_BUGS_TABLE" envDefault:"bugs"`
 	AccountsTable  string `env:"DB_ACCOUNTS_TABLE" envDefault:"accounts"`
 	AgentsTable    string `env:"DB_AGENTS_TABLE" envDefault:"agents"`
@@ -45,15 +39,36 @@ type Config struct {
 	TicketsTable   string `env:"DB_TICKETS_TABLE" envDefault:"tickets"`
 	CommsTable     string `env:"DB_COMMS_TABLE" envDefault:"comms"`
 	LogsTable      string `env:"DB_LOGS_TABLE" envDefault:"logs"`
+}
+
+type Local struct {
+	KeepLocal   bool   `env:"LOCAL_ONLY" envDefault:"false"`
+	Development bool   `env:"DEVELOPMENT" envDefault:"true"`
+	AWSEndpoint string `env:"AWS_ENDPOINT" envDefault:"https://localhost.localstack.cloud:4566"`
+	Port        int    `env:"LOCAL_PORT" envDefault:"3000"`
+}
+
+type Queues struct {
+	Name       string `env:"QUEUE_NAME" envDefault:"bugs"`
+	DeadLetter string `env:"QUEUE_DEADLETTER_NAME" envDefault:"deadletter"`
+}
+
+type Authorization struct {
+	JWTSecret    string
+	CallbackHost string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
+}
+
+type Config struct {
+	Local
 	RDS
-	JWTSecret string
+	DynamoDB
+	Queues
+	Authorization
 
-	QueueName string `env:"QUEUE_NAME" envDefault:"bugs"`
-
-	LocalPort int `env:"LOCAL_PORT" envDefault:"3000"`
+	AWSRegion string `env:"AWS_REGION" envDefault:"eu-west-2"`
 
 	AuthCredentials []ServiceCredential
-	CallbackHost    string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
+	DateFormat      string
 }
 
 func BuildConfig() (Config, error) {
@@ -63,66 +78,39 @@ func BuildConfig() (Config, error) {
 		return cfg, bugLog.Errorf("parse: %w", err)
 	}
 
-	secretClient, err := secretClient(cfg)
+	sess, err := BuildSession(cfg)
 	if err != nil {
-		return cfg, bugLog.Errorf("secretClient: %w", err)
+		return Config{}, bugLog.Errorf("buildSession: %w", err)
 	}
 
-	if cfg.RDS, err = buildDatabase(secretClient); err != nil {
+	secretClient := secretsmanager.New(sess)
+
+	if err := buildDatabase(&cfg, secretClient); err != nil {
 		return cfg, bugLog.Errorf("buildDatabase: %w", err)
 	}
 
-	if providers := os.Getenv("PROVIDERS_LIST"); providers != "" {
-		if cfg.AuthCredentials, err = getAuthCredentials(cfg, providers); err != nil {
-			return cfg, bugLog.Errorf("getAuthCredentials: %w", err)
-		}
+	buildProviders(&cfg, secretClient)
+
+	if err := getJWTSecret(&cfg, secretClient); err != nil {
+		return cfg, bugLog.Errorf("getJWTSecret: %w", err)
 	}
 
-	if cfg.JWTSecret, err = getSecret(secretClient, "jwt_secret"); err != nil {
-		return cfg, bugLog.Errorf("jwt_secret: %w", err)
-	}
+	cfg.DateFormat = "2006-04-02 15:04:05"
 
 	return cfg, nil
 }
 
-func secretClient(cfg Config) (*secretsmanager.SecretsManager, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region:   aws.String(cfg.DBRegion),
-		Endpoint: aws.String(cfg.AWSEndpoint),
+func BuildSession(cfg Config) (*session.Session, error) {
+	if cfg.Local.Development {
+		return session.NewSession(&aws.Config{
+			Region:   aws.String(cfg.AWSRegion),
+			Endpoint: aws.String(cfg.AWSEndpoint),
+		})
+	}
+
+	return session.NewSession(&aws.Config{
+		Region: aws.String(cfg.AWSRegion),
 	})
-	if err != nil {
-		return nil, bugLog.Errorf("session: %w", err)
-	}
-	return secretsmanager.New(sess), nil
-}
-
-func buildDatabase(client *secretsmanager.SecretsManager) (RDS, error) {
-	r := RDS{}
-
-	// nolint:staticcheck
-	err := errors.New("")
-
-	if r.Password, err = getSecret(client, "RDSPassword"); err != nil {
-		return r, bugLog.Errorf("password: %w", err)
-	}
-
-	if r.Username, err = getSecret(client, "RDSUsername"); err != nil {
-		return r, bugLog.Errorf("username: %w", err)
-	}
-
-	if r.Hostname, err = getSecret(client, "RDSHostname"); err != nil {
-		return r, bugLog.Errorf("hostname: %w", err)
-	}
-
-	if r.Port, err = getSecret(client, "RDSPort"); err != nil {
-		return r, bugLog.Errorf("port: %w", err)
-	}
-
-	if r.Database, err = getSecret(client, "RDSDatabase"); err != nil {
-		return r, bugLog.Errorf("database: %w", err)
-	}
-
-	return r, err
 }
 
 func getSecret(client *secretsmanager.SecretsManager, secret string) (string, error) {
@@ -136,17 +124,17 @@ func getSecret(client *secretsmanager.SecretsManager, secret string) (string, er
 	return *sec.SecretString, nil
 }
 
-func getAuthCredentials(cfg Config, providers string) ([]ServiceCredential, error) {
-	serviceCreds := []ServiceCredential{}
-
-	sess, err := session.NewSession(&aws.Config{
-		Region:   aws.String(cfg.DBRegion),
-		Endpoint: aws.String(cfg.AWSEndpoint),
-	})
+func getJWTSecret(cfg *Config, client *secretsmanager.SecretsManager) error {
+	jwt, err := getSecret(client, "jwt_secret")
 	if err != nil {
-		return serviceCreds, bugLog.Errorf("session: %w", err)
+		return bugLog.Errorf("jwt_secret: %w", err)
 	}
-	client := secretsmanager.New(sess)
+	cfg.JWTSecret = jwt
+	return nil
+}
+
+func getAuthCredentials(cfg *Config, providers string, client *secretsmanager.SecretsManager) []ServiceCredential {
+	serviceCreds := []ServiceCredential{}
 
 	services := strings.Split(providers, ",")
 	for _, service := range services {
@@ -170,7 +158,7 @@ func getAuthCredentials(cfg Config, providers string) ([]ServiceCredential, erro
 		serviceCreds = append(serviceCreds, cred)
 	}
 
-	return serviceCreds, nil
+	return serviceCreds
 }
 
 func getAuthSecret(client *secretsmanager.SecretsManager, service, secret string) (string, error) {
@@ -182,4 +170,48 @@ func getAuthSecret(client *secretsmanager.SecretsManager, service, secret string
 	}
 
 	return *sec.SecretString, nil
+}
+
+func buildProviders(cfg *Config, client *secretsmanager.SecretsManager) {
+	if providers := os.Getenv("PROVIDERS_LIST"); providers != "" {
+		cfg.AuthCredentials = getAuthCredentials(cfg, providers, client)
+	}
+}
+
+func buildDatabase(cfg *Config, client *secretsmanager.SecretsManager) error {
+	r := RDS{}
+
+	val, err := getSecret(client, "RDSPassword")
+	if err != nil {
+		return bugLog.Errorf("password: %w", err)
+	}
+	r.Password = val
+
+	val, err = getSecret(client, "RDSUsername")
+	if err != nil {
+		return bugLog.Errorf("password: %w", err)
+	}
+	r.Username = val
+
+	val, err = getSecret(client, "RDSHostname")
+	if err != nil {
+		return bugLog.Errorf("password: %w", err)
+	}
+	r.Hostname = val
+
+	val, err = getSecret(client, "RDSPort")
+	if err != nil {
+		return bugLog.Errorf("password: %w", err)
+	}
+	r.Port = val
+
+	val, err = getSecret(client, "RDSDatabase")
+	if err != nil {
+		return bugLog.Errorf("password: %w", err)
+	}
+	r.Database = val
+
+	cfg.RDS = r
+
+	return err
 }

@@ -1,9 +1,7 @@
 package database
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
@@ -20,12 +18,9 @@ func New(c config.Config) *Database {
 }
 
 func (d Database) dynamoSession() (*dynamodb.DynamoDB, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region:   aws.String(d.Config.DBRegion),
-		Endpoint: aws.String(d.Config.AWSEndpoint),
-	})
+	sess, err := config.BuildSession(d.Config)
 	if err != nil {
-		return nil, bugLog.Errorf("session: %w", err)
+		return nil, bugLog.Errorf("dynamoSessioN: %w", err)
 	}
 
 	return dynamodb.New(sess), nil

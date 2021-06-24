@@ -78,7 +78,7 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		LoggedTime: time.Now(),
 		Line:       log.Line,
 		File:       log.File,
-		Logged:     time.Now().Format(database.DateFormat),
+		Logged:     time.Now().Format(l.Config.DateFormat),
 		Stack:      fmt.Sprintf("%x", log.Stack),
 		LogFmt:     log.LogFmt,
 		Entry:      log.Log,

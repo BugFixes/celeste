@@ -33,6 +33,8 @@ type AuthCredential struct {
 }
 
 type Config struct {
+	KeepLocal bool `env:"LOCAL_ONLY" envDefault:"false"`
+
 	AWSEndpoint string `env:"AWS_ENDPOINT" envDefault:"https://localhost.localstack.cloud:4566"`
 
 	DBRegion       string `env:"DB_REGION" envDefault:"us-east-1"`

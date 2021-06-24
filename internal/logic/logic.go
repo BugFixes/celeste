@@ -53,6 +53,11 @@ func sinceMoreThanMonth(when time.Time) bool {
 // ShouldWeReport
 // nolint: gocyclo
 func (l *Logic) ShouldWeReport(lb LogicBug) bool {
+	// no need to report everything is hosted locally
+	if l.Config.KeepLocal {
+		return false
+	}
+
 	if reportedMoreThanNTimes(lb.TimesReported, 10) {
 		return true
 	}

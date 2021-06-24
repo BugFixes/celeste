@@ -12,7 +12,6 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 )
@@ -360,7 +359,7 @@ func (j *Jira) Create(ticket *Ticket) error {
 	return j.createNew(ticket, td)
 }
 
-func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
+func (j *Jira) createNew(ticket *Ticket, td TicketDetails) error {
 	template, _ := j.GenerateTemplate(ticket)
 
 	client := &http.Client{}
@@ -396,20 +395,20 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 
 	td.RemoteID = ic.ID
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, ic.Key)
-	if err := database.NewTicketingStorage(*database.New(j.Config)).StoreTicketDetails(td); err != nil {
+	if err := NewTicketingStorage(j.Config).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("jira create store: %w", err)
 	}
 
 	return nil
 }
 
-func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
-	td := database.TicketDetails{
+func (j Jira) TicketExists(ticket *Ticket) (bool, TicketDetails, error) {
+	td := TicketDetails{
 		AgentID: j.Credentials.AgentID,
 		System:  "jira",
 		Hash:    GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(j.Config)).TicketExists(td)
+	ticketExists, err := NewTicketingStorage(j.Config).TicketExists(td)
 	if err != nil {
 		return false, td, bugLog.Errorf("jira ticketExists: %w", err)
 	}
@@ -428,7 +427,7 @@ func (j Jira) Update(ticket *Ticket) error {
 	rt, err := j.FetchRemoteTicket(ticket.RemoteID)
 	if err != nil {
 		if strings.Contains(err.Error(), "Issue does not exist") {
-			td := database.TicketDetails{
+			td := TicketDetails{
 				AgentID: j.Credentials.AgentID,
 				System:  "jira",
 				Hash:    GenerateHash(ticket.Raw),
@@ -448,7 +447,7 @@ func (j Jira) Update(ticket *Ticket) error {
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, rtd.Key)
 	switch ticket.State {
 	case "Done":
-		td := database.TicketDetails{
+		td := TicketDetails{
 			AgentID: j.Credentials.AgentID,
 			System:  "jira",
 			Hash:    GenerateHash(ticket.Raw),
@@ -497,7 +496,7 @@ func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 }
 
 func (j Jira) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(j.Config)).FindTicket(database.TicketDetails{
+	td, err := NewTicketingStorage(j.Config).FindTicket(TicketDetails{
 		AgentID: j.Credentials.AgentID,
 		System:  "jira",
 		Hash:    GenerateHash(ticket.Raw),

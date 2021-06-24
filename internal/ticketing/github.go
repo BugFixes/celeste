@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 
 	"github.com/bradleyfalzon/ghinstallation"
@@ -161,7 +160,7 @@ func (g *Github) Create(ticket *Ticket) error {
 	ticket.RemoteID = td.RemoteID
 	ticket.RemoteLink = is.GetHTMLURL()
 
-	if err := database.NewTicketingStorage(*database.New(g.Config)).StoreTicketDetails(td); err != nil {
+	if err := NewTicketingStorage(g.Config).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("github create store: %w", err)
 	}
 
@@ -185,7 +184,7 @@ func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 }
 
 func (g *Github) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(g.Config)).FindTicket(database.TicketDetails{
+	td, err := NewTicketingStorage(g.Config).FindTicket(TicketDetails{
 		AgentID: g.Credentials.AgentID,
 		System:  "github",
 		Hash:    GenerateHash(ticket.Raw),
@@ -250,13 +249,13 @@ func (g *Github) Update(ticket *Ticket) error {
 	return nil
 }
 
-func (g *Github) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
-	td := database.TicketDetails{
+func (g *Github) TicketExists(ticket *Ticket) (bool, TicketDetails, error) {
+	td := TicketDetails{
 		AgentID: g.Credentials.AgentID,
 		System:  "github",
 		Hash:    GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(g.Config)).TicketExists(td)
+	ticketExists, err := NewTicketingStorage(g.Config).TicketExists(td)
 	if err != nil {
 		return false, td, bugLog.Errorf("github ticketExists: %w", err)
 	}

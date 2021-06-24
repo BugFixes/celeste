@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
@@ -41,7 +40,7 @@ type TicketingSystem interface {
 	Fetch(*Ticket) error
 
 	GenerateTemplate(*Ticket) (TicketTemplate, error)
-	TicketExists(*Ticket) (bool, database.TicketDetails, error)
+	TicketExists(*Ticket) (bool, TicketDetails, error)
 }
 
 type Ticketing struct {
@@ -72,10 +71,10 @@ type Ticket struct {
 	RemoteSystem  string      `json:"remote_system"`
 }
 
-func (t Ticketing) fetchTicketingCredentials(agentID string) (database.TicketingCredentials, error) {
-	system, err := database.NewTicketingStorage(*database.New(t.Config)).FetchCredentials(agentID)
+func (t Ticketing) fetchTicketingCredentials(agentID string) (TicketingCredentials, error) {
+	system, err := NewTicketingStorage(t.Config).FetchCredentials(agentID)
 	if err != nil {
-		return database.TicketingCredentials{
+		return TicketingCredentials{
 			AgentID: agentID,
 			System:  "mock",
 		}, bugLog.Errorf("ticketing failed to fetch system: %w", err)
@@ -85,7 +84,7 @@ func (t Ticketing) fetchTicketingCredentials(agentID string) (database.Ticketing
 }
 
 // nolint: gocyclo
-func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (TicketingSystem, error) {
+func (t Ticketing) fetchTicketSystem(creds TicketingCredentials) (TicketingSystem, error) {
 	var ts TicketingSystem
 
 	switch creds.System {
@@ -108,7 +107,7 @@ func (t Ticketing) fetchTicketSystem(creds database.TicketingCredentials) (Ticke
 	return ts, nil
 }
 
-func (t Ticketing) TicketCreate(system TicketingSystem, creds database.TicketingCredentials, ticket *Ticket) error {
+func (t Ticketing) TicketCreate(system TicketingSystem, creds TicketingCredentials, ticket *Ticket) error {
 	ticket.RemoteSystem = creds.System
 
 	if err := system.ParseCredentials(creds); err != nil {

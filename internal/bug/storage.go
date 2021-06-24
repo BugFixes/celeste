@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -32,8 +31,6 @@ type BugRecord struct {
 	FirstReportedTime   time.Time   `json:"first_reported_time" dynamodbav:"-"`
 	FirstReported       string      `json:"first_reported"`
 }
-
-const DateFormat = "2006-04-02 15:04:05"
 
 func NewBugStorage(c config.Config) *BugStorage {
 	return &BugStorage{
@@ -68,12 +65,9 @@ func dynamoError(e error) error {
 }
 
 func (b BugStorage) dynamoSession() (*dynamodb.DynamoDB, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region:   aws.String(b.Config.DBRegion),
-		Endpoint: aws.String(b.Config.AWSEndpoint),
-	})
+	sess, err := config.BuildSession(b.Config)
 	if err != nil {
-		return nil, bugLog.Errorf("session: %w", err)
+		return nil, bugLog.Errorf("dynamoSessioN: %w", err)
 	}
 
 	return dynamodb.New(sess), nil
@@ -111,9 +105,9 @@ func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 		data.TimesReportedNumber = 1
 		data.TimesReported = "1"
 		data.LastReportedTime = time.Now()
-		data.LastReported = time.Now().Format(DateFormat)
+		data.LastReported = time.Now().Format(b.Config.DateFormat)
 		data.FirstReportedTime = time.Now()
-		data.FirstReported = time.Now().Format(DateFormat)
+		data.FirstReported = time.Now().Format(b.Config.DateFormat)
 		return data, b.Store(data)
 	}
 
@@ -171,13 +165,13 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 			return brs, bugLog.Errorf("bug findAndStore atoi: %w", err)
 		}
 
-		lr, err := time.Parse(DateFormat, bri.LastReported)
+		lr, err := time.Parse(b.Config.DateFormat, bri.LastReported)
 		if err != nil {
 			return brs, bugLog.Errorf("bug findAndStore lastReportedParse: %w", err)
 		}
 		bri.LastReportedTime = lr
 
-		fr, err := time.Parse(DateFormat, bri.FirstReported)
+		fr, err := time.Parse(b.Config.DateFormat, bri.FirstReported)
 		if err != nil {
 			return brs, bugLog.Errorf("bug findAndStore firstReportedParse: %w", err)
 		}
@@ -196,8 +190,8 @@ func (b BugStorage) Store(data BugRecord) error {
 		return bugLog.Errorf("bug store dynamosession failed: %w", err)
 	}
 
-	data.FirstReported = time.Now().Format(DateFormat)
-	data.LastReported = time.Now().Format(DateFormat)
+	data.FirstReported = time.Now().Format(b.Config.DateFormat)
+	data.LastReported = time.Now().Format(b.Config.DateFormat)
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
@@ -220,7 +214,7 @@ func (b BugStorage) Update(data BugRecord) error {
 		return bugLog.Errorf("bug update dynamosession failed: %w", err)
 	}
 
-	data.LastReported = time.Now().Format(DateFormat)
+	data.LastReported = time.Now().Format(b.Config.DateFormat)
 
 	if _, err := svc.UpdateItem(&dynamodb.UpdateItemInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{

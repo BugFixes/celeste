@@ -6,7 +6,6 @@ import (
 
 	agent2 "github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
@@ -96,7 +95,7 @@ func ConvertLevelFromString(s string) int {
 }
 
 func (b *Bug) ReportedTimes(c config.Config) error {
-	bugInfo, err := database.NewBugStorage(*database.New(c)).FindAndStore(database.BugRecord{
+	bugInfo, err := NewBugStorage(c).FindAndStore(BugRecord{
 		ID:      b.Identifier,
 		AgentID: b.Agent.ID,
 		Hash:    b.Hash,

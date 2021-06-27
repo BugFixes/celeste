@@ -6,3 +6,4 @@ configs/app.pem
 info.txxt
 info.txt
 local.sql
+cloud.sh

@@ -77,4 +77,13 @@ CREATE TABLE IF NOT EXISTS ticket (
 );
 CREATE INDEX idx_tickets ON ticket(hash);
 
+CREATE TABLE IF NOT EXISTS comms_details (
+    id SERIAL,
+    agent_id INT NOT NULL,
+    system VARCHAR(100),
+    details JSON,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_agent_id FOREIGN KEY (agent_id) REFERENCES agent(id)
+);
+
 

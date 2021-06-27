@@ -91,6 +91,11 @@ stack-create: # Create the stack
   		  ParameterKey=GoogleKey,ParameterValue=${GOOGLE_CLIENT_ID} \
   		  ParameterKey=GoogleSecret,ParameterValue=${GOOGLE_CLIENT_SECRET} \
   		  ParameterKey=JWTSecret,ParameterValue=${JWT_SECRET} \
+  		  ParameterKey=DiscordAppId,ParameterValue=${DISCORD_APP_ID} \
+  		  ParameterKey=DiscordPublicKey,ParameterValue=${DISCORD_PUBLIC_KEY} \
+  		  ParameterKey=DiscordClientID,ParameterValue=${DISCORD_CLIENT_ID} \
+  		  ParameterKey=DiscordClientSecret,ParameterValue=${DISCORD_CLIENT_SECRET} \
+  		  ParameterKey=DiscordBotToken,ParameterValue=${DISCORD_BOT_TOKEN} \
   		1> /dev/null
 
 .PHONY: stack-delete

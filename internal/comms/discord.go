@@ -1,17 +1,16 @@
 package comms
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"os"
+  "context"
+  "errors"
+  "fmt"
 
-	"github.com/bugfixes/celeste/internal/config"
-	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"github.com/diamondburned/arikawa/v2/api"
-	"github.com/diamondburned/arikawa/v2/discord"
-	"github.com/diamondburned/arikawa/v2/gateway"
-	"github.com/mitchellh/mapstructure"
+  "github.com/bugfixes/celeste/internal/config"
+  bugLog "github.com/bugfixes/go-bugfixes/logs"
+  "github.com/diamondburned/arikawa/v2/api"
+  "github.com/diamondburned/arikawa/v2/discord"
+  "github.com/diamondburned/arikawa/v2/gateway"
+  "github.com/mitchellh/mapstructure"
 )
 
 type Discord struct {
@@ -35,7 +34,10 @@ func NewDiscord(c config.Config) *Discord {
 }
 
 func (d *Discord) Connect() error {
-	authToken := os.Getenv("DISCORD_BOT_TOKEN")
+	authToken, err := config.GetSecret(d.Config.SecretsClient, "discord_bot_token")
+	if err != nil {
+	  return bugLog.Errorf("connect: %w", err)
+  }
 	if authToken == "" {
 		return bugLog.Errorf("discord connect: %w", errors.New("no bot token"))
 	}

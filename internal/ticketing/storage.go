@@ -1,30 +1,32 @@
 package ticketing
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/bugfixes/celeste/internal/agent"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"github.com/google/uuid"
 )
 
 type TicketingStorage struct {
-	Config config.Config
+	Config  config.Config
+	Context context.Context
 }
 
 type TicketingCredentials struct {
-	AgentID          string      `json:"agent_id"`
+	Agent            agent.Agent
 	AccessToken      string      `json:"access_token"`
 	TicketingDetails interface{} `json:"ticketing_details"`
 	System           string      `json:"system"`
 }
 
 type TicketDetails struct {
+	agent.Agent
 	ID       string `json:"id"`
-	AgentID  string `json:"agent_id"`
 	RemoteID string `json:"remote_id"`
 	System   string `json:"system"`
 	Hash     string `json:"hash"`
@@ -32,164 +34,154 @@ type TicketDetails struct {
 
 func NewTicketingStorage(c config.Config) *TicketingStorage {
 	return &TicketingStorage{
-		Config: c,
+		Config:  c,
+		Context: context.Background(),
 	}
 }
 
-func (t TicketingStorage) dynamoSession() (*dynamodb.DynamoDB, error) {
-	sess, err := config.BuildSession(t.Config)
+func (t TicketingStorage) getConnection() (*pgx.Conn, error) {
+	conn, err := pgx.Connect(
+		t.Context,
+		fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s",
+			t.Config.RDS.Username,
+			t.Config.RDS.Password,
+			t.Config.RDS.Hostname,
+			t.Config.RDS.Port,
+			t.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("dynamoSessioN: %w", err)
+		return nil, bugLog.Errorf("getConnnection: %w", err)
 	}
 
-	return dynamodb.New(sess), nil
+	return conn, nil
 }
 
 func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) error {
-	svc, err := t.dynamoSession()
+	conn, err := t.getConnection()
 	if err != nil {
-		return bugLog.Errorf("store credentials dynamo session: %w", err)
+		return bugLog.Errorf("storeCredentials: %w", err)
+	}
+	defer func() {
+		if err := conn.Close(t.Context); err != nil {
+			bugLog.Debugf("close: %w", err)
+		}
+	}()
+
+	dbytes, err := json.Marshal(credentials.TicketingDetails)
+	if err != nil {
+		return bugLog.Errorf("marshal details: %w", err)
 	}
 
-	av, err := dynamodbattribute.MarshalMap(credentials)
-	if err != nil {
-		return bugLog.Errorf("store credentials map failed: %w", err)
-	}
-
-	if _, err := svc.PutItem(&dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(t.Config.TicketingTable),
-	}); err != nil {
-		return bugLog.Errorf("store credentials store failed: %w", err)
+	if _, err := conn.Exec(t.Context,
+		"INSERT INTO ticket_details (agent_id, system, details) VALUES ($1, $2, $3, $4)",
+		credentials.Agent.ID,
+		credentials.System,
+		fmt.Sprintf("%s", dbytes)); err != nil {
+		return bugLog.Errorf("store: %w", err)
 	}
 
 	return nil
 }
 
-func (t TicketingStorage) FetchCredentials(agentID string) (TicketingCredentials, error) {
-	svc, err := t.dynamoSession()
-	if err != nil {
-		return TicketingCredentials{}, bugLog.Errorf("ticketing fetchCredentials session: %w", err)
-	}
+func (t TicketingStorage) FetchCredentials(a agent.Agent) (TicketingCredentials, error) {
+	tc := TicketingCredentials{}
+	var details string
 
-	filt := expression.Name("agent_id").Equal(expression.Value(agentID))
-	proj := expression.NamesList(
-		expression.Name("ticketing_details"),
-		expression.Name("system"),
-		expression.Name("access_token"),
-		expression.Name("agent_id"))
-	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	conn, err := t.getConnection()
 	if err != nil {
-		return TicketingCredentials{}, bugLog.Errorf("fetch credentials failed to build expresion: %w", err)
+		return tc, bugLog.Errorf("fetchCredentials: %w", err)
 	}
-
-	result, err := svc.Scan(&dynamodb.ScanInput{
-		TableName:                 aws.String(t.Config.TicketingTable),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-	})
-	if err != nil {
-		return TicketingCredentials{}, bugLog.Errorf("ticketing failed to scan: %w", err)
-	}
-
-	tcs := []TicketingCredentials{}
-	if len(result.Items) == 0 {
-		return TicketingCredentials{}, bugLog.Errorf("ticketing failed to find any")
-	}
-	for _, i := range result.Items {
-		tc := TicketingCredentials{}
-		if err := dynamodbattribute.UnmarshalMap(i, &tc); err != nil {
-			return TicketingCredentials{}, bugLog.Errorf("failed to unmarshal details: %w", err)
+	defer func() {
+		if err := conn.Close(t.Context); err != nil {
+			bugLog.Debugf("close: %w", err)
 		}
-		tcs = append(tcs, tc)
+	}()
+
+	if err := conn.QueryRow(t.Context,
+		"SELECT system, details FROM ticketing_details WHERE agent_id = (SELECT id FROM agent WHERE key = $1 AND secret= $2 LIMIT 1)",
+		a.Credentials.Key,
+		a.Credentials.Secret).Scan(&tc.System, &details); err != nil {
+		return tc, bugLog.Errorf("queryRow: %w", err)
 	}
 
-	return tcs[0], nil
+	if err := json.Unmarshal([]byte(details), &tc.TicketingDetails); err != nil {
+		return tc, bugLog.Errorf("unmarshall: %w", err)
+	}
+
+	return tc, nil
 }
 
 func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
-	id, err := uuid.NewUUID()
+	conn, err := t.getConnection()
 	if err != nil {
-		return bugLog.Errorf("store ticket uuid failed: %w", err)
+		return bugLog.Errorf("storeTicketDetails: %w", err)
 	}
-	details.ID = id.String()
+	defer func() {
+		if err := conn.Close(t.Context); err != nil {
+			bugLog.Debugf("close: %w", err)
+		}
+	}()
 
-	svc, err := t.dynamoSession()
-	if err != nil {
-		return bugLog.Errorf("store ticket dynamo session: %w", err)
-	}
-
-	av, err := dynamodbattribute.MarshalMap(details)
-	if err != nil {
-		return bugLog.Errorf("store ticket marshal: %w", err)
-	}
-
-	if _, err := svc.PutItem(&dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(t.Config.TicketsTable),
-	}); err != nil {
-		return bugLog.Errorf("store ticket save: %w", err)
+	if _, err := conn.Exec(t.Context,
+		"INSERT INTO ticket (agent_id, remote_id, system, hash) VALUES ($1, $2, $3, $4)",
+		details.Agent.ID,
+		details.RemoteID,
+		details.System,
+		details.Hash); err != nil {
+		return bugLog.Errorf("storeTicketDetails: %w", err)
 	}
 
 	return nil
 }
 
 func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, error) {
-	svc, err := t.dynamoSession()
-	if err != nil {
-		return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket dynamosession: %w", err)
-	}
+	td := TicketDetails{}
 
-	filt := expression.And(
-		expression.Name("hash").Equal(expression.Value(details.Hash)),
-		expression.Name("agent_id").Equal(expression.Value(details.AgentID)))
-	proj := expression.NamesList(
-		expression.Name("id"),
-		expression.Name("agent_id"),
-		expression.Name("remote_id"),
-		expression.Name("system"),
-		expression.Name("hash"))
-	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
+	conn, err := t.getConnection()
 	if err != nil {
-		return TicketDetails{}, bugLog.Errorf("ticketStorage findTicket expression buider: %w", err)
+		return td, bugLog.Errorf("findTicket: %w", err)
 	}
-	result, err := svc.Scan(&dynamodb.ScanInput{
-		TableName:                 aws.String(t.Config.TicketsTable),
-		ExpressionAttributeValues: expr.Values(),
-		ExpressionAttributeNames:  expr.Names(),
-		ProjectionExpression:      expr.Projection(),
-		FilterExpression:          expr.Filter(),
-	})
-	if err != nil {
-		return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket scan: %w", err)
-	}
-
-	tds := []TicketDetails{}
-	if len(result.Items) == 0 {
-		return TicketDetails{}, nil
-	}
-	for _, i := range result.Items {
-		td := TicketDetails{}
-		if err := dynamodbattribute.UnmarshalMap(i, &td); err != nil {
-			return TicketDetails{}, bugLog.Errorf("ticketingStorage findTicket unmarshal: %w", err)
+	defer func() {
+		if err := conn.Close(t.Context); err != nil {
+			bugLog.Debugf("close: %w", err)
 		}
-		tds = append(tds, td)
+	}()
+
+	if err := conn.QueryRow(t.Context,
+		"SELECT id, agent_id, remote_id, system, hash FROM ticket WHERE hash = $1 AND agent_id = $2 LIMIT 1",
+		details.Hash,
+		details.Agent.ID).Scan(&td.ID,
+		&td.Agent.ID,
+		&td.RemoteID,
+		&td.System,
+		&td.Hash); err != nil {
+		return td, bugLog.Errorf("findTicket: %w", err)
 	}
 
-	return tds[0], nil
+	return td, nil
 }
 
 func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
-	ticket, err := t.FindTicket(details)
+	var exists bool
+
+	conn, err := t.getConnection()
 	if err != nil {
-		return false, bugLog.Errorf("ticketingStorage ticketExists findTicket: %w", err)
+		return exists, bugLog.Errorf("ticketExists: %w", err)
+	}
+	defer func() {
+		if err := conn.Close(t.Context); err != nil {
+			bugLog.Debugf("close: %w", err)
+		}
+	}()
+
+	if err := conn.QueryRow(t.Context,
+		"SELECT TRUE FROM ticket WHERE hash = $1 LIMIT 1",
+		details.Hash).Scan(&exists); err != nil {
+		if err.Error() == "no rows in result set" {
+			return false, nil
+		}
+		return exists, bugLog.Errorf("ticketExists: %w", err)
 	}
 
-	if ticket.ID == "" {
-		return false, nil
-	}
-
-	return true, nil
+	return exists, nil
 }

@@ -82,6 +82,8 @@ Parameters:
     Type: String
   GithubSecret:
     Type: String
+  GithubAppId:
+    Type: String
   GoogleKey:
     Type: String
   GoogleSecret:
@@ -558,6 +560,11 @@ Resources:
     Properties:
       Name: github_secret
       SecretString: !Ref GithubSecret
+  ProvidersGithubAppId:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_app_id
+      SecretString: !Ref GithubAppId
   ProvidersGoogleKey:
     Type: AWS::SecretsManager::Secret
     Properties:

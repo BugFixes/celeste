@@ -4,13 +4,10 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
-
-type Credentials struct {
-	AgentID string
-}
 
 type TicketID string
 type Hash string
@@ -54,11 +51,11 @@ func NewTicketing(c config.Config) *Ticketing {
 }
 
 type Ticket struct {
+	agent.Agent
 	Level         string `json:"level"`
 	LevelNumber   string `json:"level_number"`
 	Bug           string `json:"bug"`
 	Raw           string `json:"raw"`
-	AgentID       string `json:"agent_id"`
 	Line          string `json:"line"`
 	File          string `json:"file"`
 	TimesReported int    `json:"times_reported" default:"1"`
@@ -71,12 +68,12 @@ type Ticket struct {
 	RemoteSystem  string      `json:"remote_system"`
 }
 
-func (t Ticketing) fetchTicketingCredentials(agentID string) (TicketingCredentials, error) {
-	system, err := NewTicketingStorage(t.Config).FetchCredentials(agentID)
+func (t Ticketing) fetchTicketingCredentials(a agent.Agent) (TicketingCredentials, error) {
+	system, err := NewTicketingStorage(t.Config).FetchCredentials(a)
 	if err != nil {
 		return TicketingCredentials{
-			AgentID: agentID,
-			System:  "mock",
+			Agent:  a,
+			System: "mock",
 		}, bugLog.Errorf("ticketing failed to fetch system: %w", err)
 	}
 
@@ -123,7 +120,7 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds TicketingCredentia
 }
 
 func (t Ticketing) CreateTicket(ticket *Ticket) error {
-	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.AgentID)
+	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.Agent)
 	if err != nil {
 		return bugLog.Errorf("createTicket fetchSystem failed: %w", err)
 	}
@@ -131,6 +128,11 @@ func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
 		return bugLog.Errorf("createTicket fetchTicketSystem: %w", err)
+	}
+
+	err = agent.NewAgent(t.Config).Find(&ticket.Agent)
+	if err != nil {
+		return bugLog.Errorf("createTicket: %w", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {

@@ -5,3 +5,4 @@ bin/celeste-local.zip
 configs/app.pem
 info.txxt
 info.txt
+local.sql

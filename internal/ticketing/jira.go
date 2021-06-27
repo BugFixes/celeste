@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
@@ -28,7 +29,7 @@ type JiraCredentials struct {
 	Token       string `json:"token"`
 	Host        string `json:"host"`
 	JiraProject `json:"jira_project"`
-	Credentials
+	agent.Agent
 }
 
 type JiraProject struct {
@@ -61,7 +62,7 @@ func (j *Jira) Connect() error {
 
 func (j *Jira) ParseCredentials(creds interface{}) error {
 	type jc struct {
-		AgentID          string `json:"agent_id"`
+		agent.Agent
 		AccessToken      string `json:"access_token"`
 		TicketingDetails struct {
 			ProjectName string `json:"project_name" mapstructure:"project_name"`
@@ -85,9 +86,7 @@ func (j *Jira) ParseCredentials(creds interface{}) error {
 			Name: jiraCreds.TicketingDetails.ProjectName,
 			Key:  jiraCreds.TicketingDetails.ProjectKey,
 		},
-		Credentials: Credentials{
-			AgentID: jiraCreds.AgentID,
-		},
+		Agent: jiraCreds.Agent,
 	}
 
 	return nil
@@ -404,9 +403,9 @@ func (j *Jira) createNew(ticket *Ticket, td TicketDetails) error {
 
 func (j Jira) TicketExists(ticket *Ticket) (bool, TicketDetails, error) {
 	td := TicketDetails{
-		AgentID: j.Credentials.AgentID,
-		System:  "jira",
-		Hash:    GenerateHash(ticket.Raw),
+		Agent:  j.Credentials.Agent,
+		System: "jira",
+		Hash:   GenerateHash(ticket.Raw),
 	}
 	ticketExists, err := NewTicketingStorage(j.Config).TicketExists(td)
 	if err != nil {
@@ -428,9 +427,9 @@ func (j Jira) Update(ticket *Ticket) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "Issue does not exist") {
 			td := TicketDetails{
-				AgentID: j.Credentials.AgentID,
-				System:  "jira",
-				Hash:    GenerateHash(ticket.Raw),
+				Agent:  j.Credentials.Agent,
+				System: "jira",
+				Hash:   GenerateHash(ticket.Raw),
 			}
 			return j.createNew(ticket, td)
 		}
@@ -448,9 +447,9 @@ func (j Jira) Update(ticket *Ticket) error {
 	switch ticket.State {
 	case "Done":
 		td := TicketDetails{
-			AgentID: j.Credentials.AgentID,
-			System:  "jira",
-			Hash:    GenerateHash(ticket.Raw),
+			Agent:  j.Credentials.Agent,
+			System: "jira",
+			Hash:   GenerateHash(ticket.Raw),
 		}
 		return j.createNew(ticket, td)
 	case "In Review": // skip creating a ticket for one thats being fixed
@@ -497,16 +496,16 @@ func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 
 func (j Jira) Fetch(ticket *Ticket) error {
 	td, err := NewTicketingStorage(j.Config).FindTicket(TicketDetails{
-		AgentID: j.Credentials.AgentID,
-		System:  "jira",
-		Hash:    GenerateHash(ticket.Raw),
+		Agent:  j.Credentials.Agent,
+		System: "jira",
+		Hash:   GenerateHash(ticket.Raw),
 	})
 	if err != nil {
 		return bugLog.Errorf("jira fetch find: %w", err)
 	}
 	ticket.Hash = Hash(td.Hash)
 	ticket.RemoteID = td.RemoteID
-	ticket.AgentID = td.AgentID
+	ticket.Agent = td.Agent
 
 	return nil
 }

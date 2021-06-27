@@ -46,3 +46,35 @@ CREATE TABLE IF NOT EXISTS frontend_versions (
     version VARCHAR(100),
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS agent (
+    id SERIAL,
+    account_id INT NOT NULL,
+    name VARCHAR(100),
+    key UUID,
+    secret UUID,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_account_id FOREIGN KEY (account_id) REFERENCES account(id)
+);
+
+CREATE TABLE IF NOT EXISTS ticketing_details (
+    id SERIAL,
+    agent_id INT NOT NULL,
+    system VARCHAR(100),
+    details JSON,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_agent_id FOREIGN KEY (agent_id) REFERENCES agent(id)
+);
+
+CREATE TABLE IF NOT EXISTS ticket (
+    id SERIAL,
+    agent_id INT NOT NULL,
+    remote_id VARCHAR(100),
+    system VARCHAR(100),
+    hash TEXT,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_agent_id FOREIGN KEY (agent_id) REFERENCES agent(id)
+);
+CREATE INDEX idx_tickets ON ticket(hash);
+
+

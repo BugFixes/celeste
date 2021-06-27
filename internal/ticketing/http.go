@@ -24,7 +24,7 @@ func (t Ticketing) CreateTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ticket Ticket
-	ticket.AgentID = agentID
+	ticket.Agent.UUID = agentID
 
 	if err := json.NewDecoder(r.Body).Decode(&ticket); err != nil {
 		bugLog.Debugf("ticket parse failed: %+v, %+v", err, r)

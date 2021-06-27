@@ -24,7 +24,7 @@ func ParseAgentHeaders(headers map[string]string) (Agent, error) {
 		l := strings.ToLower(h)
 		switch l {
 		case "x-agent-id":
-			a.ID = v
+			a.UUID = v
 		case "x-api-key":
 			a.Key = v
 		case "x-api-secret":
@@ -36,7 +36,7 @@ func ParseAgentHeaders(headers map[string]string) (Agent, error) {
 		return a, bugLog.Errorf("headers are bad")
 	}
 
-	if a.ID == "" {
+	if a.UUID == "" {
 		return a.missingID(headers)
 	}
 

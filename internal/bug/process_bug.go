@@ -40,7 +40,7 @@ func (p ProcessBug) Fetch() (Response, error) {
 }
 
 func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
-	bug.Agent.ID = agentID
+	bug.Agent.UUID = agentID
 	if bug.Line == "" && bug.LineNumber != 0 {
 		bug.Line = strconv.Itoa(bug.LineNumber)
 	}
@@ -62,11 +62,11 @@ func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 
 func (p ProcessBug) GenerateTicket(bug *Bug) error {
 	ticket := ticketing.Ticket{
+		Agent:         bug.Agent,
 		Level:         bug.Level,
 		LevelNumber:   fmt.Sprint(bug.LevelNumber),
 		Bug:           bug.Bug,
 		Raw:           bug.Raw,
-		AgentID:       bug.Agent.ID,
 		Line:          bug.Line,
 		File:          bug.File,
 		TimesReported: bug.TimesReported,
@@ -83,7 +83,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 
 func (p ProcessBug) GenerateComms(bug *Bug) error {
 	if err := comms.NewComms(p.Config).SendComms(comms.CommsPackage{
-		AgentID:      bug.Agent.ID,
+		AgentID:      bug.Agent.UUID,
 		Message:      "tester message",
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,
@@ -112,6 +112,9 @@ func (p ProcessBug) BugHandler(w http.ResponseWriter, r *http.Request) {
 		errorReport(w, "bugHandler generateBugInfo", err)
 		return
 	}
+
+	bug.Agent.Key = r.Header.Get("X-API-KEY")
+	bug.Agent.Secret = r.Header.Get("X-API-SECRET")
 
 	if err := p.GenerateTicket(&bug); err != nil {
 		errorReport(w, "bugHandler generateTicket", err)

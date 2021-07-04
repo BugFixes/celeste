@@ -35,10 +35,10 @@ full: clean build fmt lint test ## Clean, build, make sure its formatted, linted
 docker-up: docker-start sleepy ## Start docker
 
 docker-start: ## Docker Start
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml up -d
+	docker compose -p ${SERVICE_NAME} --project-directory=docker up -d
 
 docker-stop: ## Docker Stop
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml down
+	docker compose -p ${SERVICE_NAME} --project-directory=docker down
 
 .PHONY: docker-down
 docker-down: docker-stop ## Stop docker

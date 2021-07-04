@@ -98,7 +98,7 @@ func (t TicketingStorage) FetchCredentials(a agent.Agent) (TicketingCredentials,
 	}()
 
 	if err := conn.QueryRow(t.Context,
-		"SELECT system, details FROM ticketing_details WHERE agent_id = (SELECT id FROM agent WHERE key = $1 AND secret= $2 LIMIT 1)",
+		"SELECT system, details FROM ticketing_details WHERE agent_id = (SELECT id FROM agent WHERE key = $1 AND secret = $2 LIMIT 1)",
 		a.Credentials.Key,
 		a.Credentials.Secret).Scan(&tc.System, &details); err != nil {
 		return tc, bugLog.Errorf("queryRow: %w", err)

@@ -83,7 +83,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 
 func (p ProcessBug) GenerateComms(bug *Bug) error {
 	if err := comms.NewComms(p.Config).SendComms(comms.CommsPackage{
-		AgentID:      bug.Agent.UUID,
+		Agent:        bug.Agent,
 		Message:      "tester message",
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
@@ -35,7 +34,10 @@ func NewDiscord(c config.Config) *Discord {
 }
 
 func (d *Discord) Connect() error {
-	authToken := os.Getenv("DISCORD_BOT_TOKEN")
+	authToken, err := config.GetSecret(d.Config.SecretsClient, "discord_bot_token")
+	if err != nil {
+		return bugLog.Errorf("connect: %w", err)
+	}
 	if authToken == "" {
 		return bugLog.Errorf("discord connect: %w", errors.New("no bot token"))
 	}

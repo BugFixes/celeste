@@ -1,8 +1,8 @@
 package comms
 
 import (
+	"github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 )
 
@@ -11,7 +11,7 @@ type Credentials struct {
 }
 
 type CommsPackage struct {
-	AgentID      string
+	Agent        agent.Agent
 	Message      string
 	Link         string
 	TicketSystem string
@@ -36,12 +36,12 @@ func NewComms(c config.Config) *Comms {
 	}
 }
 
-func (c Comms) fetchCommsCredentials(agentID string) (database.CommsCredentials, error) {
-	system, err := database.NewCommsStorage(*database.New(c.Config)).FetchCredentials(agentID)
+func (c Comms) fetchCommsCredentials(a agent.Agent) (CommsCredentials, error) {
+	system, err := NewCommsStorage(c.Config).FetchCredentials(a)
 	if err != nil {
-		return database.CommsCredentials{
-			AgentID: agentID,
-			System:  "mock",
+		return CommsCredentials{
+			Agent:  a,
+			System: "mock",
 		}, bugLog.Errorf("comms fetchCommsCredentials: %w", err)
 	}
 
@@ -49,7 +49,7 @@ func (c Comms) fetchCommsCredentials(agentID string) (database.CommsCredentials,
 }
 
 // nolint: gocyclo
-func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, error) {
+func (c Comms) fetchCommsSystem(creds CommsCredentials) (CommsSystem, error) {
 	var cs CommsSystem
 	switch creds.System {
 	case "slack":
@@ -65,7 +65,7 @@ func (c Comms) fetchCommsSystem(creds database.CommsCredentials) (CommsSystem, e
 	return cs, nil
 }
 
-func (c Comms) CommsSend(system CommsSystem, creds database.CommsCredentials, commsPackage CommsPackage) error {
+func (c Comms) CommsSend(system CommsSystem, creds CommsCredentials, commsPackage CommsPackage) error {
 	if err := system.ParseCredentials(creds); err != nil {
 		return bugLog.Errorf("commsSend parseCredentials: %w", err)
 	}
@@ -80,7 +80,7 @@ func (c Comms) CommsSend(system CommsSystem, creds database.CommsCredentials, co
 }
 
 func (c Comms) SendComms(commsPackage CommsPackage) error {
-	creds, err := c.fetchCommsCredentials(commsPackage.AgentID)
+	creds, err := c.fetchCommsCredentials(commsPackage.Agent)
 	if err != nil {
 		return bugLog.Errorf("sendComms fetchCommsCredentials: %w", err)
 	}

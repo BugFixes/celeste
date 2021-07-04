@@ -82,12 +82,25 @@ Parameters:
     Type: String
   GithubSecret:
     Type: String
+  GithubAppId:
+    Type: String
   GoogleKey:
     Type: String
   GoogleSecret:
     Type: String
 
   JWTSecret:
+    Type: String
+
+  DiscordAppId:
+    Type: String
+  DiscordPublicKey:
+    Type: String
+  DiscordClientId:
+    Type: String
+  DiscordClientSecret:
+    Type: String
+  DiscordBotToken:
     Type: String
 
 Resources:
@@ -558,6 +571,11 @@ Resources:
     Properties:
       Name: github_secret
       SecretString: !Ref GithubSecret
+  ProvidersGithubAppId:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: github_app_id
+      SecretString: !Ref GithubAppId
   ProvidersGoogleKey:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -568,6 +586,32 @@ Resources:
     Properties:
       Name: google_secret
       SecretString: !Ref GoogleSecret
+
+  CommsDiscordApp:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: discord_app_id
+      SecretString: !Ref DiscordAppId
+  CommsDiscordKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: discord_public_key
+      SecretString: !Ref DiscordPublicKey
+  CommsDiscordClientId:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: discord_client_id
+      SecretString: !Ref DiscordClientId
+  CommsDiscordClientSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: discord_client_secret
+      SecretString: !Ref DiscordClientSecret
+  CommsDiscordBotToken:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: discord_bot_token
+      SecretString: !Ref DiscordBotToken
 
   JWT:
     Type: AWS::SecretsManager::Secret

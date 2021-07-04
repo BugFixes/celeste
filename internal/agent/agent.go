@@ -1,9 +1,14 @@
 package agent
 
 import (
-	account2 "github.com/bugfixes/celeste/internal/account"
+	"context"
+	"fmt"
+
+	"github.com/bugfixes/celeste/internal/account"
+	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 )
 
 type Credentials struct {
@@ -12,11 +17,17 @@ type Credentials struct {
 }
 
 type Agent struct {
-	ID   string `json:"id"`
+	ID   int
+	UUID string `json:"id"`
 	Name string `json:"name"`
 
 	Credentials
-	account2.Account
+	account.Account
+}
+
+type AgentClient struct {
+	Config  config.Config
+	Context context.Context
 }
 
 //go:generate mockery --name=Agents
@@ -25,10 +36,57 @@ type Agents interface {
 	Delete(a Agent) error
 }
 
-func NewAgent(name string, account account2.Account) *Agent {
+func NewAgent(c config.Config) *AgentClient {
+	return &AgentClient{
+		Config:  c,
+		Context: context.Background(),
+	}
+}
+
+func (ac AgentClient) getConnection() (*pgx.Conn, error) {
+	conn, err := pgx.Connect(
+		ac.Context,
+		fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s",
+			ac.Config.RDS.Username,
+			ac.Config.RDS.Password,
+			ac.Config.RDS.Hostname,
+			ac.Config.RDS.Port,
+			ac.Config.RDS.Database))
+	if err != nil {
+		return nil, bugLog.Errorf("getConnnection: %w", err)
+	}
+
+	return conn, nil
+}
+
+func (ac AgentClient) Find(a *Agent) error {
+	conn, err := ac.getConnection()
+	if err != nil {
+		return bugLog.Errorf("find: %w", err)
+	}
+
+	if err := conn.QueryRow(ac.Context,
+		"SELECT id FROM agent WHERE key = $1 AND secret = $2 LIMIT 1",
+		a.Key,
+		a.Secret).Scan(&a.ID); err != nil {
+		return bugLog.Errorf("find: %w", err)
+	}
+
+	return nil
+}
+
+// func NewAgent(name string, account account2.Account) *Agent {
+// 	return &Agent{
+// 		Name:    name,
+// 		Account: account,
+// 	}
+// }
+
+func NewBlankAgent(name string, a account.Account) *Agent {
 	return &Agent{
 		Name:    name,
-		Account: account,
+		Account: a,
 	}
 }
 
@@ -37,7 +95,7 @@ func (a Agent) Create() (*Agent, error) {
 	if err != nil {
 		return &a, bugLog.Errorf("agent create: %w", err)
 	}
-	a.ID = id
+	a.UUID = id
 
 	key, err := createKey()
 	if err != nil {

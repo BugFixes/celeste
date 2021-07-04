@@ -97,7 +97,7 @@ func ConvertLevelFromString(s string) int {
 func (b *Bug) ReportedTimes(c config.Config) error {
 	bugInfo, err := NewBugStorage(c).FindAndStore(BugRecord{
 		ID:      b.Identifier,
-		AgentID: b.Agent.ID,
+		AgentID: b.Agent.UUID,
 		Hash:    b.Hash,
 		Full: struct {
 			Pretty string

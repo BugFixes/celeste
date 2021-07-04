@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 	"github.com/mitchellh/mapstructure"
 )
@@ -29,7 +29,7 @@ type JiraCredentials struct {
 	Token       string `json:"token"`
 	Host        string `json:"host"`
 	JiraProject `json:"jira_project"`
-	Credentials
+	agent.Agent
 }
 
 type JiraProject struct {
@@ -62,7 +62,7 @@ func (j *Jira) Connect() error {
 
 func (j *Jira) ParseCredentials(creds interface{}) error {
 	type jc struct {
-		AgentID          string `json:"agent_id"`
+		agent.Agent
 		AccessToken      string `json:"access_token"`
 		TicketingDetails struct {
 			ProjectName string `json:"project_name" mapstructure:"project_name"`
@@ -86,9 +86,7 @@ func (j *Jira) ParseCredentials(creds interface{}) error {
 			Name: jiraCreds.TicketingDetails.ProjectName,
 			Key:  jiraCreds.TicketingDetails.ProjectKey,
 		},
-		Credentials: Credentials{
-			AgentID: jiraCreds.AgentID,
-		},
+		Agent: jiraCreds.Agent,
 	}
 
 	return nil
@@ -360,7 +358,7 @@ func (j *Jira) Create(ticket *Ticket) error {
 	return j.createNew(ticket, td)
 }
 
-func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
+func (j *Jira) createNew(ticket *Ticket, td TicketDetails) error {
 	template, _ := j.GenerateTemplate(ticket)
 
 	client := &http.Client{}
@@ -396,20 +394,20 @@ func (j *Jira) createNew(ticket *Ticket, td database.TicketDetails) error {
 
 	td.RemoteID = ic.ID
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, ic.Key)
-	if err := database.NewTicketingStorage(*database.New(j.Config)).StoreTicketDetails(td); err != nil {
+	if err := NewTicketingStorage(j.Config).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("jira create store: %w", err)
 	}
 
 	return nil
 }
 
-func (j Jira) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
-	td := database.TicketDetails{
-		AgentID: j.Credentials.AgentID,
-		System:  "jira",
-		Hash:    GenerateHash(ticket.Raw),
+func (j Jira) TicketExists(ticket *Ticket) (bool, TicketDetails, error) {
+	td := TicketDetails{
+		Agent:  j.Credentials.Agent,
+		System: "jira",
+		Hash:   GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(j.Config)).TicketExists(td)
+	ticketExists, err := NewTicketingStorage(j.Config).TicketExists(td)
 	if err != nil {
 		return false, td, bugLog.Errorf("jira ticketExists: %w", err)
 	}
@@ -428,10 +426,10 @@ func (j Jira) Update(ticket *Ticket) error {
 	rt, err := j.FetchRemoteTicket(ticket.RemoteID)
 	if err != nil {
 		if strings.Contains(err.Error(), "Issue does not exist") {
-			td := database.TicketDetails{
-				AgentID: j.Credentials.AgentID,
-				System:  "jira",
-				Hash:    GenerateHash(ticket.Raw),
+			td := TicketDetails{
+				Agent:  j.Credentials.Agent,
+				System: "jira",
+				Hash:   GenerateHash(ticket.Raw),
 			}
 			return j.createNew(ticket, td)
 		}
@@ -448,10 +446,10 @@ func (j Jira) Update(ticket *Ticket) error {
 	ticket.RemoteLink = fmt.Sprintf("%s/browse/%s", j.Credentials.Host, rtd.Key)
 	switch ticket.State {
 	case "Done":
-		td := database.TicketDetails{
-			AgentID: j.Credentials.AgentID,
-			System:  "jira",
-			Hash:    GenerateHash(ticket.Raw),
+		td := TicketDetails{
+			Agent:  j.Credentials.Agent,
+			System: "jira",
+			Hash:   GenerateHash(ticket.Raw),
 		}
 		return j.createNew(ticket, td)
 	case "In Review": // skip creating a ticket for one thats being fixed
@@ -497,17 +495,17 @@ func (j Jira) FetchRemoteTicket(data interface{}) (Ticket, error) {
 }
 
 func (j Jira) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(j.Config)).FindTicket(database.TicketDetails{
-		AgentID: j.Credentials.AgentID,
-		System:  "jira",
-		Hash:    GenerateHash(ticket.Raw),
+	td, err := NewTicketingStorage(j.Config).FindTicket(TicketDetails{
+		Agent:  j.Credentials.Agent,
+		System: "jira",
+		Hash:   GenerateHash(ticket.Raw),
 	})
 	if err != nil {
 		return bugLog.Errorf("jira fetch find: %w", err)
 	}
 	ticket.Hash = Hash(td.Hash)
 	ticket.RemoteID = td.RemoteID
-	ticket.AgentID = td.AgentID
+	ticket.Agent = td.Agent
 
 	return nil
 }

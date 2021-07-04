@@ -5,13 +5,12 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
-	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 
 	"github.com/bradleyfalzon/ghinstallation"
@@ -32,7 +31,7 @@ type GithubRepo struct {
 }
 
 type GithubCredentials struct {
-	Credentials
+	agent.Agent
 	AccessToken    string `json:"access_token"`
 	InstallationID string `json:"installation_id"`
 	GithubRepo
@@ -51,7 +50,11 @@ func (g *Github) Connect() error {
 		return bugLog.Errorf("github connect installid conv: %w", err)
 	}
 
-	appID, err := strconv.Atoi(os.Getenv("GITHUB_APP_ID"))
+	id, err := config.GetSecret(g.Config.AWS.SecretsClient, "github_app_id")
+	if err != nil {
+		return bugLog.Errorf("github app id secret: %w", err)
+	}
+	appID, err := strconv.Atoi(id)
 	if err != nil {
 		return bugLog.Errorf("github connect appid conv: %w", err)
 	}
@@ -69,7 +72,7 @@ func (g *Github) Connect() error {
 
 func (g *Github) ParseCredentials(creds interface{}) error {
 	type gc struct {
-		AgentID          string `json:"agent_id"`
+		agent.Agent
 		AccessToken      string `json:"access_token"`
 		TicketingDetails struct {
 			Owner          string `json:"owner"`
@@ -90,9 +93,7 @@ func (g *Github) ParseCredentials(creds interface{}) error {
 			Owner: githubCreds.TicketingDetails.Owner,
 		},
 		InstallationID: githubCreds.TicketingDetails.InstallationID,
-		Credentials: Credentials{
-			AgentID: githubCreds.AgentID,
-		},
+		Agent:          githubCreds.Agent,
 	}
 
 	return nil
@@ -160,8 +161,9 @@ func (g *Github) Create(ticket *Ticket) error {
 	td.RemoteID = fmt.Sprintf("%d", is.GetNumber())
 	ticket.RemoteID = td.RemoteID
 	ticket.RemoteLink = is.GetHTMLURL()
+	td.Agent = ticket.Agent
 
-	if err := database.NewTicketingStorage(*database.New(g.Config)).StoreTicketDetails(td); err != nil {
+	if err := NewTicketingStorage(g.Config).StoreTicketDetails(td); err != nil {
 		return bugLog.Errorf("github create store: %w", err)
 	}
 
@@ -185,10 +187,10 @@ func (g *Github) FetchRemoteTicket(remoteData interface{}) (Ticket, error) {
 }
 
 func (g *Github) Fetch(ticket *Ticket) error {
-	td, err := database.NewTicketingStorage(*database.New(g.Config)).FindTicket(database.TicketDetails{
-		AgentID: g.Credentials.AgentID,
-		System:  "github",
-		Hash:    GenerateHash(ticket.Raw),
+	td, err := NewTicketingStorage(g.Config).FindTicket(TicketDetails{
+		Agent:  g.Credentials.Agent,
+		System: "github",
+		Hash:   GenerateHash(ticket.Raw),
 	})
 	if err != nil {
 		return bugLog.Errorf("github fetch find: %w", err)
@@ -196,7 +198,7 @@ func (g *Github) Fetch(ticket *Ticket) error {
 
 	ticket.Hash = Hash(td.Hash)
 	ticket.RemoteID = td.RemoteID
-	ticket.AgentID = td.AgentID
+	ticket.Agent = td.Agent
 
 	return nil
 }
@@ -250,13 +252,13 @@ func (g *Github) Update(ticket *Ticket) error {
 	return nil
 }
 
-func (g *Github) TicketExists(ticket *Ticket) (bool, database.TicketDetails, error) {
-	td := database.TicketDetails{
-		AgentID: g.Credentials.AgentID,
-		System:  "github",
-		Hash:    GenerateHash(ticket.Raw),
+func (g *Github) TicketExists(ticket *Ticket) (bool, TicketDetails, error) {
+	td := TicketDetails{
+		Agent:  g.Credentials.Agent,
+		System: "github",
+		Hash:   GenerateHash(ticket.Raw),
 	}
-	ticketExists, err := database.NewTicketingStorage(*database.New(g.Config)).TicketExists(td)
+	ticketExists, err := NewTicketingStorage(g.Config).TicketExists(td)
 	if err != nil {
 		return false, td, bugLog.Errorf("github ticketExists: %w", err)
 	}

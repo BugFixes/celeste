@@ -62,7 +62,7 @@ func (l ProcessLog) LogHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (l ProcessLog) GenerateLogInfo(log *Log, agentID string) error {
-	log.Agent.ID = agentID
+	log.Agent.UUID = agentID
 	if err := log.GenerateIdentifier(); err != nil {
 		return bugLog.Errorf("processLog generateLogInfo generateIdentifier: %w", err)
 	}
@@ -82,7 +82,7 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		Stack:      fmt.Sprintf("%x", log.Stack),
 		LogFmt:     log.LogFmt,
 		Entry:      log.Log,
-		AgentID:    log.Agent.ID,
+		AgentID:    log.Agent.UUID,
 	}); err != nil {
 		return bugLog.Errorf("processLog storeLog: %w", err)
 	}

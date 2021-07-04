@@ -35,10 +35,10 @@ full: clean build fmt lint test ## Clean, build, make sure its formatted, linted
 docker-up: docker-start sleepy ## Start docker
 
 docker-start: ## Docker Start
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml up -d
+	docker compose -p ${SERVICE_NAME} --project-directory=docker up -d
 
 docker-stop: ## Docker Stop
-	docker compose -p ${SERVICE_NAME} --project-directory=docker -f docker-compose.yml down
+	docker compose -p ${SERVICE_NAME} --project-directory=docker down
 
 .PHONY: docker-down
 docker-down: docker-stop ## Stop docker
@@ -87,10 +87,16 @@ stack-create: # Create the stack
   		--parameters \
   		  ParameterKey=GithubKey,ParameterValue=${GITHUB_CLIENT_ID} \
   		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECERT} \
+  		  ParameterKey=GithubAppId,ParameterValue=${GITHUB_APP_ID} \
   		  ParameterKey=GoogleKey,ParameterValue=${GOOGLE_CLIENT_ID} \
   		  ParameterKey=GoogleSecret,ParameterValue=${GOOGLE_CLIENT_SECRET} \
   		  ParameterKey=JWTSecret,ParameterValue=${JWT_SECRET} \
-  		1> ./info.txt
+  		  ParameterKey=DiscordAppId,ParameterValue=${DISCORD_APP_ID} \
+  		  ParameterKey=DiscordPublicKey,ParameterValue=${DISCORD_PUBLIC_KEY} \
+  		  ParameterKey=DiscordClientID,ParameterValue=${DISCORD_CLIENT_ID} \
+  		  ParameterKey=DiscordClientSecret,ParameterValue=${DISCORD_CLIENT_SECRET} \
+  		  ParameterKey=DiscordBotToken,ParameterValue=${DISCORD_BOT_TOKEN} \
+  		1> /dev/null
 
 .PHONY: stack-delete
 stack-delete: # Delete the stack
@@ -179,7 +185,13 @@ injectData: # Wipe Data
     		--table-name comms \
     		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
 	cat ./docker/create.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
+	cat ./docker/local.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
 
+.PHONY: reset-tables
+reset-tables:
+	cat ./docker/drop.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
+	cat ./docker/create.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
+	cat ./docker/local.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

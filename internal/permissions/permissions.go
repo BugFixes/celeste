@@ -73,7 +73,7 @@ func (p *Permissions) storeGroup(perm Perm) error {
 	}
 
 	if _, err := conn.Exec(p.Context,
-		"INSERT INTO permission (`key`, `action`, permission_group) VALUES($1, $2, $3)",
+		"INSERT INTO permission (key, action, permission_group) VALUES($1, $2, $3)",
 		perm.Key,
 		perm.Action,
 		perm.Group); err != nil {
@@ -89,7 +89,7 @@ func (p *Permissions) storeUser(perm Perm) error {
 		return bugLog.Errorf("storeUser Connection: %w", err)
 	}
 	if _, err := conn.Exec(p.Context,
-		"INSERT INTO account_permission (`key`, `action`, account_id) VALUES($1, $2, $3)",
+		"INSERT INTO account_permission (key, action, account_id) VALUES ($1, $2, $3)",
 		perm.Key,
 		perm.Action,
 		perm.AccountID); err != nil {
@@ -108,7 +108,7 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 	var canDo = false
 	if perm.Action == "*" {
 		if err := conn.QueryRow(p.Context,
-			"SELECT TRUE FROM permission WHERE `key` = $1 AND permission_group = $2 LIMIT 1",
+			"SELECT TRUE FROM permission WHERE key = $1 AND permission_group = $2 LIMIT 1",
 			perm.Key,
 			perm.Group).Scan(&canDo); err != nil {
 			return false, bugLog.Errorf("* action: %w", err)
@@ -116,7 +116,7 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 	}
 
 	if err := conn.QueryRow(p.Context,
-		"SELECT TRUE FROM permission WHERE `key` = $1 AND `action` = $2 AND permission_group = $3 LIMIT 1",
+		"SELECT TRUE FROM permission WHERE key = $1 AND `action` = $2 AND permission_group = $3 LIMIT 1",
 		perm.Key,
 		perm.Action,
 		perm.Group).Scan(&canDo); err != nil {
@@ -138,7 +138,7 @@ func (p *Permissions) canDoSpecial(perm Perm) (bool, error) {
 
 	var canDo = false
 	if err := conn.QueryRow(p.Context,
-		"SELECT TRUE FROM account_permission WHERE `key` = $1 AND `action` = $2 AND account_id = $3 LIMIT 1",
+		"SELECT TRUE FROM account_permission WHERE key = $1 AND action = $2 AND account_id = $3 LIMIT 1",
 		perm.Key,
 		perm.Action,
 		perm.AccountID).Scan(&canDo); err != nil {

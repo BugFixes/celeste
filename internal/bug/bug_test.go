@@ -3,7 +3,7 @@ package bug_test
 import (
 	"testing"
 
-	bug2 "github.com/bugfixes/celeste/internal/bug"
+	bug "github.com/bugfixes/celeste/internal/bug"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,53 +16,53 @@ func TestConvertLevelFromString(t *testing.T) {
 		{
 			name:    "log string",
 			request: "log",
-			expect:  bug2.GetLevelLog(),
+			expect:  bug.GetLevelLog(),
 		},
 		{
 			name:    "log int",
 			request: "1",
-			expect:  bug2.GetLevelLog(),
+			expect:  bug.GetLevelLog(),
 		},
 		{
 			name:    "info string",
 			request: "info",
-			expect:  bug2.GetLevelInfo(),
+			expect:  bug.GetLevelInfo(),
 		},
 		{
 			name:    "info int",
 			request: "2",
-			expect:  bug2.GetLevelInfo(),
+			expect:  bug.GetLevelInfo(),
 		},
 		{
 			name:    "error string",
 			request: "error",
-			expect:  bug2.GetLevelError(),
+			expect:  bug.GetLevelError(),
 		},
 		{
 			name:    "error int",
 			request: "3",
-			expect:  bug2.GetLevelError(),
+			expect:  bug.GetLevelError(),
 		},
 		{
 			name:    "unknown string",
 			request: "bob",
-			expect:  bug2.GetLevelUnknown(),
+			expect:  bug.GetLevelUnknown(),
 		},
 		{
 			name:    "unknown int",
 			request: "99",
-			expect:  bug2.GetLevelUnknown(),
+			expect:  bug.GetLevelUnknown(),
 		},
 		{
 			name:    "blank level",
 			request: "",
-			expect:  bug2.GetLevelUnknown(),
+			expect:  bug.GetLevelUnknown(),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp := bug2.ConvertLevelFromString(test.request)
+			resp := bug.ConvertLevelFromString(test.request)
 
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)

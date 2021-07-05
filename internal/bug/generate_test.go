@@ -3,23 +3,23 @@ package bug_test
 import (
 	"testing"
 
-	bug2 "github.com/bugfixes/celeste/internal/bug"
+	bug "github.com/bugfixes/celeste/internal/bug"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBug_GenerateHash(t *testing.T) {
 	tests := []struct {
 		name    string
-		request bug2.Bug
-		expect  bug2.Bug
+		request bug.Bug
+		expect  bug.Bug
 		err     error
 	}{
 		{
 			name: "tester hash",
-			request: bug2.Bug{
+			request: bug.Bug{
 				Raw: "tester",
 			},
-			expect: bug2.Bug{
+			expect: bug.Bug{
 				Raw:  "tester",
 				Hash: "9bba5c53a0545e0c80184b946153c9f58387e3bd1d4ee35740f29ac2e718b019",
 			},
@@ -45,13 +45,13 @@ func TestBug_GenerateHash(t *testing.T) {
 func TestBug_GenerateIdentifier(t *testing.T) {
 	tests := []struct {
 		name    string
-		request bug2.Bug
+		request bug.Bug
 		expect  int
 		err     error
 	}{
 		{
 			name: "tester identifier",
-			request: bug2.Bug{
+			request: bug.Bug{
 				Raw: "tester",
 			},
 			expect: 36,

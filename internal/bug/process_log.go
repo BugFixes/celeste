@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	agent2 "github.com/bugfixes/celeste/internal/agent"
+	agent "github.com/bugfixes/celeste/internal/agent"
 	"github.com/bugfixes/celeste/internal/config"
 	"github.com/bugfixes/celeste/internal/database"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
@@ -17,7 +17,7 @@ type ProcessLog struct {
 }
 
 type Log struct {
-	agent2.Agent
+	agent.Agent
 
 	Line        string `json:"line"`
 	Level       string `json:"level"`

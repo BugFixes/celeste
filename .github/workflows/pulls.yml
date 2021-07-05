@@ -29,3 +29,5 @@ jobs:
         with:
           version: v1.38
           args: --config ./configs/golangci.yml
+      - name: test
+        run: go test -v -race -bench=./... -benchmem -timeout=120s -bench=./... ./...

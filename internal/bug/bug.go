@@ -61,12 +61,12 @@ func GetLevelUnknown() int {
 func ConvertLevelFromString(s string) int {
 	switch s {
 	case "log":
-	  return GetLevelLog()
+		return GetLevelLog()
 	case "debug":
 		return GetLevelLog()
 
 	case "info":
-	  return GetLevelInfo()
+		return GetLevelInfo()
 	case "warn":
 		return GetLevelInfo()
 
@@ -74,28 +74,25 @@ func ConvertLevelFromString(s string) int {
 		return GetLevelError()
 
 	case "crash":
-    return GetLevelCrash()
+		return GetLevelCrash()
 	case "panic":
-    return GetLevelCrash()
+		return GetLevelCrash()
 	case "fatal":
 		return GetLevelCrash()
 
 	case "unknown":
 		return GetLevelUnknown()
-
-	default:
-		lvl, err := strconv.Atoi(s)
-		if err != nil {
-			bugLog.Infof("log level was sent wrong: %+v, sent: %v", err, s)
-			return GetLevelUnknown()
-		}
-		if lvl >= 5 {
-			return GetLevelUnknown()
-		}
-		return lvl
 	}
 
-	return GetLevelUnknown()
+	lvl, err := strconv.Atoi(s)
+	if err != nil {
+		bugLog.Infof("log level was sent wrong: %+v, sent: %v", err, s)
+		return GetLevelUnknown()
+	}
+	if lvl >= 5 {
+		return GetLevelUnknown()
+	}
+	return lvl
 }
 
 func (b *Bug) ReportedTimes(c config.Config) error {

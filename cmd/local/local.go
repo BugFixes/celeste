@@ -22,10 +22,6 @@ import (
 func main() {
 	bugLog.Local().Info("Starting Celeste")
 
-  b := bugLog.Errorf("tester")
-  a := fmt.Sprintf("%T", b)
-  fmt.Printf(a)
-
 	// Config
 	cfg, err := config.BuildConfig()
 	if err != nil {

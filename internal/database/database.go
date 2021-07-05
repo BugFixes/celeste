@@ -20,7 +20,7 @@ func New(c config.Config) *Database {
 func (d Database) dynamoSession() (*dynamodb.DynamoDB, error) {
 	sess, err := config.BuildSession(d.Config)
 	if err != nil {
-		return nil, bugLog.Errorf("dynamoSessioN: %w", err)
+		return nil, bugLog.Errorf("dynamoSessioN: %+v", err)
 	}
 
 	return dynamodb.New(sess), nil
@@ -38,23 +38,23 @@ func dynamoError(e error) error {
 	if aerr, ok := e.(awserr.Error); ok {
 		switch aerr.Code() {
 		case dynamodb.ErrCodeConditionalCheckFailedException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
 		case dynamodb.ErrCodeProvisionedThroughputExceededException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
 		case dynamodb.ErrCodeResourceNotFoundException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeResourceNotFoundException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeResourceNotFoundException, aerr)
 		case dynamodb.ErrCodeTransactionConflictException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeTransactionConflictException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeTransactionConflictException, aerr)
 		case dynamodb.ErrCodeRequestLimitExceeded:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeRequestLimitExceeded, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeRequestLimitExceeded, aerr)
 		case dynamodb.ErrCodeInternalServerError:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeInternalServerError, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeInternalServerError, aerr)
 		default:
-			return bugLog.Errorf("bug insert - unknown err: %w", aerr)
+			return bugLog.Errorf("bug insert - unknown err: %+v", aerr)
 		}
 	} else {
 		// Print the error, cast err to awserr.Error to get the Code and
 		// Message from an error.
-		return bugLog.Errorf("bug inster: %w", e)
+		return bugLog.Errorf("bug inster: %+v", e)
 	}
 }

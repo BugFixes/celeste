@@ -46,13 +46,13 @@ func (p ProcessBug) GenerateBugInfo(bug *Bug, agentID string) error {
 	}
 
 	if err := bug.GenerateHash(); err != nil {
-		return bugLog.Errorf("generateBugInfo generateHash: %w", err)
+		return bugLog.Errorf("generateBugInfo generateHash: %+v", err)
 	}
 	if err := bug.GenerateIdentifier(); err != nil {
-		return bugLog.Errorf("generateBugInfo generateIdentifier: %w", err)
+		return bugLog.Errorf("generateBugInfo generateIdentifier: %+v", err)
 	}
 	if err := bug.ReportedTimes(p.Config); err != nil {
-		return bugLog.Errorf("generateBugInfo reportedTimes: %w", err)
+		return bugLog.Errorf("generateBugInfo reportedTimes: %+v", err)
 	}
 
 	bug.LevelNumber = ConvertLevelFromString(bug.Level)
@@ -73,7 +73,7 @@ func (p ProcessBug) GenerateTicket(bug *Bug) error {
 	}
 
 	if err := ticketing.NewTicketing(p.Config).CreateTicket(&ticket); err != nil {
-		return bugLog.Errorf("generateTicket createTicket: %w", err)
+		return bugLog.Errorf("generateTicket createTicket: %+v", err)
 	}
 	bug.RemoteLink = ticket.RemoteLink
 	bug.TicketSystem = ticket.RemoteSystem
@@ -88,7 +88,7 @@ func (p ProcessBug) GenerateComms(bug *Bug) error {
 		Link:         bug.RemoteLink,
 		TicketSystem: bug.TicketSystem,
 	}); err != nil {
-		return bugLog.Errorf("bug generateComms: %w", err)
+		return bugLog.Errorf("bug generateComms: %+v", err)
 	}
 
 	return nil

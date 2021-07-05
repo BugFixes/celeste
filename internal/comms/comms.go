@@ -42,7 +42,7 @@ func (c Comms) fetchCommsCredentials(a agent.Agent) (CommsCredentials, error) {
 		return CommsCredentials{
 			Agent:  a,
 			System: "mock",
-		}, bugLog.Errorf("comms fetchCommsCredentials: %w", err)
+		}, bugLog.Errorf("comms fetchCommsCredentials: %+v", err)
 	}
 
 	return system, nil
@@ -67,13 +67,13 @@ func (c Comms) fetchCommsSystem(creds CommsCredentials) (CommsSystem, error) {
 
 func (c Comms) CommsSend(system CommsSystem, creds CommsCredentials, commsPackage CommsPackage) error {
 	if err := system.ParseCredentials(creds); err != nil {
-		return bugLog.Errorf("commsSend parseCredentials: %w", err)
+		return bugLog.Errorf("commsSend parseCredentials: %+v", err)
 	}
 	if err := system.Connect(); err != nil {
-		return bugLog.Errorf("commsSend connect: %w", err)
+		return bugLog.Errorf("commsSend connect: %+v", err)
 	}
 	if err := system.Send(commsPackage); err != nil {
-		return bugLog.Errorf("commsSend send: %w", err)
+		return bugLog.Errorf("commsSend send: %+v", err)
 	}
 
 	return nil
@@ -82,15 +82,15 @@ func (c Comms) CommsSend(system CommsSystem, creds CommsCredentials, commsPackag
 func (c Comms) SendComms(commsPackage CommsPackage) error {
 	creds, err := c.fetchCommsCredentials(commsPackage.Agent)
 	if err != nil {
-		return bugLog.Errorf("sendComms fetchCommsCredentials: %w", err)
+		return bugLog.Errorf("sendComms fetchCommsCredentials: %+v", err)
 	}
 	commsSystem, err := c.fetchCommsSystem(creds)
 	if err != nil {
-		return bugLog.Errorf("sendComms fetchCommsSystem: %w", err)
+		return bugLog.Errorf("sendComms fetchCommsSystem: %+v", err)
 	}
 
 	if err := c.CommsSend(commsSystem, creds, commsPackage); err != nil {
-		return bugLog.Errorf("sendComms commsSend: %w", err)
+		return bugLog.Errorf("sendComms commsSend: %+v", err)
 	}
 
 	return nil

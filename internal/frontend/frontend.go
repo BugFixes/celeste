@@ -79,11 +79,11 @@ func (f Frontend) getConnection() (*pgx.Conn, error) {
 			f.Config.RDS.Port,
 			f.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("getConnection: %w", err)
+		return nil, bugLog.Errorf("getConnection: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(f.Context); err != nil {
-			bugLog.Debugf("close getConnection: %w", err)
+			bugLog.Debugf("close getConnection: %+v", err)
 		}
 	}()
 

@@ -11,7 +11,7 @@ import (
 func (b *Bug) GenerateIdentifier() error {
 	ident, err := GenerateIdentifier()
 	if err != nil {
-		return bugLog.Errorf("bug generateIdentifier: %w", err)
+		return bugLog.Errorf("bug generateIdentifier: %+v", err)
 	}
 	b.Identifier = ident
 
@@ -27,7 +27,7 @@ func (b *Bug) GenerateHash() error {
 func (l *Log) GenerateIdentifier() error {
 	ident, err := GenerateIdentifier()
 	if err != nil {
-		return bugLog.Errorf("log generateIdentifier: %w", err)
+		return bugLog.Errorf("log generateIdentifier: %+v", err)
 	}
 
 	l.Identifier = ident
@@ -41,7 +41,7 @@ func GenerateHash(data string) string {
 func GenerateIdentifier() (string, error) {
 	ident, err := uuid.NewUUID()
 	if err != nil {
-		return "", bugLog.Errorf("generateIdentifier: %w", err)
+		return "", bugLog.Errorf("generateIdentifier: %+v", err)
 	}
 
 	return ident.String(), nil

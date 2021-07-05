@@ -50,7 +50,7 @@ func (t TicketingStorage) getConnection() (*pgx.Conn, error) {
 			t.Config.RDS.Port,
 			t.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("getConnnection: %w", err)
+		return nil, bugLog.Errorf("getConnnection: %+v", err)
 	}
 
 	return conn, nil
@@ -59,17 +59,17 @@ func (t TicketingStorage) getConnection() (*pgx.Conn, error) {
 func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) error {
 	conn, err := t.getConnection()
 	if err != nil {
-		return bugLog.Errorf("storeCredentials: %w", err)
+		return bugLog.Errorf("storeCredentials: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(t.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
 	dbytes, err := json.Marshal(credentials.TicketingDetails)
 	if err != nil {
-		return bugLog.Errorf("marshal details: %w", err)
+		return bugLog.Errorf("marshal details: %+v", err)
 	}
 
 	if _, err := conn.Exec(t.Context,
@@ -77,7 +77,7 @@ func (t TicketingStorage) StoreCredentials(credentials TicketingCredentials) err
 		credentials.Agent.ID,
 		credentials.System,
 		fmt.Sprintf("%s", dbytes)); err != nil {
-		return bugLog.Errorf("store: %w", err)
+		return bugLog.Errorf("store: %+v", err)
 	}
 
 	return nil
@@ -89,11 +89,11 @@ func (t TicketingStorage) FetchCredentials(a agent.Agent) (TicketingCredentials,
 
 	conn, err := t.getConnection()
 	if err != nil {
-		return tc, bugLog.Errorf("fetchCredentials: %w", err)
+		return tc, bugLog.Errorf("fetchCredentials: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(t.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
@@ -101,11 +101,11 @@ func (t TicketingStorage) FetchCredentials(a agent.Agent) (TicketingCredentials,
 		"SELECT system, details FROM ticketing_details WHERE agent_id = (SELECT id FROM agent WHERE key = $1 AND secret = $2 LIMIT 1)",
 		a.Credentials.Key,
 		a.Credentials.Secret).Scan(&tc.System, &details); err != nil {
-		return tc, bugLog.Errorf("queryRow: %w", err)
+		return tc, bugLog.Errorf("queryRow: %+v", err)
 	}
 
 	if err := json.Unmarshal([]byte(details), &tc.TicketingDetails); err != nil {
-		return tc, bugLog.Errorf("unmarshall: %w", err)
+		return tc, bugLog.Errorf("unmarshall: %+v", err)
 	}
 
 	return tc, nil
@@ -114,11 +114,11 @@ func (t TicketingStorage) FetchCredentials(a agent.Agent) (TicketingCredentials,
 func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 	conn, err := t.getConnection()
 	if err != nil {
-		return bugLog.Errorf("storeTicketDetails: %w", err)
+		return bugLog.Errorf("storeTicketDetails: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(t.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
@@ -128,7 +128,7 @@ func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 		details.RemoteID,
 		details.System,
 		details.Hash); err != nil {
-		return bugLog.Errorf("storeTicketDetails: %w", err)
+		return bugLog.Errorf("storeTicketDetails: %+v", err)
 	}
 
 	return nil
@@ -139,11 +139,11 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 
 	conn, err := t.getConnection()
 	if err != nil {
-		return td, bugLog.Errorf("findTicket: %w", err)
+		return td, bugLog.Errorf("findTicket: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(t.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
@@ -155,7 +155,7 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 		&td.RemoteID,
 		&td.System,
 		&td.Hash); err != nil {
-		return td, bugLog.Errorf("findTicket: %w", err)
+		return td, bugLog.Errorf("findTicket: %+v", err)
 	}
 
 	return td, nil
@@ -166,11 +166,11 @@ func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
 
 	conn, err := t.getConnection()
 	if err != nil {
-		return exists, bugLog.Errorf("ticketExists: %w", err)
+		return exists, bugLog.Errorf("ticketExists: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(t.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
@@ -180,7 +180,7 @@ func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
 		if err.Error() == "no rows in result set" {
 			return false, nil
 		}
-		return exists, bugLog.Errorf("ticketExists: %w", err)
+		return exists, bugLog.Errorf("ticketExists: %+v", err)
 	}
 
 	return exists, nil

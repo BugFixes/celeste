@@ -49,15 +49,15 @@ func (r Request) Create() (Response, error) {
 
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, bugLog.Errorf("failed to generate id: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate id: %+v", err)
 	}
 	secret, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, bugLog.Errorf("failed to generate secret: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate secret: %+v", err)
 	}
 	key, err := uuid.NewUUID()
 	if err != nil {
-		return Response{}, bugLog.Errorf("failed to generate key: %w", err)
+		return Response{}, bugLog.Errorf("failed to generate key: %+v", err)
 	}
 
 	if err := ac.Insert(database.AccountRecord{
@@ -71,7 +71,7 @@ func (r Request) Create() (Response, error) {
 			Key:    key.String(),
 		},
 	}); err != nil {
-		return Response{}, bugLog.Errorf("failed to insert account: %w", err)
+		return Response{}, bugLog.Errorf("failed to insert account: %+v", err)
 	}
 
 	type Data struct {

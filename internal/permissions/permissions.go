@@ -55,11 +55,11 @@ func (p *Permissions) getConnection() (*pgx.Conn, error) {
 			p.Config.RDS.Port,
 			p.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("getConnection: %w", err)
+		return nil, bugLog.Errorf("getConnection: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(p.Context); err != nil {
-			bugLog.Debugf("close getConnection: %w", err)
+			bugLog.Debugf("close getConnection: %+v", err)
 		}
 	}()
 
@@ -69,7 +69,7 @@ func (p *Permissions) getConnection() (*pgx.Conn, error) {
 func (p *Permissions) storeGroup(perm Perm) error {
 	conn, err := p.getConnection()
 	if err != nil {
-		return bugLog.Errorf("storeGroup Connection: %w", err)
+		return bugLog.Errorf("storeGroup Connection: %+v", err)
 	}
 
 	if _, err := conn.Exec(p.Context,
@@ -77,7 +77,7 @@ func (p *Permissions) storeGroup(perm Perm) error {
 		perm.Key,
 		perm.Action,
 		perm.Group); err != nil {
-		return bugLog.Errorf("exec: %w", err)
+		return bugLog.Errorf("exec: %+v", err)
 	}
 
 	return nil
@@ -86,14 +86,14 @@ func (p *Permissions) storeGroup(perm Perm) error {
 func (p *Permissions) storeUser(perm Perm) error {
 	conn, err := p.getConnection()
 	if err != nil {
-		return bugLog.Errorf("storeUser Connection: %w", err)
+		return bugLog.Errorf("storeUser Connection: %+v", err)
 	}
 	if _, err := conn.Exec(p.Context,
 		"INSERT INTO account_permission (key, action, account_id) VALUES ($1, $2, $3)",
 		perm.Key,
 		perm.Action,
 		perm.AccountID); err != nil {
-		return bugLog.Errorf("exec: %w", err)
+		return bugLog.Errorf("exec: %+v", err)
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func (p *Permissions) storeUser(perm Perm) error {
 func (p *Permissions) CanDo(perm Perm) (bool, error) {
 	conn, err := p.getConnection()
 	if err != nil {
-		return false, bugLog.Errorf("canDo Connection: %w", err)
+		return false, bugLog.Errorf("canDo Connection: %+v", err)
 	}
 
 	var canDo = false
@@ -111,7 +111,7 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 			"SELECT TRUE FROM permission WHERE key = $1 AND permission_group = $2 LIMIT 1",
 			perm.Key,
 			perm.Group).Scan(&canDo); err != nil {
-			return false, bugLog.Errorf("* action: %w", err)
+			return false, bugLog.Errorf("* action: %+v", err)
 		}
 	}
 
@@ -120,7 +120,7 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 		perm.Key,
 		perm.Action,
 		perm.Group).Scan(&canDo); err != nil {
-		return false, bugLog.Errorf("* action: %w", err)
+		return false, bugLog.Errorf("* action: %+v", err)
 	}
 
 	if !canDo {
@@ -133,7 +133,7 @@ func (p *Permissions) CanDo(perm Perm) (bool, error) {
 func (p *Permissions) canDoSpecial(perm Perm) (bool, error) {
 	conn, err := p.getConnection()
 	if err != nil {
-		return false, bugLog.Errorf("canDoSpecial Connection: %w", err)
+		return false, bugLog.Errorf("canDoSpecial Connection: %+v", err)
 	}
 
 	var canDo = false
@@ -142,7 +142,7 @@ func (p *Permissions) canDoSpecial(perm Perm) (bool, error) {
 		perm.Key,
 		perm.Action,
 		perm.AccountID).Scan(&canDo); err != nil {
-		return false, bugLog.Errorf("* action: %w", err)
+		return false, bugLog.Errorf("* action: %+v", err)
 	}
 
 	return canDo, nil

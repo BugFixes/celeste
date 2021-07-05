@@ -54,7 +54,7 @@ func (ac AgentClient) getConnection() (*pgx.Conn, error) {
 			ac.Config.RDS.Port,
 			ac.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("getConnnection: %w", err)
+		return nil, bugLog.Errorf("getConnnection: %+v", err)
 	}
 
 	return conn, nil
@@ -63,14 +63,14 @@ func (ac AgentClient) getConnection() (*pgx.Conn, error) {
 func (ac AgentClient) Find(a *Agent) error {
 	conn, err := ac.getConnection()
 	if err != nil {
-		return bugLog.Errorf("find: %w", err)
+		return bugLog.Errorf("find: %+v", err)
 	}
 
 	if err := conn.QueryRow(ac.Context,
 		"SELECT id FROM agent WHERE key = $1 AND secret = $2 LIMIT 1",
 		a.Key,
 		a.Secret).Scan(&a.ID); err != nil {
-		return bugLog.Errorf("find: %w", err)
+		return bugLog.Errorf("find: %+v", err)
 	}
 
 	return nil
@@ -93,19 +93,19 @@ func NewBlankAgent(name string, a account.Account) *Agent {
 func (a Agent) Create() (*Agent, error) {
 	id, err := createID()
 	if err != nil {
-		return &a, bugLog.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %+v", err)
 	}
 	a.UUID = id
 
 	key, err := createKey()
 	if err != nil {
-		return &a, bugLog.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %+v", err)
 	}
 	a.Credentials.Key = key
 
 	secret, err := createSecret()
 	if err != nil {
-		return &a, bugLog.Errorf("agent create: %w", err)
+		return &a, bugLog.Errorf("agent create: %+v", err)
 	}
 	a.Credentials.Secret = secret
 
@@ -115,7 +115,7 @@ func (a Agent) Create() (*Agent, error) {
 func createID() (string, error) {
 	id, err := generateUUID()
 	if err != nil {
-		return "", bugLog.Errorf("createID: %w", err)
+		return "", bugLog.Errorf("createID: %+v", err)
 	}
 
 	return id, nil
@@ -124,7 +124,7 @@ func createID() (string, error) {
 func createKey() (string, error) {
 	key, err := generateUUID()
 	if err != nil {
-		return "", bugLog.Errorf("createKey: %w", err)
+		return "", bugLog.Errorf("createKey: %+v", err)
 	}
 
 	return key, nil
@@ -133,7 +133,7 @@ func createKey() (string, error) {
 func createSecret() (string, error) {
 	secret, err := generateUUID()
 	if err != nil {
-		return "", bugLog.Errorf("generateUUID: %w", err)
+		return "", bugLog.Errorf("generateUUID: %+v", err)
 	}
 
 	return secret, nil
@@ -142,7 +142,7 @@ func createSecret() (string, error) {
 func generateUUID() (string, error) {
 	s, err := uuid.NewUUID()
 	if err != nil {
-		return "", bugLog.Errorf("generateUUID: %w", err)
+		return "", bugLog.Errorf("generateUUID: %+v", err)
 	}
 
 	return s.String(), nil

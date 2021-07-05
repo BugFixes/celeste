@@ -118,7 +118,7 @@ func (a Auth) CallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	jwtString, err := a.authUser(user)
 	if err != nil {
-		bugLog.Local().Logf("authUser: %w", err)
+		bugLog.Local().Logf("authUser: %+v", err)
 	}
 
 	res.Header().Set("Content-Type", "application/json")
@@ -178,7 +178,7 @@ func (a Auth) authUser(user goth.User) (string, error) {
 	key := []byte(a.Config.JWTSecret)
 	signer, err := jwt.NewSignerHS(jwt.HS256, key)
 	if err != nil {
-		return "", bugLog.Errorf("signer: %w", err)
+		return "", bugLog.Errorf("signer: %+v", err)
 	}
 
 	claims := &AccountAuth{
@@ -196,7 +196,7 @@ func (a Auth) authUser(user goth.User) (string, error) {
 	builder := jwt.NewBuilder(signer)
 	token, err := builder.Build(claims)
 	if err != nil {
-		return "", bugLog.Errorf("build jwt: %w", err)
+		return "", bugLog.Errorf("build jwt: %+v", err)
 	}
 
 	return token.String(), nil

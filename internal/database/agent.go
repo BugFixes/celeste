@@ -31,7 +31,7 @@ func NewAgentStorage(d Database) *AgentStorage {
 func (a AgentStorage) Insert(data AgentRecord) error {
 	svc, err := a.Database.dynamoSession()
 	if err != nil {
-		return bugLog.Errorf("insert agent: %w", err)
+		return bugLog.Errorf("insert agent: %+v", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{

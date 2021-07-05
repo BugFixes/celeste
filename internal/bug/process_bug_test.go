@@ -30,7 +30,7 @@ func TestProcessFile(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			resp, err := bug.ProcessBug{}.Parse(test.request)
 			if passed := assert.IsType(t, test.err, err); !passed {
-				t.Errorf("lookup err: %w", err)
+				t.Errorf("lookup err: %+v", err)
 			}
 			if passed := assert.Equal(t, test.expect, resp); !passed {
 				t.Errorf("lookup expect: %v, got: %v", test.expect, resp)

@@ -68,6 +68,8 @@ github.com/bradleyfalzon/ghinstallation v1.1.1 h1:pmBXkxgM1WeF8QYvDLT5kuQiHMcmf+
 github.com/bradleyfalzon/ghinstallation v1.1.1/go.mod h1:vyCmHTciHx/uuyN82Zc3rXN3X2KTK8nUTCrTMwAhcug=
 github.com/bugfixes/go-bugfixes v0.3.0 h1:2d05+LQZOJ7c/3kHZWaeY9N/IUyg+lMBzD4SCZVXgkI=
 github.com/bugfixes/go-bugfixes v0.3.0/go.mod h1:XvTlW9PFCCy4om2fPa7zfOiMWthfoGkNBtaGKRNyFPY=
+github.com/bugfixes/go-bugfixes v0.4.0 h1:dmlDk6Yv3mdVG7wB8Ub7In9Lom5HBrHqFUmR893Q9W8=
+github.com/bugfixes/go-bugfixes v0.4.0/go.mod h1:XvTlW9PFCCy4om2fPa7zfOiMWthfoGkNBtaGKRNyFPY=
 github.com/caarlos0/env/v6 v6.6.2 h1:BypLXDWQTA32rS4UM7pBz+/0BOuvs6C7LSeQAxMwyvI=
 github.com/caarlos0/env/v6 v6.6.2/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
 github.com/casbin/casbin/v2 v2.1.2/go.mod h1:YcPU1XXisHhLzuxH9coDNf2FbKpjGlbCg3n9yuLkIJQ=

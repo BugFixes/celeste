@@ -39,7 +39,7 @@ func (c CommsStorage) getConnection() (*pgx.Conn, error) {
 			c.Config.RDS.Port,
 			c.Config.RDS.Database))
 	if err != nil {
-		return nil, bugLog.Errorf("getConnection: %w", err)
+		return nil, bugLog.Errorf("getConnection: %+v", err)
 	}
 
 	return conn, nil
@@ -51,11 +51,11 @@ func (c CommsStorage) FetchCredentials(a agent.Agent) (CommsCredentials, error) 
 
 	conn, err := c.getConnection()
 	if err != nil {
-		return cc, bugLog.Errorf("fetchCredentials: %w", err)
+		return cc, bugLog.Errorf("fetchCredentials: %+v", err)
 	}
 	defer func() {
 		if err := conn.Close(c.Context); err != nil {
-			bugLog.Debugf("close: %w", err)
+			bugLog.Debugf("close: %+v", err)
 		}
 	}()
 
@@ -64,11 +64,11 @@ func (c CommsStorage) FetchCredentials(a agent.Agent) (CommsCredentials, error) 
 		"SELECT system, details FROM comms_details WHERE agent_id = (SELECT id FROM agent WHERE key = $1 AND secret = $2 LIMIT 1)",
 		a.Credentials.Key,
 		a.Credentials.Secret).Scan(&cc.System, &details); err != nil {
-		return cc, bugLog.Errorf("queryRow: %w", err)
+		return cc, bugLog.Errorf("queryRow: %+v", err)
 	}
 
 	if err := json.Unmarshal([]byte(details), &cc.CommsDetails); err != nil {
-		return cc, bugLog.Errorf("unmarshall: %w", err)
+		return cc, bugLog.Errorf("unmarshall: %+v", err)
 	}
 
 	return cc, nil

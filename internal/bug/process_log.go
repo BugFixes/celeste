@@ -64,7 +64,7 @@ func (l ProcessLog) LogHandler(w http.ResponseWriter, r *http.Request) {
 func (l ProcessLog) GenerateLogInfo(log *Log, agentID string) error {
 	log.Agent.UUID = agentID
 	if err := log.GenerateIdentifier(); err != nil {
-		return bugLog.Errorf("processLog generateLogInfo generateIdentifier: %w", err)
+		return bugLog.Errorf("processLog generateLogInfo generateIdentifier: %+v", err)
 	}
 	log.LevelNumber = ConvertLevelFromString(log.Level)
 
@@ -84,7 +84,7 @@ func (l ProcessLog) StoreLog(log *Log) error {
 		Entry:      log.Log,
 		AgentID:    log.Agent.UUID,
 	}); err != nil {
-		return bugLog.Errorf("processLog storeLog: %w", err)
+		return bugLog.Errorf("processLog storeLog: %+v", err)
 	}
 
 	return nil

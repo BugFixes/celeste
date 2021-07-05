@@ -40,7 +40,7 @@ func (l LogStorage) Store(data LogRecord) error {
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
-		return bugLog.Errorf("logStorage store marshal: %w", err)
+		return bugLog.Errorf("logStorage store marshal: %+v", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{
@@ -48,7 +48,7 @@ func (l LogStorage) Store(data LogRecord) error {
 		TableName: aws.String(l.Database.Config.LogsTable),
 	})
 	if err != nil {
-		return bugLog.Errorf("logStorage store putItem: %w", err)
+		return bugLog.Errorf("logStorage store putItem: %+v", err)
 	}
 
 	return nil

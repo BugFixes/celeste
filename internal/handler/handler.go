@@ -20,7 +20,7 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	// Config
 	cfg, err := config.BuildConfig()
 	if err != nil {
-		return events.APIGatewayProxyResponse{}, bugLog.Errorf("config failed to build: %w", err)
+		return events.APIGatewayProxyResponse{}, bugLog.Errorf("config failed to build: %+v", err)
 	}
 
 	// Routes
@@ -41,7 +41,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 
 		response, err := bug.NewBug(c.Config).Parse(c.Request)
 		if err != nil {
-			return events.APIGatewayProxyResponse{}, bugLog.Errorf("process file failed: %w", err)
+			return events.APIGatewayProxyResponse{}, bugLog.Errorf("process file failed: %+v", err)
 		}
 		bugLog.Local().Info("bug request processed")
 		return events.APIGatewayProxyResponse{
@@ -74,7 +74,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 
 		response, err := account.NewLambdaRequest(c.Config, c.Request).Parse()
 		if err != nil {
-			return events.APIGatewayProxyResponse{}, bugLog.Errorf("create account request failed: %w", err)
+			return events.APIGatewayProxyResponse{}, bugLog.Errorf("create account request failed: %+v", err)
 		}
 		bugLog.Local().Info("create account request processed")
 		return events.APIGatewayProxyResponse{
@@ -87,7 +87,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 		bugLog.Local().Info("account login received")
 		response, err := account.NewLambdaRequest(c.Config, c.Request).Login()
 		if err != nil {
-			return events.APIGatewayProxyResponse{}, bugLog.Errorf("login account request failed: %w", err)
+			return events.APIGatewayProxyResponse{}, bugLog.Errorf("login account request failed: %+v", err)
 		}
 		bugLog.Local().Info("login account processed")
 		return events.APIGatewayProxyResponse{

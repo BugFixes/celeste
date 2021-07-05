@@ -22,6 +22,10 @@ import (
 func main() {
 	bugLog.Local().Info("Starting Celeste")
 
+  b := bugLog.Errorf("tester")
+  a := fmt.Sprintf("%T", b)
+  fmt.Printf(a)
+
 	// Config
 	cfg, err := config.BuildConfig()
 	if err != nil {
@@ -85,7 +89,7 @@ func route(c handler.Celeste) error {
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.Local.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.Local.Port), r)
 	if err != nil {
-		return bugLog.Errorf("port: %w", err)
+		return bugLog.Errorf("port: %v", err)
 	}
 
 	return nil

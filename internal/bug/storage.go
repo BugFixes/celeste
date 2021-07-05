@@ -43,31 +43,31 @@ func dynamoError(e error) error {
 	if aerr, ok := e.(awserr.Error); ok {
 		switch aerr.Code() {
 		case dynamodb.ErrCodeConditionalCheckFailedException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeConditionalCheckFailedException, aerr)
 		case dynamodb.ErrCodeProvisionedThroughputExceededException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeProvisionedThroughputExceededException, aerr)
 		case dynamodb.ErrCodeResourceNotFoundException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeResourceNotFoundException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeResourceNotFoundException, aerr)
 		case dynamodb.ErrCodeTransactionConflictException:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeTransactionConflictException, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeTransactionConflictException, aerr)
 		case dynamodb.ErrCodeRequestLimitExceeded:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeRequestLimitExceeded, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeRequestLimitExceeded, aerr)
 		case dynamodb.ErrCodeInternalServerError:
-			return bugLog.Errorf("bug insert - %s: %w", dynamodb.ErrCodeInternalServerError, aerr)
+			return bugLog.Errorf("bug insert - %s: %+v", dynamodb.ErrCodeInternalServerError, aerr)
 		default:
-			return bugLog.Errorf("bug insert - unknown err: %w", aerr)
+			return bugLog.Errorf("bug insert - unknown err: %+v", aerr)
 		}
 	} else {
 		// Print the error, cast err to awserr.Error to get the Code and
 		// Message from an error.
-		return bugLog.Errorf("bug inster: %w", e)
+		return bugLog.Errorf("bug inster: %+v", e)
 	}
 }
 
 func (b BugStorage) dynamoSession() (*dynamodb.DynamoDB, error) {
 	sess, err := config.BuildSession(b.Config)
 	if err != nil {
-		return nil, bugLog.Errorf("dynamoSessioN: %w", err)
+		return nil, bugLog.Errorf("dynamoSessioN: %+v", err)
 	}
 
 	return dynamodb.New(sess), nil
@@ -76,12 +76,12 @@ func (b BugStorage) dynamoSession() (*dynamodb.DynamoDB, error) {
 func (b BugStorage) Insert(data BugRecord) error {
 	svc, err := b.dynamoSession()
 	if err != nil {
-		return bugLog.Errorf("insert bug dynamo session failed: %w", err)
+		return bugLog.Errorf("insert bug dynamo session failed: %+v", err)
 	}
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
-		return bugLog.Errorf("insert bug marshal failed: %w", err)
+		return bugLog.Errorf("insert bug marshal failed: %+v", err)
 	}
 
 	_, err = svc.PutItem(&dynamodb.PutItemInput{
@@ -98,7 +98,7 @@ func (b BugStorage) Insert(data BugRecord) error {
 func (b BugStorage) FindAndStore(data BugRecord) (BugRecord, error) {
 	bugRecords, err := b.Find(data)
 	if err != nil {
-		return BugRecord{}, bugLog.Errorf("bugstorage findAndStore find: %w", err)
+		return BugRecord{}, bugLog.Errorf("bugstorage findAndStore find: %+v", err)
 	}
 
 	if len(bugRecords) == 0 {
@@ -119,7 +119,7 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 
 	svc, err := b.dynamoSession()
 	if err != nil {
-		return brs, bugLog.Errorf("bug findAndStore session: %w", err)
+		return brs, bugLog.Errorf("bug findAndStore session: %+v", err)
 	}
 
 	filt := expression.And(
@@ -136,7 +136,7 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 		expression.Name("first_reported"))
 	expr, err := expression.NewBuilder().WithFilter(filt).WithProjection(proj).Build()
 	if err != nil {
-		return brs, bugLog.Errorf("bug findAndStore build: %w", err)
+		return brs, bugLog.Errorf("bug findAndStore build: %+v", err)
 	}
 
 	result, err := svc.Scan(&dynamodb.ScanInput{
@@ -147,7 +147,7 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 		ProjectionExpression:      expr.Projection(),
 	})
 	if err != nil {
-		return brs, bugLog.Errorf("bug findAndStore scan: %w", err)
+		return brs, bugLog.Errorf("bug findAndStore scan: %+v", err)
 	}
 
 	if len(result.Items) == 0 {
@@ -157,23 +157,23 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 	for _, i := range result.Items {
 		bri := BugRecord{}
 		if err := dynamodbattribute.UnmarshalMap(i, &bri); err != nil {
-			return brs, bugLog.Errorf("bug findAndStore unmarshall: %w", err)
+			return brs, bugLog.Errorf("bug findAndStore unmarshall: %+v", err)
 		}
 
 		trn, err := strconv.Atoi(bri.TimesReported)
 		if err != nil {
-			return brs, bugLog.Errorf("bug findAndStore atoi: %w", err)
+			return brs, bugLog.Errorf("bug findAndStore atoi: %+v", err)
 		}
 
 		lr, err := time.Parse(b.Config.DateFormat, bri.LastReported)
 		if err != nil {
-			return brs, bugLog.Errorf("bug findAndStore lastReportedParse: %w", err)
+			return brs, bugLog.Errorf("bug findAndStore lastReportedParse: %+v", err)
 		}
 		bri.LastReportedTime = lr
 
 		fr, err := time.Parse(b.Config.DateFormat, bri.FirstReported)
 		if err != nil {
-			return brs, bugLog.Errorf("bug findAndStore firstReportedParse: %w", err)
+			return brs, bugLog.Errorf("bug findAndStore firstReportedParse: %+v", err)
 		}
 		bri.FirstReportedTime = fr
 
@@ -187,7 +187,7 @@ func (b BugStorage) Find(data BugRecord) ([]BugRecord, error) {
 func (b BugStorage) Store(data BugRecord) error {
 	svc, err := b.dynamoSession()
 	if err != nil {
-		return bugLog.Errorf("bug store dynamosession failed: %w", err)
+		return bugLog.Errorf("bug store dynamosession failed: %+v", err)
 	}
 
 	data.FirstReported = time.Now().Format(b.Config.DateFormat)
@@ -195,14 +195,14 @@ func (b BugStorage) Store(data BugRecord) error {
 
 	av, err := dynamodbattribute.MarshalMap(data)
 	if err != nil {
-		return bugLog.Errorf("bug store marshal failed: %w", err)
+		return bugLog.Errorf("bug store marshal failed: %+v", err)
 	}
 
 	if _, err := svc.PutItem(&dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(b.Config.BugsTable),
 	}); err != nil {
-		return bugLog.Errorf("bug store putitem failed: %w", err)
+		return bugLog.Errorf("bug store putitem failed: %+v", err)
 	}
 
 	return nil
@@ -211,7 +211,7 @@ func (b BugStorage) Store(data BugRecord) error {
 func (b BugStorage) Update(data BugRecord) error {
 	svc, err := b.dynamoSession()
 	if err != nil {
-		return bugLog.Errorf("bug update dynamosession failed: %w", err)
+		return bugLog.Errorf("bug update dynamosession failed: %+v", err)
 	}
 
 	data.LastReported = time.Now().Format(b.Config.DateFormat)
@@ -231,7 +231,7 @@ func (b BugStorage) Update(data BugRecord) error {
 		ReturnValues:     aws.String("UPDATED_NEW"),
 		UpdateExpression: aws.String("set times_reported = :tr"),
 	}); err != nil {
-		return bugLog.Errorf("bug update updateItem failed: %w", err)
+		return bugLog.Errorf("bug update updateItem failed: %+v", err)
 	}
 
 	return nil

@@ -42,7 +42,7 @@ func ParseAgentHeaders(headers map[string]string) (Agent, error) {
 
 	valid, err := a.ValidateID()
 	if err != nil {
-		return a, bugLog.Errorf("validated id failed: %w", err)
+		return a, bugLog.Errorf("validated id failed: %+v", err)
 	}
 	if !valid {
 		return a, bugLog.Errorf("agent isn't valid: %v", a)
@@ -66,7 +66,7 @@ func (a Agent) missingID(headers map[string]string) (Agent, error) {
 
 	a, err := a.LookupDetails()
 	if err != nil {
-		return a, bugLog.Errorf("lookup id failed: %w", err)
+		return a, bugLog.Errorf("lookup id failed: %+v", err)
 	}
 	return a, nil
 }

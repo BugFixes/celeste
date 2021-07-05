@@ -36,10 +36,10 @@ func NewDiscord(c config.Config) *Discord {
 func (d *Discord) Connect() error {
 	authToken, err := config.GetSecret(d.Config.SecretsClient, "discord_bot_token")
 	if err != nil {
-		return bugLog.Errorf("connect: %w", err)
+		return bugLog.Errorf("connect: %+v", err)
 	}
 	if authToken == "" {
-		return bugLog.Errorf("discord connect: %w", errors.New("no bot token"))
+		return bugLog.Errorf("discord connect: %+v", errors.New("no bot token"))
 	}
 
 	d.BotAuth = authToken
@@ -58,7 +58,7 @@ func (d *Discord) ParseCredentials(creds interface{}) error {
 
 	discordCreds := cc{}
 	if err := mapstructure.Decode(creds, &discordCreds); err != nil {
-		return bugLog.Errorf("discord parseCredentials decode: %w", err)
+		return bugLog.Errorf("discord parseCredentials decode: %+v", err)
 	}
 
 	d.Credentials = DiscordCredentials{
@@ -80,21 +80,21 @@ func (d *Discord) Send(commsPackage CommsPackage) error {
 
 	g, err := gateway.NewGateway(d.BotAuth)
 	if err != nil {
-		return bugLog.Errorf("discord send newGateway: %w", err)
+		return bugLog.Errorf("discord send newGateway: %+v", err)
 	}
 	g.AddIntents(gateway.IntentGuildMessages)
 	if err := g.OpenContext(d.Context); err != nil {
-		return bugLog.Errorf("discord send openContext: %w", err)
+		return bugLog.Errorf("discord send openContext: %+v", err)
 	}
 
 	c := api.NewClient(fmt.Sprintf("Bot %s", d.BotAuth)).WithContext(d.Context)
 	snow, err := discord.ParseSnowflake(d.Credentials.Channel)
 	if err != nil {
-		return bugLog.Errorf("discord send parseSnowFlake: %w", err)
+		return bugLog.Errorf("discord send parseSnowFlake: %+v", err)
 	}
 	m, err := c.SendMessage(discord.ChannelID(snow), title, &embed)
 	if err != nil {
-		return bugLog.Errorf("discord send sendMessage: %w", err)
+		return bugLog.Errorf("discord send sendMessage: %+v", err)
 	}
 
 	bugLog.Infof("%+v", m)

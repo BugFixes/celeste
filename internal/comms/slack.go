@@ -35,7 +35,7 @@ func NewSlack(c config.Config) *Slack {
 func (s *Slack) Connect() error {
 	authToken := s.Credentials.Token
 	if authToken == "" {
-		return bugLog.Errorf("slack connect: %w", errors.New("no bot token"))
+		return bugLog.Errorf("slack connect: %+v", errors.New("no bot token"))
 	}
 	s.Client = slack.New(authToken)
 
@@ -54,7 +54,7 @@ func (s *Slack) ParseCredentials(creds interface{}) error {
 
 	slackCreds := sc{}
 	if err := mapstructure.Decode(creds, &slackCreds); err != nil {
-		return bugLog.Errorf("slack parseCredentials decode: %w", err)
+		return bugLog.Errorf("slack parseCredentials decode: %+v", err)
 	}
 
 	s.Credentials = SlackCredentials{
@@ -81,7 +81,7 @@ func (s *Slack) Send(commsPackage CommsPackage) error {
 		s.Credentials.Channel,
 		title,
 		message); err != nil {
-		return bugLog.Errorf("slack send postMessage: %w", err)
+		return bugLog.Errorf("slack send postMessage: %+v", err)
 	}
 
 	return nil

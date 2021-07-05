@@ -74,7 +74,7 @@ func (t Ticketing) fetchTicketingCredentials(a agent.Agent) (TicketingCredential
 		return TicketingCredentials{
 			Agent:  a,
 			System: "mock",
-		}, bugLog.Errorf("ticketing failed to fetch system: %w", err)
+		}, bugLog.Errorf("ticketing failed to fetch system: %+v", err)
 	}
 
 	return system, nil
@@ -108,13 +108,13 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds TicketingCredentia
 	ticket.RemoteSystem = creds.System
 
 	if err := system.ParseCredentials(creds); err != nil {
-		return bugLog.Errorf("ticketCreate parseCredentials: %w", err)
+		return bugLog.Errorf("ticketCreate parseCredentials: %+v", err)
 	}
 	if err := system.Connect(); err != nil {
-		return bugLog.Errorf("ticketCreate connect: %w", err)
+		return bugLog.Errorf("ticketCreate connect: %+v", err)
 	}
 	if err := system.Create(ticket); err != nil {
-		return bugLog.Errorf("ticketCreate create: %w", err)
+		return bugLog.Errorf("ticketCreate create: %+v", err)
 	}
 	return nil
 }
@@ -122,21 +122,21 @@ func (t Ticketing) TicketCreate(system TicketingSystem, creds TicketingCredentia
 func (t Ticketing) CreateTicket(ticket *Ticket) error {
 	ticketSystemCredentials, err := t.fetchTicketingCredentials(ticket.Agent)
 	if err != nil {
-		return bugLog.Errorf("createTicket fetchSystem failed: %w", err)
+		return bugLog.Errorf("createTicket fetchSystem failed: %+v", err)
 	}
 
 	ticketSystem, err := t.fetchTicketSystem(ticketSystemCredentials)
 	if err != nil {
-		return bugLog.Errorf("createTicket fetchTicketSystem: %w", err)
+		return bugLog.Errorf("createTicket fetchTicketSystem: %+v", err)
 	}
 
 	err = agent.NewAgent(t.Config).Find(&ticket.Agent)
 	if err != nil {
-		return bugLog.Errorf("createTicket: %w", err)
+		return bugLog.Errorf("createTicket: %+v", err)
 	}
 
 	if err := t.TicketCreate(ticketSystem, ticketSystemCredentials, ticket); err != nil {
-		return bugLog.Errorf("createTicket ticketCreate: %w", err)
+		return bugLog.Errorf("createTicket ticketCreate: %+v", err)
 	}
 
 	return nil

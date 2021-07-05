@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/aws/aws-lambda-go/events"
-	account2 "github.com/bugfixes/celeste/internal/account"
-	bug2 "github.com/bugfixes/celeste/internal/bug"
+	account "github.com/bugfixes/celeste/internal/account"
+	bug "github.com/bugfixes/celeste/internal/bug"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
 
 	"github.com/bugfixes/celeste/internal/config"
@@ -39,7 +39,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 	case "/bug":
 		bugLog.Local().Info("bug request received")
 
-		response, err := bug2.NewBug(c.Config).Parse(c.Request)
+		response, err := bug.NewBug(c.Config).Parse(c.Request)
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("process file failed: %w", err)
 		}
@@ -72,7 +72,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 	case "/account":
 		bugLog.Local().Info("create account request received")
 
-		response, err := account2.NewLambdaRequest(c.Config, c.Request).Parse()
+		response, err := account.NewLambdaRequest(c.Config, c.Request).Parse()
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("create account request failed: %w", err)
 		}
@@ -85,7 +85,7 @@ func (c Celeste) parseLambdaRequest() (events.APIGatewayProxyResponse, error) {
 
 	case "/account/login":
 		bugLog.Local().Info("account login received")
-		response, err := account2.NewLambdaRequest(c.Config, c.Request).Login()
+		response, err := account.NewLambdaRequest(c.Config, c.Request).Login()
 		if err != nil {
 			return events.APIGatewayProxyResponse{}, bugLog.Errorf("login account request failed: %w", err)
 		}

@@ -1,18 +1,12 @@
 name: auto-merge
-on:
-  workflow_run:
-    types:
-      - completed
-    workflows:
-      - 'Pull Requests'
+on: pull_request
 
 jobs:
   auto-merge:
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow-run.conclusion == 'success' }}
     steps:
-      - name: Merge it
-        uses: ridedott/merge-me-action@v2
+      - uses: actions/checkout@v2
+      - uses: ahmadnassri/action-dependabot-auto-merge@v2
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

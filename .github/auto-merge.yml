@@ -4,6 +4,6 @@
 - match:
     dependency_type: production
     update_type: semver:minor
--match:
+- match:
   dependency_type: production
   update_type: semver:patch

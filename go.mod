@@ -9,7 +9,7 @@ require (
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.4.0
 	github.com/caarlos0/env/v6 v6.6.2
-	github.com/cristalhq/jwt/v3 v3.0.14
+	github.com/cristalhq/jwt/v3 v3.1.0
 	github.com/diamondburned/arikawa/v2 v2.1.0
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.3

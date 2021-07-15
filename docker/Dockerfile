@@ -4,10 +4,12 @@ FROM golang:1.16 AS builder
 RUN mkdir -p /home/builder
 WORKDIR /home/builder
 
+## Download dependencies
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
+## Copy files
 COPY . .
 ARG build
 ARG version
@@ -25,16 +27,19 @@ RUN rm -rf /var/cache/apk/*
 
 COPY --from=builder /celeste /home
 
+## Set the timezone
 ENV TZ=Europe/London
 
 WORKDIR /home
-ENV _SERVICENAME=celeste
+
+## Set the entrypoint
 RUN echo "#!/bin/bash" >> ./entrypoint.sh
 RUN echo "./celeste" >> ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
-
 ENTRYPOINT ["sh", "./entrypoint.sh"]
 
+## Healthcheck to keep system alive
 HEALTHCHECK --interval=5s --timeout=2s --retries=12 CMD curl --silent --fail localhost/probe || exit 1
 
-EXPOSE 80
+## Expose the main ports
+EXPOSE 80 3000

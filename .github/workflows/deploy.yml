@@ -48,4 +48,5 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           file: ./docker/Dockerfile
           tags: ${{ steps.prep.output.tags }}
+          push: true
 

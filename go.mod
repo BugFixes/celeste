@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/andygrunwald/go-jira v1.13.0
-	github.com/aws/aws-lambda-go v1.24.0
+	github.com/aws/aws-lambda-go v1.25.0
 	github.com/aws/aws-sdk-go v1.40.0
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.4.0
@@ -19,8 +19,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
-	github.com/keloran/go-probe v0.0.0-20210417224119-539dae99a65e // indirect
 	github.com/jackc/pgx/v4 v4.12.0
+	github.com/keloran/go-probe v0.0.0-20210417224119-539dae99a65e
 	github.com/kr/text v0.2.0 // indirect
 	github.com/markbates/goth v1.67.1
 	github.com/mitchellh/mapstructure v1.4.1

@@ -10,7 +10,8 @@ setup: ## Get linting stuffs
 
 .PHONY: build
 build: lint ## Build the app
-	go build -ldflags "-w -s -X github.com/bugfixes/${SEVICE_NAME}/internal/app.version=`git describe --tags --dirty` -X github.com/bugfixes/${SERVICE_NAME}/internal/app.commitHash=`git rev-parse HEAD`" -race -o ./bin/${SERVICE_NAME} -v ./cmd/${SERVICE_NAME}/${SEVICE_NAME}.go
+	docker build -t "bugfixes/celeste:`git rev-parse HEAD`" --build-arg build=`git rev-parse HEAD` --build-arg version=`git describe --tags --dirty` -f ./docker/Dockerfile .
+	docker scan "bugfixes/celeste:`git rev-parse HEAD`"
 
 .PHONY: test
 test: lint ## Test the app

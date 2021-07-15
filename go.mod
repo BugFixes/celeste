@@ -20,6 +20,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1
 	github.com/jackc/pgx/v4 v4.11.0
+	github.com/keloran/go-probe v0.0.0-20210417224119-539dae99a65e // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/markbates/goth v1.67.1
 	github.com/mitchellh/mapstructure v1.4.1

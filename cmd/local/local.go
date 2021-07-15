@@ -17,6 +17,7 @@ import (
 	bugfixes "github.com/bugfixes/go-bugfixes/middleware"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/mux"
+	"github.com/keloran/go-probe"
 )
 
 func main() {
@@ -53,34 +54,37 @@ func route(c handler.Celeste) error {
 	s.HandleFunc("/logout/{provider}", auth.NewAuth(c.Config).LogoutHandler)
 
 	// Account
-	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).CreateHandler).Methods("POST")
-	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).DeleteHandler).Methods("DELETE")
-	r.PathPrefix("/account/login").HandlerFunc(account.NewHTTPRequest(c.Config).LoginHandler).Methods("POST")
+	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).CreateHandler).Methods(http.MethodPost)
+	r.PathPrefix("/account").HandlerFunc(account.NewHTTPRequest(c.Config).DeleteHandler).Methods(http.MethodDelete)
+	r.PathPrefix("/account/login").HandlerFunc(account.NewHTTPRequest(c.Config).LoginHandler).Methods(http.MethodPost)
 
 	// Agent
 	// TODO: Add agent
 	// s = r.PathPrefix("/agent").Subrouter()
 
 	// Logs
-	r.PathPrefix("/log").HandlerFunc(bug.NewLog(c.Config).LogHandler).Methods("POST")
+	r.PathPrefix("/log").HandlerFunc(bug.NewLog(c.Config).LogHandler).Methods(http.MethodPost)
 
 	// Bug
-	r.PathPrefix("/bug").HandlerFunc(bug.NewBug(c.Config).BugHandler).Methods("POST")
+	r.PathPrefix("/bug").HandlerFunc(bug.NewBug(c.Config).BugHandler).Methods(http.MethodPost)
 
 	// Comms
-	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).CreateCommsHandler).Methods("POST")
-	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).AttachCommsHandler).Methods("PUT")
-	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DetachCommsHandler).Methods("PATCH")
-	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DeleteCommsHandler).Methods("DELETE")
-	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).ListCommsHandler).Methods("GET")
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).CreateCommsHandler).Methods(http.MethodPost)
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).AttachCommsHandler).Methods(http.MethodPut)
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DetachCommsHandler).Methods(http.MethodPatch)
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).DeleteCommsHandler).Methods(http.MethodDelete)
+	r.PathPrefix("/comms").HandlerFunc(comms.NewCommunication(c.Config).ListCommsHandler).Methods(http.MethodGet)
 
 	// Ticket
-	r.PathPrefix("/ticket").HandlerFunc(ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods("POST")
+	r.PathPrefix("/ticket").HandlerFunc(ticketing.NewTicketing(c.Config).CreateTicketHandler).Methods(http.MethodPost)
 
 	// Frontend
 	s = r.PathPrefix("/fe").Subrouter()
-	s.HandleFunc("/r", frontend.NewFrontend(c.Config).RegisterHandler).Methods("POST")
-	s.HandleFunc("/d", frontend.NewFrontend(c.Config).DetailsHandler).Methods("GET")
+	s.HandleFunc("/r", frontend.NewFrontend(c.Config).RegisterHandler).Methods(http.MethodPost)
+	s.HandleFunc("/d", frontend.NewFrontend(c.Config).DetailsHandler).Methods(http.MethodGet)
+
+	// Probe
+	r.PathPrefix("/probe").HandlerFunc(probe.HTTP).Methods(http.MethodGet)
 
 	bugLog.Local().Infof("listening on port: %d\n", c.Config.Local.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", c.Config.Local.Port), r)

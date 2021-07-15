@@ -50,6 +50,6 @@ jobs:
           file: ./docker/Dockerfile
           tags: |
             ghcr.io/bugfixes/celeste:latest
-            ghcr.io/bugfixes/celeste:${GITHUB_REF#refs/tags/v}
+            ${{ steps.prep.output.tags }}
           push: true
 

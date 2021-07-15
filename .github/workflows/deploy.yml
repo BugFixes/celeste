@@ -48,6 +48,8 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           file: ./docker/Dockerfile
-          tags: ${{ steps.prep.output.tags }}
+          tags: |
+            ghcr.io/bugfixes/celeste:latest
+            ghcr.io/bugfixes/celeste:${GITHUB_REF#refs/tags/v}
           push: true
 

@@ -18,7 +18,7 @@ RUN go build -ldflags "-w -s -X github.com/bugfixes/celeste/internal/app.version
 RUN cp ./bin/celeste /
 
 # Runner
-FROM alpine
+FROM alpine as Runner
 RUN apk update
 RUN apk upgrade
 RUN apk add ca-certificates && update-ca-certificates

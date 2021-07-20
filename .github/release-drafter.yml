@@ -5,18 +5,48 @@ template: |
 
   $CHANGES
 categories:
-  - title: 'Breaking'
-    label: 'type: breaking'
-  - title: 'New'
-    label: 'type: feature'
+  - title: 'New Features'
+    labels:
+      - 'Feature'
+      - 'Feature :boom:'
+  - title: 'Improvements'
+    labels:
+      - 'enhancement'
+      - 'Improvement'
+      - 'Enhancement :tada:'
+      - 'Improvement :tada:'
   - title: 'Bug Fixes'
-    label: 'type: bug'
-  - title: 'Maintenance'
-    label: 'type: maintenance'
-  - title: 'Documentation'
-    label: 'type: docs'
-  - title: 'Dependency Updates'
-    label: 'type: dependencies'
+    labels:
+      - 'bug'
+      - 'bug :bug:'
+      - 'Bug fix'
+      - 'Bug fix :bug:'
+      - 'Bug Fix'
+      - 'Bug Fix :bug:'
+      - 'Bug Fixes'
+      - 'Bug Fixes :bug:'
+  - title: 'Breaking Changes'
+    labels:
+      - 'BC Break'
+      - 'BC Break :fire:'
+  - title: 'Environment Variable Changes'
+    labels:
+      - 'Env'
+      - 'Env :man_technologist:'
+      - 'env'
+      - 'env :man_technologist:'
+      - 'Env change'
+      - 'Env change :man_technologist:'
+      - 'Env Change'
+      - 'Env Change :man_technologist:'
+  - title: 'External Change'
+    labels:
+      - 'external'
+      - 'external :shipit:'
+  - title: 'Dependencies'
+    labels:
+      - 'dependencies'
+      - 'dependencies :electric_plug:'
 
 version-resolver:
   major:

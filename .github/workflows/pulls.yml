@@ -3,9 +3,6 @@ on:
   push:
     branches-ignore:
       - main
-  check_suite:
-    types:
-      - completed
   pull_request:
     types:
       - opened
@@ -14,7 +11,7 @@ on:
       - synchronize
 
 jobs:
-  lint:
+  test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
@@ -30,3 +27,10 @@ jobs:
           args: --config ./configs/golangci.yml
       - name: test
         run: go test -v -race -bench=./... -benchmem -timeout=120s -bench=./... ./...
+  automerge:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: fastify/github-action-merge-dependabot@v2.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

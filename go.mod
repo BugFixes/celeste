@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.25.0
 	github.com/aws/aws-sdk-go v1.40.5
 	github.com/bradleyfalzon/ghinstallation v1.1.1
-	github.com/bugfixes/go-bugfixes v0.4.0
+	github.com/bugfixes/go-bugfixes v0.5.0
 	github.com/caarlos0/env/v6 v6.6.2
 	github.com/cristalhq/jwt/v3 v3.1.0
 	github.com/diamondburned/arikawa/v2 v2.1.0

@@ -22,7 +22,7 @@ require (
 	github.com/jackc/pgx/v4 v4.12.0
 	github.com/keloran/go-probe v0.0.0-20210417224119-539dae99a65e
 	github.com/kr/text v0.2.0 // indirect
-	github.com/markbates/goth v1.67.1
+	github.com/markbates/goth v1.68.0
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/slack-go/slack v0.9.3

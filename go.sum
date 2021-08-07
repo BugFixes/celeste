@@ -53,8 +53,8 @@ github.com/aws/aws-sdk-go v1.40.16 h1:Tgg7i9ee2j6ir2EfejPDJBB3PyfUM4dPlvmMLtvJVf
 github.com/aws/aws-sdk-go v1.40.16/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
 github.com/bradleyfalzon/ghinstallation v1.1.1 h1:pmBXkxgM1WeF8QYvDLT5kuQiHMcmf+X015GI0KM/E3I=
 github.com/bradleyfalzon/ghinstallation v1.1.1/go.mod h1:vyCmHTciHx/uuyN82Zc3rXN3X2KTK8nUTCrTMwAhcug=
-github.com/bugfixes/go-bugfixes v0.5.0 h1:SOst5Pi5IAFHvSSxfNB+OV7vcqYFFJc9ci3KTkNW2l8=
-github.com/bugfixes/go-bugfixes v0.5.0/go.mod h1:FV2qnGBkoD8Vb2qxHy5sASGiJLHhJ1KaR7gVmVK2er4=
+github.com/bugfixes/go-bugfixes v0.6.0 h1:GUpprXnvcvvFFFD9b7c8Nfp8eyowQCKmX5/06/8gOHc=
+github.com/bugfixes/go-bugfixes v0.6.0/go.mod h1:FV2qnGBkoD8Vb2qxHy5sASGiJLHhJ1KaR7gVmVK2er4=
 github.com/caarlos0/env/v6 v6.6.2 h1:BypLXDWQTA32rS4UM7pBz+/0BOuvs6C7LSeQAxMwyvI=
 github.com/caarlos0/env/v6 v6.6.2/go.mod h1:P0BVSgU9zfkxfSpFUs6KsO3uWR4k3Ac0P66ibAGTybM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

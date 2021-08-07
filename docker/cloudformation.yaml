@@ -9,6 +9,10 @@ Parameters:
   Environment:
     Type: String
     Default: local
+  HostedZoneId:
+    Type: String
+    Default: Z8VLZEXAMPLE
+    #Default: Z2P70J7EXAMPLE
 
   RDSName:
     Type: String
@@ -93,7 +97,7 @@ Parameters:
 
   HostedZoneName:
     Type: String
-    Default: dev.bugfix.ese
+    Default: dev.bugfix.es
 
   Image:
     Type: String
@@ -537,255 +541,261 @@ Resources:
               - 'ecr:UploadLayerPart'
               - 'ecr:CompleteLayerUpload'
 
-  CelesteLogs:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Join
-        - ''
-        - - /ecs/
-          - !Ref ServiceName
-          - TaskDefinition
-  Cluster:
-    Type: AWS::ECS::Cluster
-    Properties:
-      ClusterName: CelesteCluster
-  TaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    DependsOn: CelesteLogs
-    Properties:
-      Family: !Join
-        - ''
-        - - !Ref ServiceName
-          - TaskDefinition
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - FARGATE
-      Cpu: '256'
-      Memory: 0.5GB
-      ExecutionRoleArn: !Ref ExecutionRole
-      TaskRoleArn: !Ref TaskRole
-      ContainerDefinitions:
-        - Name: !Ref ServiceName
-          Image: !Ref Image
-          PortMappings:
-            - ContainerPort: 3000
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-region: !Ref AWS::Region
-              awslogs-group: !Ref CelesteLogs
-              awslogs-stream-prefix: ecs
-  ExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join
-        - ''
-        - - !Ref ServiceName
-          - ExecutionRole
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principle:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
-  TaskRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join
-        - ''
-        - - !Ref ServiceName
-          - TaskRole
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principle:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-  AutoScalingRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join
-        - ''
-        - - !Ref ServiceName
-          - AutoScalingRole
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principle:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam:aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
-  ContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Join
-        - ''
-        - - !Ref ServiceName
-          - ContainerSecurityGroup
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
-  LoadBalancerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Join
-        - ''
-        - - !Ref ServiceName
-          - LoadBalancerSecurityGroup
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-  ContainerService:
-    Type: AWS::ECS::Service
-    DependsOn:
-      - ListenerHTTPS
-    Properties:
-      ServiceName: !Ref ServiceName
-      Cluster: !Ref Cluster
-      TaskDefinition: !Ref TaskDefinition
-      DeploymentConfiguration:
-        MinimumHealthyPercent: 100
-        MaximumPercent: 200
-      DesiredCount: 2
-      HealthCheckGracePeriodSeconds: 30
-      LaunchType: FARGATE
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
-          Subnets:
-            - !Ref SubnetA
-            - !Ref SubnetB
-          SecurityGroups:
-            - !Ref ContainerSecurityGroup
-      LoadBalancers:
-        - ContainerPort: 3000
-          ContainerName: !Ref ServiceName
-          TargetGroupArn: !Ref TargetGroup
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /probe
-      HealthCheckTimeoutSeconds: 5
-      UnhealthyThresholdCount: 2
-      HealthyThresholdCount: 2
-      Name: !Join
-        - ''
-        - - !Ref ServiceName
-          - TargetGroup
-      Port: 80
-      Protocol: HTTP
-      TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: '60'
-      TargetType: ip
-      VpcId: !Ref VPC
-  ListenerHTTPS:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - TargetGroupArn: !Ref TargetGroup
-          Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      Certificates:
-        - CertificateArn: !Ref Certificate
-  LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: '60'
-      Name: !Join
-        - ''
-        - - !Ref ServiceName
-          - LoadBalancer
-      Scheme: internet-facing
-      SecurityGroups:
-        - !Ref LoadBalancerSecurityGroup
-      Subnets:
-        - !Ref SubnetA
-        - !Ref SubnetB
-  DNSRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneName: !Join
-        - ''
-        - - !Ref HostedZoneName
-          - .
-      Name: !Join
-        - ''
-        - - ''
-          - .
-          - !Ref HostedZoneName
-          - .
-      Type: A
-      AliasTarget:
-        DNSName: !GetAtt LoadBalancer.DNSName
-        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
-  AutoScalingTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MinCapacity: 2
-      MaxCapacity: 2
-      ResourceId: !Join
-        - '/'
-        - - service
-          - !Ref Cluster
-          - !GetAtt ContainerService.Name
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
-      RoleARN: !GetAtt AutoScalingRole.Arn
-  AutoScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: !Join
-        - ''
-        - - !Ref ServiceName
-          - AutoScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref AutoScalingTarget
-      TargetTrackingScalingPolicyConfiguration:
-        PredefinedMetricSpecification:
-          PredefinedMetricType: ECSServiceAverageCPUUtilization
-        ScaleInCooldown: 10
-        ScaleOutCooldown: 10
-        TargetValue: 50
-  SubnetA:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.0.0/24
-      AvailabilityZone: !Join
-        - ''
-        - - !Ref AWS::Region
-          - a
-  SubnetB:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.0.0/24
-      AvailabilityZone: !Join
-        - ''
-        - - !Ref AWS::Region
-          - b
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-      EnableDnsSupport: false
-      EnableDnsHostnames: false
-      InstanceTenancy: dedicated
+#  CelesteLogs:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Join
+#        - ''
+#        - - /ecs/
+#          - !Ref ServiceName
+#          - TaskDefinition
+#  Cluster:
+#    Type: AWS::ECS::Cluster
+#    Properties:
+#      ClusterName: CelesteCluster
+#  TaskDefinition:
+#    Type: AWS::ECS::TaskDefinition
+#    DependsOn: CelesteLogs
+#    Properties:
+#      Family: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - TaskDefinition
+#      NetworkMode: awsvpc
+#      RequiresCompatibilities:
+#        - FARGATE
+#      Cpu: '256'
+#      Memory: 0.5GB
+#      ExecutionRoleArn: !Ref ExecutionRole
+#      TaskRoleArn: !Ref TaskRole
+#      ContainerDefinitions:
+#        - Name: !Ref ServiceName
+#          Image: !Ref Image
+#          PortMappings:
+#            - ContainerPort: 3000
+#          LogConfiguration:
+#            LogDriver: awslogs
+#            Options:
+#              awslogs-region: !Ref AWS::Region
+#              awslogs-group: !Ref CelesteLogs
+#              awslogs-stream-prefix: ecs
+#  ExecutionRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      RoleName: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - ExecutionRole
+#      AssumeRolePolicyDocument:
+#        Statement:
+#          - Effect: Allow
+#            Principle:
+#              Service: ecs-tasks.amazonaws.com
+#            Action: 'sts:AssumeRole'
+#      ManagedPolicyArns:
+#        - 'arn:aws:iam:aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+#  TaskRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      RoleName: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - TaskRole
+#      AssumeRolePolicyDocument:
+#        Statement:
+#          - Effect: Allow
+#            Principle:
+#              Service: ecs-tasks.amazonaws.com
+#            Action: 'sts:AssumeRole'
+#  AutoScalingRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      RoleName: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - AutoScalingRole
+#      AssumeRolePolicyDocument:
+#        Statement:
+#          - Effect: Allow
+#            Principle:
+#              Service: ecs-tasks.amazonaws.com
+#            Action: 'sts:AssumeRole'
+#      ManagedPolicyArns:
+#        - 'arn:aws:iam:aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
+#  ContainerSecurityGroup:
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#      GroupDescription: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - ContainerSecurityGroup
+#      VpcId: !Ref VPC
+#      SecurityGroupIngress:
+#        - IpProtocol: tcp
+#          FromPort: 3000
+#          ToPort: 3000
+#          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+#  LoadBalancerSecurityGroup:
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#      GroupDescription: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - LoadBalancerSecurityGroup
+#      VpcId: !Ref VPC
+#      SecurityGroupIngress:
+#        - IpProtocol: tcp
+#          FromPort: 443
+#          ToPort: 443
+#          CidrIp: 0.0.0.0/0
+#  ContainerService:
+#    Type: AWS::ECS::Service
+#    DependsOn:
+#      - ListenerHTTPS
+#    Properties:
+#      ServiceName: !Ref ServiceName
+#      Cluster: !Ref Cluster
+#      TaskDefinition: !Ref TaskDefinition
+#      DeploymentConfiguration:
+#        MinimumHealthyPercent: 100
+#        MaximumPercent: 200
+#      DesiredCount: 2
+#      HealthCheckGracePeriodSeconds: 30
+#      LaunchType: FARGATE
+#      NetworkConfiguration:
+#        AwsvpcConfiguration:
+#          AssignPublicIp: ENABLED
+#          Subnets:
+#            - !Ref SubnetA
+#            - !Ref SubnetB
+#          SecurityGroups:
+#            - !Ref ContainerSecurityGroup
+#      LoadBalancers:
+#        - ContainerPort: 3000
+#          ContainerName: !Ref ServiceName
+#          TargetGroupArn: !Ref TargetGroup
+#  TargetGroup:
+#    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+#    Properties:
+#      HealthCheckIntervalSeconds: 10
+#      HealthCheckPath: /probe
+#      HealthCheckTimeoutSeconds: 5
+#      UnhealthyThresholdCount: 2
+#      HealthyThresholdCount: 2
+#      Name: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - TargetGroup
+#      Port: 80
+#      Protocol: HTTP
+#      TargetGroupAttributes:
+#        - Key: deregistration_delay.timeout_seconds
+#          Value: '60'
+#      TargetType: ip
+#      VpcId: !Ref VPC
+#  ListenerHTTPS:
+#    Type: AWS::ElasticLoadBalancingV2::Listener
+#    Properties:
+#      DefaultActions:
+#        - TargetGroupArn: !Ref TargetGroup
+#          Type: forward
+#      LoadBalancerArn: !Ref LoadBalancer
+#      Port: 443
+#      Protocol: HTTPS
+#      Certificates:
+#        - CertificateArn: !Ref Certificate
+#  LoadBalancer:
+#    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+#    Properties:
+#      LoadBalancerAttributes:
+#        - Key: idle_timeout.timeout_seconds
+#          Value: '60'
+#      Name: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - LoadBalancer
+#      Scheme: internet-facing
+#      SecurityGroups:
+#        - !Ref LoadBalancerSecurityGroup
+#      Subnets:
+#        - !Ref SubnetA
+#        - !Ref SubnetB
+#  DNSRecord:
+#    Type: AWS::Route53::RecordSet
+#    Properties:
+#      HostedZoneId: !Ref HostedZoneId
+#      HostedZoneName: !Join
+#        - ''
+#        - - !Ref HostedZoneName
+#          - .
+#      Name: !Join
+#        - ''
+#        - - ''
+#          - .
+#          - !Ref HostedZoneName
+#          - .
+#      Type: A
+#      AliasTarget:
+#        DNSName: !GetAtt LoadBalancer.DNSName
+#        HostedZoneId: !Ref HostedZoneId
+#  AutoScalingTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MinCapacity: 2
+#      MaxCapacity: 2
+#      ResourceId: !Join
+#        - '/'
+#        - - service
+#          - !Ref Cluster
+#          - !GetAtt ContainerService.Name
+#      ScalableDimension: ecs:service:DesiredCount
+#      ServiceNamespace: ecs
+#      RoleARN: !GetAtt AutoScalingRole.Arn
+#  AutoScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: !Join
+#        - ''
+#        - - !Ref ServiceName
+#          - AutoScalingPolicy
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref AutoScalingTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: ECSServiceAverageCPUUtilization
+#        ScaleInCooldown: 10
+#        ScaleOutCooldown: 10
+#        TargetValue: 50
+#  SubnetA:
+#    Type: AWS::EC2::Subnet
+#    Properties:
+#      VpcId: !Ref VPC
+#      CidrBlock: 10.0.0.0/24
+#      AvailabilityZone: !Join
+#        - ''
+#        - - !Ref AWS::Region
+#          - a
+#  SubnetB:
+#    Type: AWS::EC2::Subnet
+#    Properties:
+#      VpcId: !Ref VPC
+#      CidrBlock: 10.0.0.0/24
+#      AvailabilityZone: !Join
+#        - ''
+#        - - !Ref AWS::Region
+#          - b
+#  VPC:
+#    Type: AWS::EC2::VPC
+#    Properties:
+#      CidrBlock: 10.0.0.0/16
+#      EnableDnsSupport: false
+#      EnableDnsHostnames: false
+#      InstanceTenancy: dedicated
+#  Certificate:
+#    Type: AWS::CertificateManager::Certificate
+#    Properties:
+#      ValidationMethod: DNS
+#      DomainName: !Ref HostedZoneName
 
   Bucket:
     Type: AWS::S3::Bucket
@@ -798,11 +808,6 @@ Resources:
         - - 'bugfixes'
           - !Ref ServiceName
           - !Ref Environment
-  Certificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      ValidationMethod: DNS
-      DomainName: !Ref HostedZoneName
 
 #  Gateway:
 #    Type: AWS::ApiGateway::RestApi

@@ -8,10 +8,14 @@ setup: ## Get linting stuffs
 	go get github.com/golangci/golangci-lint/cmd/golangci-lint
 	go get golang.org/x/tools/cmd/goimports
 
+.PHONY: build-images
+build-images: ## Build the images
+	docker build -t "ghcr.io/bugfixes/celeste:`git rev-parse HEAD`" --build-arg build=`git rev-parse HEAD` --build-arg version=`git describe --tags --dirty` -f ./docker/Dockerfile .
+	docker tag "ghcr.io/bugfixes/celeste:`git rev-parse HEAD`" "ghcr.io/bugfixes/celeste:latest"
+	docker scan "ghcr.io/bugfixes/celeste:`git rev-parse HEAD`"
+
 .PHONY: build
-build: lint ## Build the app
-	docker build -t "bugfixes/celeste:`git rev-parse HEAD`" --build-arg build=`git rev-parse HEAD` --build-arg version=`git describe --tags --dirty` -f ./docker/Dockerfile .
-	docker scan "bugfixes/celeste:`git rev-parse HEAD`"
+build: lint build-images ## Build the app
 
 .PHONY: test
 test: lint ## Test the app
@@ -108,91 +112,15 @@ stack-delete: # Delete the stack
 
 .PHONY: wipeData
 wipeData: # Wipe Data
-	export $(egrep -v '^#' .env | xargs)
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name ticketing \
-		--key '{"id":{"S":"github_token"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name ticketing \
-		--key '{"id":{"S":"jira_token"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name agents \
-		--key '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name agents \
-		--key '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name accounts \
-		--key '{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name comms \
-		--key '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"}}' 1> /dev/null
-	aws dynamodb delete-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name comms \
-		--key '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"}}' 1> /dev/null
 	cat ./docker/drop.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
 
 .PHONY: injectData
 injectData: # Wipe Data
-	export $(egrep -v '^#' .env | xargs)
-
-	aws dynamodb put-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name ticketing \
-		--item '{"access_token":{"S":"${GITHUB_ACCESS_TOKEN}"},"id":{"S":"github_token"},"system":{"S":"github"},"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"ticketing_details":{"M":{"owner":{"S":"bugfixes"},"repo":{"S":"celeste"},"installation_id":{"S":"${GITHUB_INSTALL_ID}"}}}}' 1> /dev/null
-	aws dynamodb put-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name ticketing \
-		--item '{"access_token":{"S":"${JIRA_API_TOKEN}"},"id":{"S":"jira_token"},"system":{"S":"jira"},"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"ticketing_details":{"M":{"project_name":{"S":"${JIRA_PROJECT_NAME}"},"username":{"S":"${JIRA_USERNAME}"},"host":{"S":"${JIRA_HOST}"},"project_key":{"S":"${JIRA_PROJECT_KEY}"}}}}' 1>/dev/null
-	aws dynamodb put-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name agents \
-		--item '{"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"name":{"S":"github"},"account_record":{"M":{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}},"agent_credentials":{"M":{"key":{"S":"${BUGFIXES_GITHUB_AGENT_KEY}"},"secret":{"S":"${BUGFIXES_GITHUB_AGENT_SECRET}"}}}}' 1> /dev/null
-	aws dynamodb put-item \
-  		--endpoint http://localhost.localstack.cloud:4566 \
-  		--region us-east-1 \
-  		--table-name agents \
-  		--item '{"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"name":{"S":"jira"},"account_record":{"M":{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}},"agent_credentials":{"M":{"key":{"S":"${BUGFIXES_JIRA_AGENT_KEY}"},"secret":{"S":"${BUGFIXES_JIRA_AGENT_SECRET}"}}}}' 1> /dev/null
-	aws dynamodb put-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name accounts \
-		--item '{"id":{"S":"${BUGFIXES_ACCOUNT_ID}"},"name":{"S":"bob"},"email":{"S":"${BUGFIXES_ACCOUNT_EMAIL}"},"level":{"S":"0"},"account_credentials":{"M":{"key":{"S":"${BUGFIXES_ACCOUNT_KEY}"},"secret":{"S":"${BUGFIXES_ACCOUNT_SECRET}"}}}}' 1> /dev/null
-	aws dynamodb put-item \
-		--endpoint http://localhost.localstack.cloud:4566 \
-		--region us-east-1 \
-		--table-name comms \
-		--item '{"agent_id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_GITHUB_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
-	aws dynamodb put-item \
-    		--endpoint http://localhost.localstack.cloud:4566 \
-    		--region us-east-1 \
-    		--table-name comms \
-    		--item '{"agent_id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"comms_details":{"M":{"channel":{"S":"${DISCORD_TEST_CHANNEL}"}}},"id":{"S":"${BUGFIXES_JIRA_AGENT_ID}"},"system":{"S":"discord"}}' 1> /dev/null
 	cat ./docker/create.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
 	cat ./docker/local.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes
 
 .PHONY: reset-tables
-reset-tables:
-	cat ./docker/drop.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
-	cat ./docker/create.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
-	cat ./docker/local.sql | docker exec -i celeste_database_1 psql -U database_username -d bugfixes 1> /dev/null
+reset-tables: wipeData injectData # Reset the tables
 
 .PHONY: bucket-up
 bucket-up: bucket-create bucket-upload ## S3 Bucket Up

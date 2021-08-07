@@ -14,18 +14,18 @@ COPY . .
 ARG build
 ARG version
 
-RUN go build -ldflags "-w -s -X github.com/bugfixes/celeste/internal/app.version=$(version) -X github.com/bugfixes/celeste/internal/app.build=$(build)" -race -o ./bin/celeste -v ./cmd/local/local.go
+RUN CGO_ENABLED=0 go build -ldflags "-w -s -X github.com/bugfixes/celeste/internal/app.version=$(version) -X github.com/bugfixes/celeste/internal/app.build=$(build)" -o ./bin/celeste -v ./cmd/local/local.go
 RUN cp ./bin/celeste /
 
 # Runner
-FROM alpine as Runner
+FROM alpine AS Runner
 RUN apk update
 RUN apk upgrade
 RUN apk add ca-certificates && update-ca-certificates
 RUN apk add --update tzdata
 RUN rm -rf /var/cache/apk/*
 
-COPY --from=builder /celeste /home
+COPY --from=builder /celeste /home/
 
 ## Set the timezone
 ENV TZ=Europe/London

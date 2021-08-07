@@ -16,9 +16,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: |
-            bugfixes/celeste
-            ghcr.io/bugfixes/celeste
+          images: ghcr.io/bugfixes/celeste
           tags: |
             type=schedule
             type=ref,event=branch

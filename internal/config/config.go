@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -63,6 +64,11 @@ type Authorization struct {
 	CallbackHost string `env:"CALLBACK_HOST" envDefault:"http://localhost:3000"`
 }
 
+type Secret struct {
+	Key    string
+	Secret string
+}
+
 type Config struct {
 	Local
 	RDS
@@ -93,7 +99,7 @@ func BuildConfig() (Config, error) {
 		return cfg, bugLog.Errorf("buildDatabase: %+v", err)
 	}
 
-	buildProviders(&cfg)
+	buildSystems(&cfg, "PROVIDERS_LIST")
 
 	if err := getJWTSecret(&cfg); err != nil {
 		return cfg, bugLog.Errorf("getJWTSecret: %+v", err)
@@ -128,8 +134,20 @@ func GetSecret(client *secretsmanager.SecretsManager, secret string) (string, er
 	return *sec.SecretString, nil
 }
 
+func GetEnv(name string) string {
+	return os.Getenv(name)
+}
+
+func GetSecretEnv(client *secretsmanager.SecretsManager, secret, env string) (string, error) {
+	if ret := GetEnv(env); ret != "" {
+		return ret, nil
+	}
+
+	return GetSecret(client, secret)
+}
+
 func getJWTSecret(cfg *Config) error {
-	jwt, err := GetSecret(cfg.AWS.SecretsClient, "jwt_secret")
+	jwt, err := GetSecret(cfg.AWS.SecretsClient, "JWT")
 	if err != nil {
 		return bugLog.Errorf("jwt_secret: %+v", err)
 	}
@@ -142,19 +160,22 @@ func getAuthCredentials(cfg *Config, providers string) []ServiceCredential {
 
 	services := strings.Split(providers, ",")
 	for _, service := range services {
-		key, err := getAuthSecret(cfg.AWS.SecretsClient, service, "key")
+		sec, err := GetSecretEnv(cfg.AWS.SecretsClient, service, "")
 		if err != nil {
 			continue
 		}
-		sec, err := getAuthSecret(cfg.AWS.SecretsClient, service, "secret")
-		if err != nil {
+
+		secret := Secret{}
+		if err := json.Unmarshal([]byte(sec), &secret); err != nil {
+			bugLog.Local().Warn(err)
 			continue
 		}
+
 		cred := ServiceCredential{
 			Service: service,
 			AuthCredential: AuthCredential{
-				Key:      key,
-				Secret:   sec,
+				Key:      secret.Key,
+				Secret:   secret.Secret,
 				Callback: fmt.Sprintf("%s/auth/%s/callback", cfg.CallbackHost, service),
 			},
 		}
@@ -165,51 +186,40 @@ func getAuthCredentials(cfg *Config, providers string) []ServiceCredential {
 	return serviceCreds
 }
 
-func getAuthSecret(client *secretsmanager.SecretsManager, service, secret string) (string, error) {
-	sec, err := client.GetSecretValue(&secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(fmt.Sprintf("%s_%s", service, secret)),
-	})
-	if err != nil {
-		return "", bugLog.Errorf("getAuthSecret: %s_%s, %+v", service, secret, err)
-	}
-
-	return *sec.SecretString, nil
-}
-
-func buildProviders(cfg *Config) {
-	if providers := os.Getenv("PROVIDERS_LIST"); providers != "" {
-		cfg.AuthCredentials = getAuthCredentials(cfg, providers)
+func buildSystems(cfg *Config, systemName string) {
+	if systems := os.Getenv(systemName); systems != "" {
+		cfg.AuthCredentials = getAuthCredentials(cfg, systems)
 	}
 }
 
 func buildDatabase(cfg *Config) error {
 	r := RDS{}
 
-	val, err := GetSecret(cfg.AWS.SecretsClient, "RDSPassword")
+	val, err := GetSecretEnv(cfg.AWS.SecretsClient, "RDSPassword", "DB_PASSWORD")
 	if err != nil {
 		return bugLog.Errorf("password: %+v", err)
 	}
 	r.Password = val
 
-	val, err = GetSecret(cfg.AWS.SecretsClient, "RDSUsername")
+	val, err = GetSecretEnv(cfg.AWS.SecretsClient, "RDSUsername", "DB_USERNAME")
 	if err != nil {
 		return bugLog.Errorf("password: %+v", err)
 	}
 	r.Username = val
 
-	val, err = GetSecret(cfg.AWS.SecretsClient, "RDSHostname")
+	val, err = GetSecretEnv(cfg.AWS.SecretsClient, "RDSHostname", "DB_HOSTNAME")
 	if err != nil {
 		return bugLog.Errorf("password: %+v", err)
 	}
 	r.Hostname = val
 
-	val, err = GetSecret(cfg.AWS.SecretsClient, "RDSPort")
+	val, err = GetSecretEnv(cfg.AWS.SecretsClient, "RDSPort", "DB_PORT")
 	if err != nil {
 		return bugLog.Errorf("password: %+v", err)
 	}
 	r.Port = val
 
-	val, err = GetSecret(cfg.AWS.SecretsClient, "RDSDatabase")
+	val, err = GetSecretEnv(cfg.AWS.SecretsClient, "RDSDatabase", "DB_DATABASE")
 	if err != nil {
 		return bugLog.Errorf("password: %+v", err)
 	}

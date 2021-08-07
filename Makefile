@@ -91,7 +91,7 @@ stack-create: # Create the stack
   		--region us-east-1 \
   		--parameters \
   		  ParameterKey=GithubKey,ParameterValue=${GITHUB_CLIENT_ID} \
-  		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECERT} \
+  		  ParameterKey=GithubSecret,ParameterValue=${GITHUB_CLIENT_SECRET} \
   		  ParameterKey=GithubAppId,ParameterValue=${GITHUB_APP_ID} \
   		  ParameterKey=GoogleKey,ParameterValue=${GOOGLE_CLIENT_ID} \
   		  ParameterKey=GoogleSecret,ParameterValue=${GOOGLE_CLIENT_SECRET} \

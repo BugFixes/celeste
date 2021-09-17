@@ -25,7 +25,7 @@ require (
 	github.com/markbates/goth v1.68.0
 	github.com/mitchellh/mapstructure v1.4.2
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/slack-go/slack v0.9.4
+	github.com/slack-go/slack v0.9.5
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210716203947-853a461950ff // indirect

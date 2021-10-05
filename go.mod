@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.87.0 // indirect
 	github.com/andygrunwald/go-jira v1.14.0
 	github.com/aws/aws-lambda-go v1.27.0
-	github.com/aws/aws-sdk-go v1.40.54
+	github.com/aws/aws-sdk-go v1.40.55
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.7.1
 	github.com/caarlos0/env/v6 v6.7.1

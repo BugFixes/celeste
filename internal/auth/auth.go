@@ -9,7 +9,7 @@ import (
 
 	"github.com/bugfixes/celeste/internal/config"
 	bugLog "github.com/bugfixes/go-bugfixes/logs"
-	"github.com/cristalhq/jwt/v3"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
@@ -176,10 +176,6 @@ func (a Auth) LogoutHandler(res http.ResponseWriter, req *http.Request) {
 
 func (a Auth) authUser(user goth.User) (string, error) {
 	key := []byte(a.Config.JWTSecret)
-	signer, err := jwt.NewSignerHS(jwt.HS256, key)
-	if err != nil {
-		return "", bugLog.Errorf("signer: %+v", err)
-	}
 
 	claims := &AccountAuth{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -193,11 +189,11 @@ func (a Auth) authUser(user goth.User) (string, error) {
 			AccountID: user.UserID,
 		},
 	}
-	builder := jwt.NewBuilder(signer)
-	token, err := builder.Build(claims)
+	builder := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token, err := builder.SignedString(key)
 	if err != nil {
 		return "", bugLog.Errorf("build jwt: %+v", err)
 	}
 
-	return token.String(), nil
+	return token, nil
 }

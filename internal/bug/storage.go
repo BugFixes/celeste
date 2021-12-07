@@ -22,6 +22,7 @@ type BugRecord struct {
 	ID                  string      `json:"id"`
 	AgentID             string      `json:"agent_id"`
 	Level               string      `json:"level"`
+	FileLineHash        string      `json:"file_line_hash"`
 	Hash                string      `json:"hash"`
 	Full                interface{} `json:"full"`
 	TimesReported       string      `json:"times_reported"`

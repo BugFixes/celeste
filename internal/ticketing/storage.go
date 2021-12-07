@@ -26,10 +26,11 @@ type TicketingCredentials struct {
 
 type TicketDetails struct {
 	agent.Agent
-	ID       string `json:"id"`
-	RemoteID string `json:"remote_id"`
-	System   string `json:"system"`
-	Hash     string `json:"hash"`
+	ID           string `json:"id"`
+	RemoteID     string `json:"remote_id"`
+	System       string `json:"system"`
+	Hash         string `json:"hash"`
+	FileLineHash string `json:"file_line_hash"`
 }
 
 func NewTicketingStorage(c config.Config) *TicketingStorage {
@@ -123,11 +124,12 @@ func (t TicketingStorage) StoreTicketDetails(details TicketDetails) error {
 	}()
 
 	if _, err := conn.Exec(t.Context,
-		"INSERT INTO ticket (agent_id, remote_id, system, hash) VALUES ($1, $2, $3, $4)",
+		"INSERT INTO ticket (agent_id, remote_id, system, hash, file_line_hash) VALUES ($1, $2, $3, $4, $5)",
 		details.Agent.ID,
 		details.RemoteID,
 		details.System,
-		details.Hash); err != nil {
+		details.Hash,
+		details.FileLineHash); err != nil {
 		return bugLog.Errorf("storeTicketDetails: %+v", err)
 	}
 
@@ -158,6 +160,17 @@ func (t TicketingStorage) FindTicket(details TicketDetails) (TicketDetails, erro
 		return td, bugLog.Errorf("findTicket: %+v", err)
 	}
 
+	if err := conn.QueryRow(t.Context,
+		"SELECT id, agent_id, remote_id, system, hash, file_line_hash WHERE file_line_hash = $1 AND agent_id = $2 LIMIT 1",
+		details.FileLineHash,
+		details.Agent.ID).Scan(&td.ID,
+		&td.Agent.ID,
+		&td.RemoteID,
+		&td.System,
+		&td.Hash); err != nil {
+		return td, bugLog.Errorf("findTicket: %+v", err)
+	}
+
 	return td, nil
 }
 
@@ -178,7 +191,15 @@ func (t TicketingStorage) TicketExists(details TicketDetails) (bool, error) {
 		"SELECT TRUE FROM ticket WHERE hash = $1 LIMIT 1",
 		details.Hash).Scan(&exists); err != nil {
 		if err.Error() == "no rows in result set" {
-			return false, nil
+			if err := conn.QueryRow(
+				t.Context,
+				"SELECT TRUE FROM ticket WHERE file_line_hash = $1 LIMIT 1",
+				details.FileLineHash).Scan(&exists); err != nil {
+				if err.Error() == "no rows in result set" {
+					return false, nil
+				}
+				return exists, bugLog.Errorf("ticketExists: %+v", err)
+			}
 		}
 		return exists, bugLog.Errorf("ticketExists: %+v", err)
 	}

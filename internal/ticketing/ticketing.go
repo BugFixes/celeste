@@ -14,15 +14,15 @@ type Hash string
 type Status string
 
 type TicketTemplate struct {
-	Title  string      `json:"title"`
-	Body   interface{} `json:"body"`
-	Labels []string    `json:"labels"`
-	Level  string      `json:"level"`
+  Title  string      `json:"title"`
+  Body   interface{} `json:"body"`
+  Labels []string    `json:"labels"`
+  Level  string      `json:"level"`
 }
 
 const (
-	firstReport = "first report"
-	multiReport = "multiple reports"
+  firstReport = "first report"
+  multiReport = "multiple reports"
 )
 
 //go:generate mockery --name=TicketingSystem
@@ -63,6 +63,7 @@ type Ticket struct {
 	RemoteID      string      `json:"remote_id"`
 	RemoteDetails interface{} `json:"remote_details"`
 	Hash          Hash        `json:"hash"`
+	FileLineHash  Hash        `json:"file_line_hash"`
 	State         string      `json:"state"`
 	RemoteLink    string      `json:"remote_link"`
 	RemoteSystem  string      `json:"remote_system"`

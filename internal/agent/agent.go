@@ -25,10 +25,10 @@ type Agent struct {
 	account.Account
 }
 
-type AgentClient struct {
-	Config  config.Config
-	Context context.Context
-}
+  type AgentClient struct {
+    Config  config.Config
+    Context context.Context
+  }
 
 //go:generate mockery --name=Agents
 type Agents interface {

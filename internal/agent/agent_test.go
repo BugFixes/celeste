@@ -20,7 +20,7 @@ func TestParseAgentHeaders(t *testing.T) {
 			name:    "bad headers",
 			request: map[string]string{},
 			expect:  agent.Agent{},
-			err:     bugLog.Errorf("headers are bad"),
+			err:     bugLog.Local().Errorf("headers are bad"),
 		},
 	}
 

@@ -20,6 +20,7 @@ func (b *Bug) GenerateIdentifier() error {
 
 func (b *Bug) GenerateHash() error {
 	b.Hash = GenerateHash(b.Raw)
+	b.FileLineHash = GenerateHash(fmt.Sprintf("%s:%s", b.File, b.Line))
 
 	return nil
 }

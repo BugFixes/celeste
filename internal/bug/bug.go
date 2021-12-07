@@ -15,6 +15,7 @@ type Bug struct {
 	File          string `json:"file"`
 	Line          string `json:"line"`
 	LineNumber    int    `json:"line_number"`
+	FileLineHash  string `json:"file_line_hash"`
 	Bug           string `json:"bug"`
 	Raw           string `json:"raw"`
 	BugLine       string `json:"bug_line"`

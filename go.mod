@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.42.25
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.7.1
-	github.com/caarlos0/env/v6 v6.9.0
+	github.com/caarlos0/env/v6 v6.9.1
 	github.com/diamondburned/arikawa/v2 v2.1.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/golang-jwt/jwt/v4 v4.2.0

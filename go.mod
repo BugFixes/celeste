@@ -12,7 +12,7 @@ require (
 	github.com/caarlos0/env/v6 v6.9.1
 	github.com/diamondburned/arikawa/v2 v2.1.0
 	github.com/go-chi/chi/v5 v5.0.7
-	github.com/golang-jwt/jwt/v4 v4.2.0
+	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/google/go-github/v29 v29.0.3 // indirect
 	github.com/google/go-github/v35 v35.3.0
 	github.com/google/go-querystring v1.1.0 // indirect

@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
-	github.com/andygrunwald/go-jira v1.14.0
+	github.com/andygrunwald/go-jira v1.15.0
 	github.com/aws/aws-lambda-go v1.28.0
 	github.com/aws/aws-sdk-go v1.43.1
 	github.com/bradleyfalzon/ghinstallation v1.1.1
@@ -15,7 +15,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/google/go-github/v29 v29.0.3 // indirect
 	github.com/google/go-github/v35 v35.3.0
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.1

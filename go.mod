@@ -5,7 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go v0.99.0 // indirect
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/aws/aws-lambda-go v1.29.0
+	github.com/aws/aws-lambda-go v1.31.1
 	github.com/aws/aws-sdk-go v1.43.31
 	github.com/bradleyfalzon/ghinstallation v1.1.1
 	github.com/bugfixes/go-bugfixes v0.7.1
